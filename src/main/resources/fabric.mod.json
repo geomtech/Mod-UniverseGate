@@ -1,0 +1,38 @@
+{
+	"schemaVersion": 1,
+	"id": "universegate",
+	"version": "${version}",
+	"name": "UniverseGate",
+	"description": "This is an example description! Tell everyone what your mod is about!",
+	"authors": [
+		"Me!"
+	],
+	"contact": {
+		"homepage": "https://geomtech.fr/",
+		"sources": "https://geomtech.fr"
+	},
+	"license": "CC0-1.0",
+	"icon": "assets/universegate/icon.png",
+	"environment": "*",
+	"entrypoints": {
+		"main": [
+			"fr.geomtech.universegate.UniverseGate"
+		],
+		"client": [
+			"fr.geomtech.universegate.UniverseGateClient"
+		]
+	},
+	"mixins": [
+		"universegate.mixins.json",
+		{
+			"config": "universegate.client.mixins.json",
+			"environment": "client"
+		}
+	],
+	"depends": {
+		"fabricloader": ">=0.18.4",
+		"minecraft": "~1.21.1",
+		"java": ">=21",
+		"fabric-api": "*"
+	}
+}

@@ -1,0 +1,20 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "pattern": [
+    "III",
+    "IRI",
+    "III"
+  ],
+  "key": {
+    "I": {
+      "item": "minecraft:iron_block"
+    },
+    "R": {
+      "item": "minecraft:respawn_anchor"
+    }
+  },
+  "result": {
+    "count": 1,
+    "id": "universegate:portal_core"
+  }
+}
