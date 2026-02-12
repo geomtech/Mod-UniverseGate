@@ -25,6 +25,11 @@ public final class ModItems {
             new BlockItem(ModBlocks.KELO_LOG, new Item.Properties())
     );
 
+    public static final Item KELO_PLANKS_ITEM = register(
+            "kelo_planks",
+            new BlockItem(ModBlocks.KELO_PLANKS, new Item.Properties())
+    );
+
     public static final Item WHITE_PURPUR_BLOCK_ITEM = register(
             "white_purpur_block",
             new BlockItem(ModBlocks.WHITE_PURPUR_BLOCK, new Item.Properties())

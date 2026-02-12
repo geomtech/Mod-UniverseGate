@@ -13,13 +13,15 @@ public final class ModBlocks {
     public static final Block VOID_BLOCK = register(
             "void_block",
             new Block(BlockBehaviour.Properties.ofFullCopy(Blocks.OBSIDIAN)
-                    .strength(40.0f, 1200.0f))
+                    .strength(5.0f, 6.0f)
+                    .requiresCorrectToolForDrops())
     );
 
     public static final Block LIGHT_BLOCK = register(
             "light_block",
             new Block(BlockBehaviour.Properties.ofFullCopy(Blocks.QUARTZ_BLOCK)
                     .strength(1.5f, 6.0f)
+                    .requiresCorrectToolForDrops()
                     .lightLevel(state -> 15))
     );
 
@@ -29,16 +31,24 @@ public final class ModBlocks {
                     .strength(2.0f, 3.0f))
     );
 
+    public static final Block KELO_PLANKS = register(
+            "kelo_planks",
+            new Block(BlockBehaviour.Properties.ofFullCopy(Blocks.SPRUCE_PLANKS)
+                    .strength(2.0f, 3.0f))
+    );
+
     public static final Block WHITE_PURPUR_BLOCK = register(
             "white_purpur_block",
             new Block(BlockBehaviour.Properties.ofFullCopy(Blocks.PURPUR_BLOCK)
-                    .strength(1.5f, 6.0f))
+                    .strength(1.5f, 6.0f)
+                    .requiresCorrectToolForDrops())
     );
 
     public static final Block WHITE_PURPUR_PILLAR = register(
             "white_purpur_pillar",
             new RotatedPillarBlock(BlockBehaviour.Properties.ofFullCopy(Blocks.PURPUR_PILLAR)
-                    .strength(1.5f, 6.0f))
+                    .strength(1.5f, 6.0f)
+                    .requiresCorrectToolForDrops())
     );
 
     public static final Block LIGHT_BEAM_EMITTER = register(

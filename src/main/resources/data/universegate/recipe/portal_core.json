@@ -2,15 +2,18 @@
   "type": "minecraft:crafting_shaped",
   "pattern": [
     "III",
-    "IRI",
-    "III"
+    "IEI",
+    "IRI"
   ],
   "key": {
     "I": {
-      "item": "universegate:void_block"
+      "item": "minecraft:stone"
+    },
+    "E": {
+      "item": "minecraft:ender_pearl"
     },
     "R": {
-      "item": "universegate:light_beam_emitter"
+      "item": "minecraft:redstone"
     }
   },
   "result": {

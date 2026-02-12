@@ -7,9 +7,11 @@ import net.minecraft.core.component.DataComponents;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.level.ServerLevel;
+import net.minecraft.tags.BlockTags;
 import net.minecraft.world.Container;
 import net.minecraft.world.RandomizableContainer;
 import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.item.Items;
 import net.minecraft.world.item.component.LodestoneTracker;
 import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.Mirror;
@@ -56,10 +58,16 @@ public final class RiftScenarioGenerator {
             return;
         }
 
-        addCompassToOutpostContainers(riftLevel, outpost.get(), workingPortalCore.below());
-        data.setGenerated(outpost.get().center(), workingPortalCore);
+        BlockPos outpostBedPos = findOutpostBedPos(riftLevel, outpost.get());
+        if (outpostBedPos == null) {
+            UniverseGate.LOGGER.warn("No bed found in outpost at {}, using fallback respawn point", outpost.get().center());
+            outpostBedPos = outpost.get().center().above();
+        }
 
-        UniverseGate.LOGGER.info("Rift scenario generated: outpost at {}, working portal at {}", outpost.get().center(), workingPortalCore);
+        addCompassToOutpostContainers(riftLevel, outpost.get(), workingPortalCore);
+        data.setGenerated(outpost.get().center(), workingPortalCore, outpostBedPos);
+
+        UniverseGate.LOGGER.info("Rift scenario generated: outpost at {}, outpost bed at {}, working portal at {}", outpost.get().center(), outpostBedPos, workingPortalCore);
     }
 
     private static Optional<PlacedTemplate> placeOutpostNearBrokenPortal(ServerLevel level, BlockPos brokenPortalPos) {
@@ -162,7 +170,6 @@ public final class RiftScenarioGenerator {
 
             loadChunksForPortal(level, corePos);
             clearPortalAirVolume(level, corePos);
-            level.setBlock(corePos.below(), Blocks.LODESTONE.defaultBlockState(), 3);
 
             var right = level.random.nextBoolean() ? net.minecraft.core.Direction.EAST : net.minecraft.core.Direction.SOUTH;
             PortalRiftHelper.placeRiftFrame(level, corePos, right);
@@ -231,13 +238,14 @@ public final class RiftScenarioGenerator {
         }
     }
 
-    private static void addCompassToOutpostContainers(ServerLevel level, PlacedTemplate outpost, BlockPos lodestonePos) {
-        ItemStack compass = new ItemStack(ModItems.RIFT_COMPASS);
+    private static void addCompassToOutpostContainers(ServerLevel level, PlacedTemplate outpost, BlockPos targetCorePos) {
+        ItemStack compass = new ItemStack(Items.COMPASS);
         compass.set(DataComponents.CUSTOM_NAME, Component.literal("Rift Compass"));
         compass.set(
                 DataComponents.LODESTONE_TRACKER,
-                new LodestoneTracker(Optional.of(GlobalPos.of(UniverseGateDimensions.RIFT, lodestonePos)), true)
+                new LodestoneTracker(Optional.of(GlobalPos.of(UniverseGateDimensions.RIFT, targetCorePos)), false)
         );
+        ItemStack craftingTable = new ItemStack(Items.CRAFTING_TABLE);
 
         BlockPos start = outpost.start();
         Vec3i size = outpost.size();
@@ -257,7 +265,13 @@ public final class RiftScenarioGenerator {
                 if (!container.getItem(i).isEmpty()) continue;
                 container.setItem(i, compass.copy());
                 inserted = true;
-                UniverseGate.LOGGER.info("Inserted Rift Compass in outpost container at {}", pos);
+                UniverseGate.LOGGER.info("Inserted Rift Compass in outpost container at {} targeting core {} (tracked=false)", pos, targetCorePos);
+
+                if (tryInsertInEmptySlot(container, craftingTable.copy())) {
+                    UniverseGate.LOGGER.info("Inserted Crafting Table in outpost container at {}", pos);
+                } else {
+                    UniverseGate.LOGGER.warn("No empty slot for Crafting Table in outpost container at {}", pos);
+                }
                 break;
             }
 
@@ -267,6 +281,28 @@ public final class RiftScenarioGenerator {
         if (!inserted) {
             UniverseGate.LOGGER.warn("No container found in rift outpost for Rift Compass at {}", outpost.center());
         }
+    }
+
+    private static BlockPos findOutpostBedPos(ServerLevel level, PlacedTemplate outpost) {
+        BlockPos start = outpost.start();
+        Vec3i size = outpost.size();
+        BlockPos end = start.offset(size.getX() - 1, size.getY() - 1, size.getZ() - 1);
+
+        for (BlockPos pos : BlockPos.betweenClosed(start, end)) {
+            if (level.getBlockState(pos).is(BlockTags.BEDS)) {
+                return pos.immutable();
+            }
+        }
+        return null;
+    }
+
+    private static boolean tryInsertInEmptySlot(Container container, ItemStack stack) {
+        for (int i = 0; i < container.getContainerSize(); i++) {
+            if (!container.getItem(i).isEmpty()) continue;
+            container.setItem(i, stack);
+            return true;
+        }
+        return false;
     }
 
     private static BlockPos findVoidGround(ServerLevel level, BlockPos fromTop) {

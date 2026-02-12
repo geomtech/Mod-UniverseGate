@@ -1,0 +1,9 @@
+{
+  "replace": false,
+  "values": [
+    "universegate:void_block",
+    "universegate:light_block",
+    "universegate:white_purpur_block",
+    "universegate:white_purpur_pillar"
+  ]
+}

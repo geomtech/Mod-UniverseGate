@@ -7,6 +7,9 @@
 		"PoiTypesAccessor",
 		"LightningBoltMixin"
 	],
+	"client": [
+		"LevelRendererMixin"
+	],
 	"injectors": {
 		"defaultRequire": 1
 	},

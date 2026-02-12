@@ -14,6 +14,7 @@ public class RiftScenarioSavedData extends SavedData {
     private boolean generated = false;
     private BlockPos outpostPos = BlockPos.ZERO;
     private BlockPos workingPortalPos = BlockPos.ZERO;
+    private BlockPos outpostBedPos = BlockPos.ZERO;
 
     public static RiftScenarioSavedData get(MinecraftServer server) {
         ServerLevel overworld = server.overworld();
@@ -39,10 +40,19 @@ public class RiftScenarioSavedData extends SavedData {
         return workingPortalPos;
     }
 
+    public BlockPos getOutpostBedPos() {
+        return outpostBedPos;
+    }
+
     public void setGenerated(BlockPos outpostPos, BlockPos workingPortalPos) {
+        setGenerated(outpostPos, workingPortalPos, outpostPos);
+    }
+
+    public void setGenerated(BlockPos outpostPos, BlockPos workingPortalPos, BlockPos outpostBedPos) {
         this.generated = true;
         this.outpostPos = outpostPos;
         this.workingPortalPos = workingPortalPos;
+        this.outpostBedPos = outpostBedPos;
         setDirty();
     }
 
@@ -57,6 +67,10 @@ public class RiftScenarioSavedData extends SavedData {
             tag.putInt("PortalX", workingPortalPos.getX());
             tag.putInt("PortalY", workingPortalPos.getY());
             tag.putInt("PortalZ", workingPortalPos.getZ());
+
+            tag.putInt("BedX", outpostBedPos.getX());
+            tag.putInt("BedY", outpostBedPos.getY());
+            tag.putInt("BedZ", outpostBedPos.getZ());
         }
         return tag;
     }
@@ -67,6 +81,11 @@ public class RiftScenarioSavedData extends SavedData {
         if (data.generated) {
             data.outpostPos = new BlockPos(tag.getInt("OutpostX"), tag.getInt("OutpostY"), tag.getInt("OutpostZ"));
             data.workingPortalPos = new BlockPos(tag.getInt("PortalX"), tag.getInt("PortalY"), tag.getInt("PortalZ"));
+            if (tag.contains("BedX")) {
+                data.outpostBedPos = new BlockPos(tag.getInt("BedX"), tag.getInt("BedY"), tag.getInt("BedZ"));
+            } else {
+                data.outpostBedPos = data.outpostPos;
+            }
         }
         return data;
     }
