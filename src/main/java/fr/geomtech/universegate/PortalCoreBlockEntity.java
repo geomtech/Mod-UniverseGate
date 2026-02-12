@@ -6,6 +6,7 @@ import net.minecraft.core.HolderLookup;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.chat.Component;
 import net.minecraft.server.level.ServerLevel;
+import net.minecraft.core.particles.ParticleTypes;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.inventory.AbstractContainerMenu;
@@ -57,12 +58,23 @@ public class PortalCoreBlockEntity extends BlockEntity implements ExtendedScreen
             restorePending = false;
             if (!restoreActiveState(sl)) return;
         }
+        if (sl.getGameTime() % 10L == 0L) {
+            PortalRiftHelper.findNearestChargedRod(sl, worldPosition, ChargedLightningRodBlock.PORTAL_RADIUS)
+                    .ifPresent((rod) -> spawnRiftParticles(sl));
+        }
         if (!active) return;
 
         long now = sl.getGameTime();
         if (now >= activeUntilGameTime) {
             PortalConnectionManager.forceCloseOneSide(sl, worldPosition);
         }
+    }
+
+    private void spawnRiftParticles(ServerLevel level) {
+        double x = worldPosition.getX() + 0.5;
+        double y = worldPosition.getY() + 1.2;
+        double z = worldPosition.getZ() + 0.5;
+        level.sendParticles(ParticleTypes.END_ROD, x, y, z, 4, 0.35, 0.5, 0.35, 0.0);
     }
 
     private boolean restoreActiveState(ServerLevel sl) {

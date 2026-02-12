@@ -40,6 +40,11 @@ public final class UniverseGateNetwork {
                 BlockPos corePos = findCoreNear(level, payload.keyboardPos(), 8);
                 if (corePos == null) return;
 
+                if (fr.geomtech.universegate.PortalRiftHelper.tryConsumeChargeAndOpenRift(level, corePos, fr.geomtech.universegate.ChargedLightningRodBlock.PORTAL_RADIUS)) {
+                    sendPortalKeyboardStatusToPlayer(player, payload.keyboardPos());
+                    return;
+                }
+
                 // Ouvrir Stargate A<->B
                 if (kb.catalystCount() <= 0) return;
                 boolean ok = PortalConnectionManager.openBothSides(level, corePos, payload.targetPortalId());
@@ -82,7 +87,7 @@ public final class UniverseGateNetwork {
 
     public static void sendPortalListToPlayer(net.minecraft.server.level.ServerPlayer player, BlockPos keyboardPos) {
         var reg = PortalRegistrySavedData.get(player.server);
-        List<PortalInfo> list = reg.listAll().stream()
+        List<PortalInfo> list = reg.listVisible().stream()
                 .map(e -> new PortalInfo(e.id(), e.name().isEmpty() ? shortId(e.id()) : e.name(), e.dim().location(), e.pos()))
                 .collect(Collectors.toList());
 

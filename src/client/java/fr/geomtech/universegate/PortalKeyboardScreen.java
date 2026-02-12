@@ -11,21 +11,29 @@ import net.minecraft.client.gui.screens.inventory.AbstractContainerScreen;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.entity.player.Inventory;
+import net.minecraft.util.Mth;
 
 import java.util.ArrayList;
 import java.util.List;
 
 public class PortalKeyboardScreen extends AbstractContainerScreen<PortalKeyboardMenu> {
 
+    private static final ResourceLocation TEXTURE =
+            ResourceLocation.fromNamespaceAndPath("universegate", "textures/gui/portal_keyboard.png");
+
     private final List<PortalInfo> portals = new ArrayList<>();
     private final List<Button> portalButtons = new ArrayList<>();
     private boolean portalActive = false;
     private Button disconnectButton;
+    private int scrollOffset = 0;
+    private static final int VISIBLE_PORTALS = 3;
 
     public PortalKeyboardScreen(PortalKeyboardMenu menu, Inventory inv, Component title) {
         super(menu, inv, title);
-        this.imageWidth = 220;
-        this.imageHeight = 222;
+        this.imageWidth = 256;
+        this.imageHeight = 200;
+        this.inventoryLabelY = this.imageHeight - 94;
+        this.titleLabelX = 10;
     }
 
     public net.minecraft.core.BlockPos getKeyboardPos() {
@@ -36,6 +44,7 @@ public class PortalKeyboardScreen extends AbstractContainerScreen<PortalKeyboard
     public void setPortals(List<PortalInfo> newList) {
         portals.clear();
         portals.addAll(newList);
+        scrollOffset = 0;
         rebuildPortalButtons();
     }
 
@@ -50,12 +59,11 @@ public class PortalKeyboardScreen extends AbstractContainerScreen<PortalKeyboard
         disconnectButton = Button.builder(Component.literal("Déconnexion"), (btn) -> {
                     ClientPlayNetworking.send(new DisconnectPortalPayload(this.menu.getKeyboardPos()));
                 })
-                .bounds(leftPos + 132, topPos + 4, 80, 16)
+                .bounds(leftPos + imageWidth - 88, topPos + 10, 78, 16)
                 .build();
         this.addRenderableWidget(disconnectButton);
         updateDisconnectButton();
         rebuildPortalButtons();
-        this.inventoryLabelY = 10000;
     }
 
     private void rebuildPortalButtons() {
@@ -66,23 +74,26 @@ public class PortalKeyboardScreen extends AbstractContainerScreen<PortalKeyboard
         for (Button b : portalButtons) this.removeWidget(b);
         portalButtons.clear();
 
-        int max = Math.min(6, portals.size());
-        int x = leftPos + 8;
-        int y = topPos + 24;
+        clampScrollOffset();
+        int max = Math.min(VISIBLE_PORTALS, portals.size() - scrollOffset);
+        int buttonWidth = 200;
+        int buttonHeight = 20;
+        int x = leftPos + (imageWidth - buttonWidth) / 2;
+        int y = topPos + 28;
 
         for (int i = 0; i < max; i++) {
-            PortalInfo p = portals.get(i);
+            PortalInfo p = portals.get(i + scrollOffset);
 
             String dimShort = shortDim(p.dimId());
             Component label = Component.literal(dimShort + " - " + p.name());
 
-            int btnY = y + i * 18;
+            int btnY = y + i * (buttonHeight + 6);
 
             Button b = Button.builder(label, (btn) -> {
                         // Envoie la demande de connexion au serveur
                         ClientPlayNetworking.send(new ConnectPortalPayload(this.menu.getKeyboardPos(), p.id()));
                     })
-                    .bounds(x, btnY, 160, 16)
+                    .bounds(x, btnY, buttonWidth, buttonHeight)
                     .build();
 
             portalButtons.add(b);
@@ -101,8 +112,43 @@ public class PortalKeyboardScreen extends AbstractContainerScreen<PortalKeyboard
 
     @Override
     protected void renderBg(GuiGraphics g, float partialTicks, int mouseX, int mouseY) {
-        g.fill(leftPos, topPos, leftPos + imageWidth, topPos + imageHeight, 0xFF2B2B2B);
-        g.drawString(this.font, "Fuel", leftPos + 180, topPos + 122, 0xFFFFFF, false);
+        g.blit(TEXTURE, leftPos, topPos, 0, 0, imageWidth, imageHeight, 256, 200);
+
+        if (portals.size() > VISIBLE_PORTALS) {
+            int trackX = leftPos + imageWidth - 28;
+            int trackY = topPos + 34;
+            int trackH = 60;
+            int handleH = Math.max(10, trackH * VISIBLE_PORTALS / portals.size());
+            int maxOffset = Math.max(1, portals.size() - VISIBLE_PORTALS);
+            int handleY = trackY + (trackH - handleH) * scrollOffset / maxOffset;
+            g.fill(trackX, trackY, trackX + 3, trackY + trackH, 0xFF1E222B);
+            g.fill(trackX, handleY, trackX + 3, handleY + handleH, 0xFF7E6BC6);
+        }
+    }
+
+    @Override
+    protected void renderLabels(GuiGraphics g, int mouseX, int mouseY) {
+        g.pose().pushPose();
+        g.pose().translate(0.0F, 0.0F, 0.0F);
+        g.pose().scale(1.2F, 1.2F, 1.0F);
+        g.drawString(this.font, this.title, (int) (titleLabelX / 1.2F), (int) (titleLabelY / 1.2F), 0xE0E0E0, true);
+        g.pose().popPose();
+
+        g.drawString(this.font, this.playerInventoryTitle, inventoryLabelX, inventoryLabelY, 0xA0A0A0, false);
+    }
+
+    @Override
+    public boolean mouseScrolled(double mouseX, double mouseY, double deltaX, double deltaY) {
+        if (portals.size() <= VISIBLE_PORTALS) return super.mouseScrolled(mouseX, mouseY, deltaX, deltaY);
+        int direction = deltaY > 0 ? -1 : 1;
+        scrollOffset = Mth.clamp(scrollOffset + direction, 0, portals.size() - VISIBLE_PORTALS);
+        rebuildPortalButtons();
+        return true;
+    }
+
+    private void clampScrollOffset() {
+        int maxOffset = Math.max(0, portals.size() - VISIBLE_PORTALS);
+        scrollOffset = Mth.clamp(scrollOffset, 0, maxOffset);
     }
 
     private void updateDisconnectButton() {

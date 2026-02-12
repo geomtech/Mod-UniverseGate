@@ -17,7 +17,7 @@ public final class ModBlocks {
 
     public static final Block PORTAL_FRAME = register(
             "portal_frame",
-            new Block(BlockBehaviour.Properties.ofFullCopy(Blocks.OBSIDIAN)
+            new PortalFrameBlock(BlockBehaviour.Properties.ofFullCopy(Blocks.OBSIDIAN)
                     .strength(60.0f, 1200.0f))
     );
 
@@ -32,10 +32,15 @@ public final class ModBlocks {
             new PortalFieldBlock(
                     BlockBehaviour.Properties.of()
                             .noCollission()
-                            .strength(-1.0F)
+                            .strength(-1.0F, 0.0F)
                             .lightLevel(state -> 10)
                             .noLootTable()
             )
+    );
+
+    public static final Block CHARGED_LIGHTNING_ROD = register(
+            "charged_lightning_rod",
+            new ChargedLightningRodBlock(BlockBehaviour.Properties.ofFullCopy(Blocks.LIGHTNING_ROD))
     );
 
     private static Block register(String id, Block block) {

@@ -28,7 +28,7 @@ public class PortalKeyboardMenu extends AbstractContainerMenu {
         this.keyboardPos = keyboard.getBlockPos();
 
         // Slot fuel (index 0)
-        this.addSlot(new Slot(keyboard, 0, 194, 132) {
+        this.addSlot(new Slot(keyboard, 0, 220, 150) {
             @Override
             public boolean mayPlace(ItemStack stack) {
                 return stack.is(ModItems.CATALYST);
@@ -37,7 +37,7 @@ public class PortalKeyboardMenu extends AbstractContainerMenu {
 
         // Inventaire joueur
         int startX = 8;
-        int startY = 142;
+        int startY = 118;
 
         for (int row = 0; row < 3; row++) {
             for (int col = 0; col < 9; col++) {

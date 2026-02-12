@@ -5,6 +5,8 @@ import net.minecraft.core.Direction;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 
+import fr.geomtech.universegate.UniverseGateDimensions;
+
 import java.util.HashMap;
 import java.util.Map;
 import java.util.UUID;
@@ -47,26 +49,30 @@ public final class PortalTeleportHandler {
         UUID targetId = core.getTargetPortalId();
         if (targetId == null) return;
 
-        // 3) anti double facturation carburant
-        Long lastFuel = lastFuelChargeTick.get(pid);
-        if (lastFuel != null && now - lastFuel < FUEL_CHARGE_COOLDOWN_TICKS) return;
-
-        // 4) consommer 1 catalyst dans le keyboard source
-        PortalKeyboardBlockEntity keyboard = findKeyboardNear(sourceLevel, corePos, KEYBOARD_RADIUS);
-        if (keyboard == null || !keyboard.consumeOneCatalyst()) {
-            // plus de carburant => fermeture immédiate
-            PortalConnectionManager.forceCloseOneSide(sourceLevel, corePos);
-            return;
-        }
-        lastFuelChargeTick.put(pid, now);
-
-        // 5) resolve destination (cross-dimension)
+        // 3) resolve destination (cross-dimension)
         PortalRegistrySavedData registry = PortalRegistrySavedData.get(sourceLevel.getServer());
         PortalRegistrySavedData.PortalEntry targetEntry = registry.get(targetId);
         if (targetEntry == null) {
             // destination inexistante => fermeture
             PortalConnectionManager.forceCloseOneSide(sourceLevel, corePos);
             return;
+        }
+
+        boolean isRift = targetEntry.dim().equals(UniverseGateDimensions.RIFT);
+
+        // 4) anti double facturation carburant
+        Long lastFuel = lastFuelChargeTick.get(pid);
+        if (lastFuel != null && now - lastFuel < FUEL_CHARGE_COOLDOWN_TICKS) return;
+
+        if (!isRift) {
+            // 5) consommer 1 catalyst dans le keyboard source
+            PortalKeyboardBlockEntity keyboard = findKeyboardNear(sourceLevel, corePos, KEYBOARD_RADIUS);
+            if (keyboard == null || !keyboard.consumeOneCatalyst()) {
+                // plus de carburant => fermeture immédiate
+                PortalConnectionManager.forceCloseOneSide(sourceLevel, corePos);
+                return;
+            }
+            lastFuelChargeTick.put(pid, now);
         }
 
         ServerLevel targetLevel = sourceLevel.getServer().getLevel(targetEntry.dim());

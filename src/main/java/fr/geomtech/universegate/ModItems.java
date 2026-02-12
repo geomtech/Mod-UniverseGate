@@ -24,6 +24,11 @@ public final class ModItems {
             new BlockItem(ModBlocks.PORTAL_KEYBOARD, new Item.Properties())
     );
 
+    public static final Item CHARGED_LIGHTNING_ROD_ITEM = register(
+            "charged_lightning_rod",
+            new BlockItem(ModBlocks.CHARGED_LIGHTNING_ROD, new Item.Properties())
+    );
+
     public static final Item CATALYST = register(
             "catalyst",
             new Item(new Item.Properties().stacksTo(16))

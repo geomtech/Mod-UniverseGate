@@ -11,6 +11,9 @@ import net.minecraft.world.entity.player.Inventory;
 
 public class PortalCoreScreen extends AbstractContainerScreen<PortalCoreMenu> {
 
+    private static final net.minecraft.resources.ResourceLocation TEXTURE =
+            net.minecraft.resources.ResourceLocation.fromNamespaceAndPath("universegate", "textures/gui/portal_core.png");
+
     private EditBox nameBox;
     private String pendingName = "";
 
@@ -77,8 +80,8 @@ public class PortalCoreScreen extends AbstractContainerScreen<PortalCoreMenu> {
 
     @Override
     protected void renderBg(GuiGraphics g, float partialTicks, int mouseX, int mouseY) {
-        g.fill(leftPos, topPos, leftPos + imageWidth, topPos + imageHeight, 0xFF2B2B2B);
-        g.drawString(this.font, "Portal Name", leftPos + 8, topPos + 8, 0xFFFFFF, false);
+        g.blit(TEXTURE, leftPos, topPos, 0, 0, imageWidth, imageHeight, 176, 80);
+        g.drawString(this.font, "Portal Name", leftPos + 8, topPos + 8, 0xC0C0C0, false);
     }
 
     @Override

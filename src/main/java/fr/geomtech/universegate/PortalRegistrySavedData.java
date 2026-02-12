@@ -19,7 +19,7 @@ public class PortalRegistrySavedData extends SavedData {
 
     private static final String DATA_NAME = UniverseGate.MOD_ID + "_portal_registry";
 
-    public record PortalEntry(UUID id, String name, ResourceKey<Level> dim, BlockPos pos) {}
+    public record PortalEntry(UUID id, String name, ResourceKey<Level> dim, BlockPos pos, boolean hidden) {}
 
     private final Map<UUID, PortalEntry> portals = new HashMap<>();
 
@@ -40,13 +40,33 @@ public class PortalRegistrySavedData extends SavedData {
         return Collections.unmodifiableCollection(portals.values());
     }
 
+    public Collection<PortalEntry> listVisible() {
+        List<PortalEntry> visible = new ArrayList<>();
+        for (PortalEntry entry : portals.values()) {
+            if (!entry.hidden()) visible.add(entry);
+        }
+        return Collections.unmodifiableCollection(visible);
+    }
+
     public PortalEntry get(UUID id) {
         return portals.get(id);
     }
 
     public void upsertPortal(ServerLevel level, UUID id, String name, BlockPos pos) {
+        upsertPortal(level, id, name, pos, false);
+    }
+
+    public void upsertPortal(ServerLevel level, UUID id, String name, BlockPos pos, boolean hidden) {
         ResourceKey<Level> dim = level.dimension();
-        portals.put(id, new PortalEntry(id, name == null ? "" : name, dim, pos));
+        portals.put(id, new PortalEntry(id, name == null ? "" : name, dim, pos, hidden));
+        setDirty();
+    }
+
+    public void setHidden(UUID id, boolean hidden) {
+        PortalEntry existing = portals.get(id);
+        if (existing == null) return;
+        if (existing.hidden() == hidden) return;
+        portals.put(id, new PortalEntry(existing.id(), existing.name(), existing.dim(), existing.pos(), hidden));
         setDirty();
     }
 
@@ -64,6 +84,7 @@ public class PortalRegistrySavedData extends SavedData {
             CompoundTag p = new CompoundTag();
             p.putUUID("Id", e.id());
             p.putString("Name", e.name());
+            p.putBoolean("Hidden", e.hidden());
 
             p.putString("Dim", e.dim().location().toString());
 
@@ -95,7 +116,9 @@ public class PortalRegistrySavedData extends SavedData {
 
             BlockPos pos = new BlockPos(p.getInt("X"), p.getInt("Y"), p.getInt("Z"));
 
-            data.portals.put(id, new PortalEntry(id, name, dim, pos));
+            boolean hidden = p.contains("Hidden") && p.getBoolean("Hidden");
+
+            data.portals.put(id, new PortalEntry(id, name, dim, pos, hidden));
         }
 
         return data;

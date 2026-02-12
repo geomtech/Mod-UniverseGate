@@ -85,7 +85,9 @@ public final class PortalConnectionManager {
         UUID targetId = a.getTargetPortalId();
 
         // Recalculer frame + retirer champ
-        PortalFrameDetector.find(level, corePos).ifPresent(match -> removeField(level, match));
+        var match = PortalFrameDetector.find(level, corePos);
+        if (match.isPresent()) removeField(level, match.get());
+        else removeFieldFallback(level, corePos);
         a.clearActiveState();
 
         // Essayer de fermer l’autre côté (si on peut le charger)
@@ -107,7 +109,9 @@ public final class PortalConnectionManager {
 
         if (!(targetLevel.getBlockEntity(entry.pos()) instanceof PortalCoreBlockEntity b)) return;
 
-        PortalFrameDetector.find(targetLevel, entry.pos()).ifPresent(match -> removeField(targetLevel, match));
+        var match = PortalFrameDetector.find(targetLevel, entry.pos());
+        if (match.isPresent()) removeField(targetLevel, match.get());
+        else removeFieldFallback(targetLevel, entry.pos());
         b.clearActiveState();
         b.setChanged();
     }
@@ -126,6 +130,22 @@ public final class PortalConnectionManager {
         for (BlockPos p : match.interior()) {
             if (level.getBlockState(p).is(ModBlocks.PORTAL_FIELD)) {
                 level.setBlockAndUpdate(p, net.minecraft.world.level.block.Blocks.AIR.defaultBlockState());
+            }
+        }
+    }
+
+    private static void removeFieldFallback(ServerLevel level, BlockPos corePos) {
+        removeFieldArea(level, corePos, net.minecraft.core.Direction.EAST);
+        removeFieldArea(level, corePos, net.minecraft.core.Direction.SOUTH);
+    }
+
+    private static void removeFieldArea(ServerLevel level, BlockPos corePos, net.minecraft.core.Direction right) {
+        for (int dy = 1; dy <= PortalFrameDetector.INNER_HEIGHT; dy++) {
+            for (int dx = -PortalFrameDetector.INNER_WIDTH / 2; dx <= PortalFrameDetector.INNER_WIDTH / 2; dx++) {
+                BlockPos p = corePos.offset(right.getStepX() * dx, dy, right.getStepZ() * dx);
+                if (level.getBlockState(p).is(ModBlocks.PORTAL_FIELD)) {
+                    level.setBlockAndUpdate(p, net.minecraft.world.level.block.Blocks.AIR.defaultBlockState());
+                }
             }
         }
     }
