@@ -1,18 +1,20 @@
 package fr.geomtech.universegate;
 
 import net.minecraft.core.BlockPos;
-import net.minecraft.core.registries.Registries;
-import net.minecraft.resources.ResourceKey;
 import net.minecraft.core.Vec3i;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.util.RandomSource;
+import net.minecraft.world.Container;
 import net.minecraft.world.RandomizableContainer;
+import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.item.Items;
 import net.minecraft.world.level.ChunkPos;
 import net.minecraft.world.level.block.Mirror;
 import net.minecraft.world.level.block.Rotation;
 import net.minecraft.world.level.levelgen.Heightmap;
-import net.minecraft.world.level.storage.loot.LootTable;
+import net.minecraft.world.level.levelgen.structure.BoundingBox;
 import net.minecraft.world.level.levelgen.structure.templatesystem.BlockIgnoreProcessor;
 import net.minecraft.world.level.levelgen.structure.templatesystem.StructurePlaceSettings;
 
@@ -22,10 +24,6 @@ import java.util.Set;
 public final class RiftCubeGenerator {
 
     private static final ResourceLocation TEMPLATE_ID = ResourceLocation.fromNamespaceAndPath(UniverseGate.MOD_ID, "rift_cube");
-    private static final ResourceKey<LootTable> RIFT_CUBE_LOOT = ResourceKey.create(
-            Registries.LOOT_TABLE,
-            ResourceLocation.fromNamespaceAndPath(UniverseGate.MOD_ID, "chests/rift_cube")
-    );
     private static final int SPACING_CHUNKS = 40;
     private static final int CELL_RADIUS = 2;
     private static final int CHECK_EVERY_TICKS = 120;
@@ -107,7 +105,7 @@ public final class RiftCubeGenerator {
 
         boolean ok = template.placeInWorld(level, start, start, settings, level.random, 2);
         if (ok) {
-            applyLootToContainers(level, start, size);
+            applyLootToContainers(level, template, settings, start);
             data.markGenerated(cellX, cellZ);
             UniverseGate.LOGGER.info("Generated rift_cube at {} in cell {},{}", start, cellX, cellZ);
             return true;
@@ -129,15 +127,78 @@ public final class RiftCubeGenerator {
         }
     }
 
-    private static void applyLootToContainers(ServerLevel level, BlockPos start, Vec3i size) {
-        BlockPos end = start.offset(size.getX() - 1, size.getY() - 1, size.getZ() - 1);
-        for (BlockPos pos : BlockPos.betweenClosed(start, end)) {
+    private static void applyLootToContainers(ServerLevel level,
+                                              net.minecraft.world.level.levelgen.structure.templatesystem.StructureTemplate template,
+                                              StructurePlaceSettings settings,
+                                              BlockPos start) {
+        BoundingBox box = template.getBoundingBox(settings, start);
+        int containers = 0;
+        int filled = 0;
+
+        for (BlockPos pos : BlockPos.betweenClosed(box.minX(), box.minY(), box.minZ(), box.maxX(), box.maxY(), box.maxZ())) {
             var be = level.getBlockEntity(pos);
-            if (!(be instanceof RandomizableContainer randomizable)) continue;
-            randomizable.setLootTable(RIFT_CUBE_LOOT);
-            randomizable.setLootTableSeed(level.random.nextLong());
+            if (!(be instanceof Container container)) continue;
+            containers++;
+
+            if (be instanceof RandomizableContainer randomizable) {
+                randomizable.unpackLootTable(null);
+            }
+
+            if (fillRiftCubeContainer(container, level.random)) {
+                filled++;
+            }
             be.setChanged();
         }
+
+        UniverseGate.LOGGER.info("Rift cube loot pass: containers found={}, filled={} at {}", containers, filled, start);
+    }
+
+    private static boolean fillRiftCubeContainer(Container container, RandomSource random) {
+        boolean inserted = false;
+
+        inserted |= addItem(container, random, 0.90F, new ItemStack(Items.COAL, randBetween(random, 4, 18)));
+        inserted |= addItem(container, random, 0.70F, new ItemStack(Items.CHORUS_FRUIT, randBetween(random, 2, 8)));
+
+        // Rare valuables
+        inserted |= addItem(container, random, 0.16F, new ItemStack(Items.DIAMOND, randBetween(random, 1, 3)));
+        inserted |= addItem(container, random, 0.28F, new ItemStack(Items.ENDER_PEARL, randBetween(random, 1, 2)));
+
+        // Useless / filler loot
+        inserted |= addItem(container, random, 0.55F, new ItemStack(Items.STICK, randBetween(random, 3, 14)));
+        inserted |= addItem(container, random, 0.50F, new ItemStack(Items.ROTTEN_FLESH, randBetween(random, 2, 10)));
+        inserted |= addItem(container, random, 0.45F, new ItemStack(Items.BONE, randBetween(random, 1, 8)));
+        inserted |= addItem(container, random, 0.40F, new ItemStack(Items.STRING, randBetween(random, 1, 8)));
+        inserted |= addItem(container, random, 0.35F, new ItemStack(Items.FLINT, randBetween(random, 1, 4)));
+        inserted |= addItem(container, random, 0.30F, new ItemStack(Items.COBBLED_DEEPSLATE, randBetween(random, 4, 16)));
+        inserted |= addItem(container, random, 0.22F, new ItemStack(Items.DEAD_BUSH, randBetween(random, 1, 3)));
+        inserted |= addItem(container, random, 0.20F, new ItemStack(Items.FEATHER, randBetween(random, 1, 5)));
+
+        if (!inserted) {
+            inserted = placeInRandomEmptySlot(container, random, new ItemStack(Items.COAL, randBetween(random, 4, 8)));
+        }
+
+        return inserted;
+    }
+
+    private static boolean addItem(Container container, RandomSource random, float chance, ItemStack stack) {
+        if (random.nextFloat() > chance) return false;
+        return placeInRandomEmptySlot(container, random, stack);
+    }
+
+    private static boolean placeInRandomEmptySlot(Container container, RandomSource random, ItemStack stack) {
+        int size = container.getContainerSize();
+        int start = random.nextInt(Math.max(1, size));
+        for (int i = 0; i < size; i++) {
+            int slot = (start + i) % size;
+            if (!container.getItem(slot).isEmpty()) continue;
+            container.setItem(slot, stack);
+            return true;
+        }
+        return false;
+    }
+
+    private static int randBetween(RandomSource random, int min, int max) {
+        return min + random.nextInt(max - min + 1);
     }
 
     private static BlockPos findVoidGround(ServerLevel level, BlockPos fromTop) {
