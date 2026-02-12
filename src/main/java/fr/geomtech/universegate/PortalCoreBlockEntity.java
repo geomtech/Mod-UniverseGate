@@ -25,6 +25,7 @@ public class PortalCoreBlockEntity extends BlockEntity implements ExtendedScreen
     private UUID connectionId = null;
     private UUID targetPortalId = null;
     private long activeUntilGameTime = 0L; // fermeture auto
+    private boolean riftLightningLink = false;
     private boolean restorePending = false;
 
     public PortalCoreBlockEntity(BlockPos pos, BlockState state) {
@@ -112,6 +113,7 @@ public class PortalCoreBlockEntity extends BlockEntity implements ExtendedScreen
     public UUID getTargetPortalId() { return targetPortalId; }
     public UUID getConnectionId() { return connectionId; }
     public long getActiveUntilGameTime() { return activeUntilGameTime; }
+    public boolean isRiftLightningLink() { return riftLightningLink; }
 
     public void setPortalName(String name) { this.portalName = name == null ? "" : name; setChanged(); }
     public String getPortalName() { return portalName; }
@@ -129,11 +131,12 @@ public class PortalCoreBlockEntity extends BlockEntity implements ExtendedScreen
         setChanged();
     }
 
-    void setActiveState(UUID connectionId, UUID targetPortalId, long activeUntilGameTime) {
+    void setActiveState(UUID connectionId, UUID targetPortalId, long activeUntilGameTime, boolean riftLightningLink) {
         this.active = true;
         this.connectionId = connectionId;
         this.targetPortalId = targetPortalId;
         this.activeUntilGameTime = activeUntilGameTime;
+        this.riftLightningLink = riftLightningLink;
         setChanged();
     }
 
@@ -142,6 +145,7 @@ public class PortalCoreBlockEntity extends BlockEntity implements ExtendedScreen
         this.connectionId = null;
         this.targetPortalId = null;
         this.activeUntilGameTime = 0L;
+        this.riftLightningLink = false;
         setChanged();
     }
 
@@ -157,6 +161,7 @@ public class PortalCoreBlockEntity extends BlockEntity implements ExtendedScreen
         if (connectionId != null) tag.putUUID("ConnectionId", connectionId);
         if (targetPortalId != null) tag.putUUID("TargetPortalId", targetPortalId);
         tag.putLong("ActiveUntil", activeUntilGameTime);
+        tag.putBoolean("RiftLightning", riftLightningLink);
     }
 
     @Override
@@ -170,6 +175,7 @@ public class PortalCoreBlockEntity extends BlockEntity implements ExtendedScreen
         connectionId = tag.hasUUID("ConnectionId") ? tag.getUUID("ConnectionId") : null;
         targetPortalId = tag.hasUUID("TargetPortalId") ? tag.getUUID("TargetPortalId") : null;
         activeUntilGameTime = tag.getLong("ActiveUntil");
+        riftLightningLink = tag.getBoolean("RiftLightning");
         restorePending = active;
     }
 

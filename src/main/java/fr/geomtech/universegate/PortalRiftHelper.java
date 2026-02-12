@@ -98,12 +98,13 @@ public final class PortalRiftHelper {
             return false;
         }
 
-        return PortalConnectionManager.openBothSides(sourceLevel, sourceCorePos, riftEntry.id());
+        return PortalConnectionManager.openBothSides(sourceLevel, sourceCorePos, riftEntry.id(), true);
     }
 
     public static void handleRiftArrival(ServerLevel riftLevel, BlockPos corePos) {
         if (!(riftLevel.getBlockEntity(corePos) instanceof PortalCoreBlockEntity core)) return;
         if (!core.isActive()) return;
+        if (!core.isRiftLightningLink()) return;
 
         var match = PortalFrameDetector.find(riftLevel, corePos);
 

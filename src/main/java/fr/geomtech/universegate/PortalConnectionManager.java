@@ -20,6 +20,10 @@ public final class PortalConnectionManager {
      * targetId = portail B choisi via UI
      */
     public static boolean openBothSides(ServerLevel sourceLevel, BlockPos sourceCorePos, UUID targetId) {
+        return openBothSides(sourceLevel, sourceCorePos, targetId, false);
+    }
+
+    public static boolean openBothSides(ServerLevel sourceLevel, BlockPos sourceCorePos, UUID targetId, boolean riftLightningLink) {
         MinecraftServer server = sourceLevel.getServer();
         PortalRegistrySavedData reg = PortalRegistrySavedData.get(server);
 
@@ -70,8 +74,8 @@ public final class PortalConnectionManager {
         }
 
         // 3) Etat actif
-        a.setActiveState(connectionId, b.getPortalId(), untilA);
-        b.setActiveState(connectionId, a.getPortalId(), untilB);
+        a.setActiveState(connectionId, b.getPortalId(), untilA, riftLightningLink);
+        b.setActiveState(connectionId, a.getPortalId(), untilB, riftLightningLink);
 
         a.setChanged();
         b.setChanged();
@@ -120,8 +124,11 @@ public final class PortalConnectionManager {
     // Champ portal (à brancher ensuite)
     // ----------------------------
     private static boolean placeField(ServerLevel level, PortalFrameDetector.FrameMatch match) {
+        var axis = match.right() == net.minecraft.core.Direction.EAST
+                ? net.minecraft.core.Direction.Axis.X
+                : net.minecraft.core.Direction.Axis.Z;
         for (BlockPos p : match.interior()) {
-            level.setBlock(p, ModBlocks.PORTAL_FIELD.defaultBlockState(), 3);
+            level.setBlock(p, ModBlocks.PORTAL_FIELD.defaultBlockState().setValue(PortalFieldBlock.AXIS, axis), 3);
         }
         return true;
     }

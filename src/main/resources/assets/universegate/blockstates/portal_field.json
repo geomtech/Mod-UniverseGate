@@ -1,7 +1,10 @@
 {
   "variants": {
-    "": {
-      "model": "universegate:block/portal_field"
+    "axis=x": {
+      "model": "universegate:block/portal_field_ns"
+    },
+    "axis=z": {
+      "model": "universegate:block/portal_field_ew"
     }
   }
 }
