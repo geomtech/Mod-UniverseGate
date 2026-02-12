@@ -9,7 +9,7 @@ import java.util.Optional;
 public final class PortalRiftHelper {
 
     private static final String RIFT_PORTAL_NAME = "Rift Anchor";
-    private static final BlockPos RIFT_CORE_POS = new BlockPos(0, 80, 0);
+    private static final BlockPos RIFT_CORE_ANCHOR = new BlockPos(0, 0, 0);
 
     private PortalRiftHelper() {}
 
@@ -105,14 +105,18 @@ public final class PortalRiftHelper {
             rift.getChunk(existing.pos());
             if (!(rift.getBlockEntity(existing.pos()) instanceof PortalCoreBlockEntity)) {
                 existing = null;
+            } else if (rift.getBlockState(existing.pos().below()).isAir()) {
+                UniverseGate.LOGGER.warn("Existing rift portal is not anchored to ground; recreating.");
+                existing = null;
             }
         }
 
         if (existing == null) {
-            UniverseGate.LOGGER.info("Creating rift portal at {}", RIFT_CORE_POS);
-            rift.getChunk(RIFT_CORE_POS);
-            placeRiftFrame(rift, RIFT_CORE_POS, Direction.EAST);
-            if (!(rift.getBlockEntity(RIFT_CORE_POS) instanceof PortalCoreBlockEntity core)) return null;
+            BlockPos corePos = findRiftCorePos(rift, RIFT_CORE_ANCHOR);
+            UniverseGate.LOGGER.info("Creating rift portal at {}", corePos);
+            rift.getChunk(corePos);
+            placeRiftFrame(rift, corePos, Direction.EAST);
+            if (!(rift.getBlockEntity(corePos) instanceof PortalCoreBlockEntity core)) return null;
             core.onPlaced();
             core.renamePortal(RIFT_PORTAL_NAME);
             reg.setHidden(core.getPortalId(), true);
@@ -123,6 +127,45 @@ public final class PortalRiftHelper {
         }
 
         return existing;
+    }
+
+    private static BlockPos findRiftCorePos(ServerLevel rift, BlockPos anchor) {
+        BlockPos surface = findTopmostSurfaceNear(rift, anchor, 128);
+        if (surface != null) {
+            return surface.above();
+        }
+        UniverseGate.LOGGER.warn("No surface found near {} in rift; using fallback height", anchor);
+        int y = rift.getMinBuildHeight() + 1;
+        return new BlockPos(anchor.getX(), y, anchor.getZ());
+    }
+
+    private static BlockPos findTopmostSurfaceNear(ServerLevel level, BlockPos anchor, int radius) {
+        BlockPos best = null;
+        int bestY = level.getMinBuildHeight();
+        int maxY = level.getMaxBuildHeight() - 2;
+
+        for (int dx = -radius; dx <= radius; dx++) {
+            for (int dz = -radius; dz <= radius; dz++) {
+                BlockPos column = anchor.offset(dx, 0, dz);
+                int minY = level.getMinBuildHeight() + 1;
+                for (int scanY = maxY; scanY >= minY; scanY--) {
+                    BlockPos pos = new BlockPos(column.getX(), scanY, column.getZ());
+                    if (level.getBlockState(pos).isAir()) continue;
+                    if (!level.getBlockState(pos.above()).isAir()) continue;
+
+                    if (scanY > bestY) {
+                        bestY = scanY;
+                        best = pos;
+                    }
+                    break;
+                }
+            }
+        }
+
+        if (best != null) {
+            UniverseGate.LOGGER.info("Rift surface chosen at {}", best);
+        }
+        return best;
     }
 
     private static PortalRegistrySavedData.PortalEntry findRiftPortal(PortalRegistrySavedData reg) {
