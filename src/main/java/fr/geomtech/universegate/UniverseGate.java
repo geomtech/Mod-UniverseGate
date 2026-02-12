@@ -22,6 +22,7 @@ public class UniverseGate implements ModInitializer {
 		ModBlocks.register();
 		ModItems.register();
 		ModBlockEntities.register();
+		ModFeatures.register();
 		ModMenuTypes.register();
 		UniverseGatePoiHelper.registerChargedLightningRodPoi();
 		fr.geomtech.universegate.net.UniverseGateNetwork.registerCommon();

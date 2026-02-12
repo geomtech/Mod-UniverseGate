@@ -58,7 +58,7 @@ public class PortalCoreBlock extends BaseEntityBlock {
     @Override
     public ItemInteractionResult useItemOn(ItemStack stack, BlockState state, Level level, BlockPos pos,
                                            Player player, InteractionHand hand, BlockHitResult hit) {
-        if (!stack.is(ModItems.CATALYST)) {
+        if (!stack.is(ModItems.RIFT_ASH)) {
             if (!level.isClientSide) {
                 BlockEntity be = level.getBlockEntity(pos);
                 if (be instanceof MenuProvider provider && player instanceof ServerPlayer sp) {

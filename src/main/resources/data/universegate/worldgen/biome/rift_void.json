@@ -1,12 +1,12 @@
 {
-  "temperature": 0.4,
+  "temperature": 0.5,
   "downfall": 0.0,
   "has_precipitation": false,
   "effects": {
-    "fog_color": 703985,
-    "sky_color": 0,
-    "water_color": 2105376,
-    "water_fog_color": 2105376,
+    "fog_color": 16382457,
+    "sky_color": 16777215,
+    "water_color": 15790320,
+    "water_fog_color": 15790320,
     "mood_sound": {
       "sound": "minecraft:ambient.cave",
       "tick_delay": 6000,
@@ -36,7 +36,10 @@
     [],
     [],
     [],
-    [],
+    [
+      "universegate:rift_light_block",
+      "universegate:rift_kelo_tree"
+    ],
     []
   ]
 }

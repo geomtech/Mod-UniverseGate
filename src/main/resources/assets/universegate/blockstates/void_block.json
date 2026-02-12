@@ -1,0 +1,7 @@
+{
+  "variants": {
+    "": {
+      "model": "universegate:block/void_block"
+    }
+  }
+}

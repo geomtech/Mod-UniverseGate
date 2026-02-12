@@ -4,10 +4,24 @@ import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.world.item.BlockItem;
 import net.minecraft.world.item.Item;
 import net.minecraft.resources.ResourceLocation;
-import net.minecraft.core.registries.Registries;
 import net.minecraft.core.Registry;
 
 public final class ModItems {
+
+    public static final Item VOID_BLOCK_ITEM = register(
+            "void_block",
+            new BlockItem(ModBlocks.VOID_BLOCK, new Item.Properties())
+    );
+
+    public static final Item LIGHT_BLOCK_ITEM = register(
+            "light_block",
+            new BlockItem(ModBlocks.LIGHT_BLOCK, new Item.Properties())
+    );
+
+    public static final Item KELO_LOG_ITEM = register(
+            "kelo_log",
+            new BlockItem(ModBlocks.KELO_LOG, new Item.Properties())
+    );
 
     public static final Item PORTAL_CORE_ITEM = register(
             "portal_core",
@@ -29,8 +43,8 @@ public final class ModItems {
             new BlockItem(ModBlocks.CHARGED_LIGHTNING_ROD, new Item.Properties())
     );
 
-    public static final Item CATALYST = register(
-            "catalyst",
+    public static final Item RIFT_ASH = register(
+            "rift_ash",
             new Item(new Item.Properties().stacksTo(16))
     );
 

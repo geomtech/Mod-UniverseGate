@@ -66,9 +66,9 @@ public final class PortalTeleportHandler {
         if (lastFuel != null && now - lastFuel < FUEL_CHARGE_COOLDOWN_TICKS) return;
 
         if (!isRift) {
-            // 5) consommer 1 catalyst dans le keyboard source
+            // 5) consommer 1 rift ash dans le keyboard source
             PortalKeyboardBlockEntity keyboard = findKeyboardNear(sourceLevel, corePos, KEYBOARD_RADIUS);
-            if (keyboard == null || !keyboard.consumeOneCatalyst()) {
+            if (keyboard == null || !keyboard.consumeOneFuel()) {
                 // plus de carburant => fermeture immédiate
                 PortalConnectionManager.forceCloseOneSide(sourceLevel, corePos);
                 return;

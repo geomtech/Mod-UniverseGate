@@ -3,11 +3,31 @@ package fr.geomtech.universegate;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.Blocks;
+import net.minecraft.world.level.block.RotatedPillarBlock;
 import net.minecraft.world.level.block.state.BlockBehaviour;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.core.Registry;
 
 public final class ModBlocks {
+
+    public static final Block VOID_BLOCK = register(
+            "void_block",
+            new Block(BlockBehaviour.Properties.ofFullCopy(Blocks.OBSIDIAN)
+                    .strength(40.0f, 1200.0f))
+    );
+
+    public static final Block LIGHT_BLOCK = register(
+            "light_block",
+            new Block(BlockBehaviour.Properties.ofFullCopy(Blocks.QUARTZ_BLOCK)
+                    .strength(1.5f, 6.0f)
+                    .lightLevel(state -> 15))
+    );
+
+    public static final Block KELO_LOG = register(
+            "kelo_log",
+            new RotatedPillarBlock(BlockBehaviour.Properties.ofFullCopy(Blocks.SPRUCE_LOG)
+                    .strength(2.0f, 3.0f))
+    );
 
     public static final Block PORTAL_CORE = register(
             "portal_core",

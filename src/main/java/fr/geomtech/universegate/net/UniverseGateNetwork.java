@@ -46,10 +46,10 @@ public final class UniverseGateNetwork {
                 }
 
                 // Ouvrir Stargate A<->B
-                if (kb.catalystCount() <= 0) return;
+                if (kb.fuelCount() <= 0) return;
                 boolean ok = PortalConnectionManager.openBothSides(level, corePos, payload.targetPortalId());
                 if (ok) {
-                    kb.consumeOneCatalyst();
+                    kb.consumeOneFuel();
                 }
                 // (Optionnel: feedback joueur)
                 // player.displayClientMessage(Component.literal(ok ? "§aConnexion établie" : "§cConnexion impossible"), true);

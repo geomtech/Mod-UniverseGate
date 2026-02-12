@@ -1,0 +1,7 @@
+{
+  "parent": "minecraft:block/cube_column",
+  "textures": {
+    "side": "universegate:block/kelo_log",
+    "end": "universegate:block/kelo_log_top"
+  }
+}

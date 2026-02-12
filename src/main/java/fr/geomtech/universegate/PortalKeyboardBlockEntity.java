@@ -29,17 +29,17 @@ public class PortalKeyboardBlockEntity extends BlockEntity implements Container,
     }
 
     // --- fuel API ---
-    public boolean consumeOneCatalyst() {
+    public boolean consumeOneFuel() {
         ItemStack s = items.get(SLOT_FUEL);
-        if (s.isEmpty() || !s.is(ModItems.CATALYST)) return false;
+        if (s.isEmpty() || !s.is(ModItems.RIFT_ASH)) return false;
         s.shrink(1);
         setChanged();
         return true;
     }
 
-    public int catalystCount() {
+    public int fuelCount() {
         ItemStack s = items.get(SLOT_FUEL);
-        return s.is(ModItems.CATALYST) ? s.getCount() : 0;
+        return s.is(ModItems.RIFT_ASH) ? s.getCount() : 0;
     }
 
     // --- ExtendedScreenHandlerFactory ---
@@ -72,8 +72,8 @@ public class PortalKeyboardBlockEntity extends BlockEntity implements Container,
 
     @Override
     public void setItem(int slot, ItemStack stack) {
-        // n'accepte que le catalyst
-        if (!stack.isEmpty() && !stack.is(ModItems.CATALYST)) return;
+        // n'accepte que la rift ash
+        if (!stack.isEmpty() && !stack.is(ModItems.RIFT_ASH)) return;
 
         items.set(slot, stack);
         if (stack.getCount() > getMaxStackSize()) stack.setCount(getMaxStackSize());

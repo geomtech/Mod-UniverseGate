@@ -31,7 +31,7 @@ public class PortalKeyboardMenu extends AbstractContainerMenu {
         this.addSlot(new Slot(keyboard, 0, 220, 150) {
             @Override
             public boolean mayPlace(ItemStack stack) {
-                return stack.is(ModItems.CATALYST);
+                return stack.is(ModItems.RIFT_ASH);
             }
         });
 
@@ -73,7 +73,7 @@ public class PortalKeyboardMenu extends AbstractContainerMenu {
         if (index == 0) {
             if (!this.moveItemStackTo(stack, 1, this.slots.size(), true)) return ItemStack.EMPTY;
         } else {
-            if (stack.is(ModItems.CATALYST)) {
+            if (stack.is(ModItems.RIFT_ASH)) {
                 if (!this.moveItemStackTo(stack, 0, 1, false)) return ItemStack.EMPTY;
             } else {
                 return ItemStack.EMPTY;

@@ -1,11 +1,22 @@
 {
   "type": "universegate:rift",
   "generator": {
-    "type": "minecraft:noise",
-    "settings": "minecraft:end",
-    "biome_source": {
-      "type": "minecraft:fixed",
-      "biome": "universegate:rift_void"
+    "type": "minecraft:flat",
+    "settings": {
+      "biome": "universegate:rift_void",
+      "features": true,
+      "lakes": false,
+      "layers": [
+        {
+          "block": "minecraft:bedrock",
+          "height": 1
+        },
+        {
+          "block": "universegate:void_block",
+          "height": 100
+        }
+      ],
+      "structure_overrides": []
     }
   }
 }

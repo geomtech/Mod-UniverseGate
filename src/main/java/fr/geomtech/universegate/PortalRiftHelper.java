@@ -161,8 +161,8 @@ public final class PortalRiftHelper {
             rift.getChunk(existing.pos());
             if (!(rift.getBlockEntity(existing.pos()) instanceof PortalCoreBlockEntity)) {
                 existing = null;
-            } else if (rift.getBlockState(existing.pos().below()).isAir()) {
-                UniverseGate.LOGGER.warn("Existing rift portal is not anchored to ground; recreating.");
+            } else if (!rift.getBlockState(existing.pos().below()).is(ModBlocks.VOID_BLOCK)) {
+                UniverseGate.LOGGER.warn("Existing rift portal is not on void block ground; recreating.");
                 existing = null;
             }
         }
@@ -198,6 +198,7 @@ public final class PortalRiftHelper {
     private static BlockPos findTopmostSurfaceNear(ServerLevel level, BlockPos anchor, int radius) {
         BlockPos best = null;
         int bestY = level.getMinBuildHeight();
+        double bestDist = Double.MAX_VALUE;
         int maxY = level.getMaxBuildHeight() - 2;
 
         for (int dx = -radius; dx <= radius; dx++) {
@@ -207,10 +208,13 @@ public final class PortalRiftHelper {
                 for (int scanY = maxY; scanY >= minY; scanY--) {
                     BlockPos pos = new BlockPos(column.getX(), scanY, column.getZ());
                     if (level.getBlockState(pos).isAir()) continue;
+                    if (!level.getBlockState(pos).is(ModBlocks.VOID_BLOCK)) continue;
                     if (!level.getBlockState(pos.above()).isAir()) continue;
 
-                    if (scanY > bestY) {
+                    double dist = pos.distSqr(anchor);
+                    if (scanY > bestY || (scanY == bestY && dist < bestDist)) {
                         bestY = scanY;
+                        bestDist = dist;
                         best = pos;
                     }
                     break;
