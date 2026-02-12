@@ -2,18 +2,18 @@
   "type": "minecraft:crafting_shaped",
   "pattern": [
     "SSS",
-    "SCS",
+    "SES",
     "SRS"
   ],
   "key": {
     "S": {
-      "item": "minecraft:stone"
+      "item": "universegate:void_block"
     },
-    "C": {
-      "item": "minecraft:chorus_fruit"
+    "E": {
+      "item": "universegate:light_beam_emitter"
     },
     "R": {
-      "item": "minecraft:redstone"
+      "item": "minecraft:stone_button"
     }
   },
   "result": {

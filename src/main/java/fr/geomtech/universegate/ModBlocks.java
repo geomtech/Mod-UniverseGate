@@ -29,6 +29,25 @@ public final class ModBlocks {
                     .strength(2.0f, 3.0f))
     );
 
+    public static final Block WHITE_PURPUR_BLOCK = register(
+            "white_purpur_block",
+            new Block(BlockBehaviour.Properties.ofFullCopy(Blocks.PURPUR_BLOCK)
+                    .strength(1.5f, 6.0f))
+    );
+
+    public static final Block WHITE_PURPUR_PILLAR = register(
+            "white_purpur_pillar",
+            new RotatedPillarBlock(BlockBehaviour.Properties.ofFullCopy(Blocks.PURPUR_PILLAR)
+                    .strength(1.5f, 6.0f))
+    );
+
+    public static final Block LIGHT_BEAM_EMITTER = register(
+            "light_beam_emitter",
+            new LightBeamEmitterBlock(BlockBehaviour.Properties.ofFullCopy(Blocks.SEA_LANTERN)
+                    .strength(1.5f, 6.0f)
+                    .lightLevel(state -> 15))
+    );
+
     public static final Block PORTAL_CORE = register(
             "portal_core",
             new PortalCoreBlock(BlockBehaviour.Properties.ofFullCopy(Blocks.OBSIDIAN)

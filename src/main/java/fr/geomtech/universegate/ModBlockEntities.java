@@ -28,6 +28,13 @@ public final class ModBlockEntities {
                     BlockEntityType.Builder.of(ChargedLightningRodBlockEntity::new, ModBlocks.CHARGED_LIGHTNING_ROD).build(null)
             );
 
+    public static final BlockEntityType<LightBeamEmitterBlockEntity> LIGHT_BEAM_EMITTER =
+            Registry.register(
+                    BuiltInRegistries.BLOCK_ENTITY_TYPE,
+                    ResourceLocation.fromNamespaceAndPath(UniverseGate.MOD_ID, "light_beam_emitter"),
+                    BlockEntityType.Builder.of(LightBeamEmitterBlockEntity::new, ModBlocks.LIGHT_BEAM_EMITTER).build(null)
+            );
+
 
     public static void register() {}
 

@@ -153,6 +153,8 @@ public final class PortalRiftHelper {
                 }
             }
         }
+
+        RiftScenarioGenerator.ensureGenerated(riftLevel, corePos);
     }
 
     private static PortalRegistrySavedData.PortalEntry ensureRiftPortal(ServerLevel rift, PortalRegistrySavedData reg) {
@@ -237,7 +239,7 @@ public final class PortalRiftHelper {
         return null;
     }
 
-    private static void placeRiftFrame(ServerLevel level, BlockPos corePos, Direction right) {
+    static void placeRiftFrame(ServerLevel level, BlockPos corePos, Direction right) {
         int halfWidth = 2;
         int topY = 5;
 

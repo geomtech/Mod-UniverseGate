@@ -2,5 +2,11 @@
   "block.universegate.void_block": "Void Block",
   "block.universegate.light_block": "Light Block",
   "block.universegate.kelo_log": "Kelo Log",
-  "item.universegate.rift_ash": "Rift Ash"
+  "block.universegate.white_purpur_block": "White Purpur Block",
+  "block.universegate.white_purpur_pillar": "White Purpur Pillar",
+  "block.universegate.light_beam_emitter": "Light Beam Emitter",
+  "item.universegate.rift_ash": "Rift Ash",
+  "item.universegate.rift_compass": "Rift Compass",
+  "item.universegate.rift_shade_spawn_egg": "Rift Shade Spawn Egg",
+  "entity.universegate.rift_shade": "Rift Shade"
 }

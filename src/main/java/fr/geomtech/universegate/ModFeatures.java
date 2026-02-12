@@ -14,6 +14,12 @@ public final class ModFeatures {
             new KeloDeadTreeFeature(NoneFeatureConfiguration.CODEC)
     );
 
+    public static final Feature<NoneFeatureConfiguration> RIFT_CUBE = Registry.register(
+            BuiltInRegistries.FEATURE,
+            ResourceLocation.fromNamespaceAndPath(UniverseGate.MOD_ID, "rift_cube"),
+            new RiftCubeFeature(NoneFeatureConfiguration.CODEC)
+    );
+
     public static void register() {}
 
     private ModFeatures() {}

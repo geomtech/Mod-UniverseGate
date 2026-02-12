@@ -7,10 +7,10 @@
   ],
   "key": {
     "I": {
-      "item": "minecraft:iron_block"
+      "item": "universegate:void_block"
     },
     "R": {
-      "item": "minecraft:respawn_anchor"
+      "item": "universegate:light_beam_emitter"
     }
   },
   "result": {

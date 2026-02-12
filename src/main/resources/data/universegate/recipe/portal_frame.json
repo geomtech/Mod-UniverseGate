@@ -7,7 +7,7 @@
   ],
   "key": {
     "S": {
-      "item": "minecraft:stone"
+      "item": "universegate:void_block"
     },
     "C": {
       "item": "minecraft:chorus_fruit"

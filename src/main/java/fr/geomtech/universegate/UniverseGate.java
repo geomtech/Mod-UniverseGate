@@ -1,6 +1,7 @@
 package fr.geomtech.universegate;
 
 import net.fabricmc.api.ModInitializer;
+import net.fabricmc.fabric.api.event.lifecycle.v1.ServerTickEvents;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -20,11 +21,13 @@ public class UniverseGate implements ModInitializer {
 		// Proceed with mild caution.
 
 		ModBlocks.register();
+		ModEntityTypes.register();
 		ModItems.register();
 		ModBlockEntities.register();
 		ModFeatures.register();
 		ModMenuTypes.register();
 		UniverseGatePoiHelper.registerChargedLightningRodPoi();
+		ServerTickEvents.END_WORLD_TICK.register(RiftShadeSpawner::tickWorld);
 		fr.geomtech.universegate.net.UniverseGateNetwork.registerCommon();
 
 
