@@ -41,11 +41,14 @@ public final class RiftScenarioGenerator {
         RiftScenarioSavedData data = RiftScenarioSavedData.get(riftLevel.getServer());
         if (data.isGenerated()) return;
 
+        UniverseGate.LOGGER.info("Generating Rift scenario near broken portal {}", brokenPortalPos);
+
         var outpost = placeOutpostNearBrokenPortal(riftLevel, brokenPortalPos);
         if (outpost.isEmpty()) {
             UniverseGate.LOGGER.warn("Could not place rift outpost near {}", brokenPortalPos);
             return;
         }
+        UniverseGate.LOGGER.info("Placed rift outpost at {}", outpost.get().center());
 
         BlockPos workingPortalCore = placeWorkingPortalFarFromOutpost(riftLevel, outpost.get().center());
         if (workingPortalCore == null) {
@@ -121,6 +124,7 @@ public final class RiftScenarioGenerator {
 
             boolean ok = template.placeInWorld(level, start, start, settings, level.random, 2);
             if (ok) {
+                UniverseGate.LOGGER.info("Rift outpost placed at {} (rotation {})", start, rotation);
                 return Optional.of(new PlacedTemplate(start, size));
             }
         }
@@ -253,6 +257,7 @@ public final class RiftScenarioGenerator {
                 if (!container.getItem(i).isEmpty()) continue;
                 container.setItem(i, compass.copy());
                 inserted = true;
+                UniverseGate.LOGGER.info("Inserted Rift Compass in outpost container at {}", pos);
                 break;
             }
 

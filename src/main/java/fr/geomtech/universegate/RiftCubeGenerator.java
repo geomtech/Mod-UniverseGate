@@ -1,14 +1,18 @@
 package fr.geomtech.universegate;
 
 import net.minecraft.core.BlockPos;
+import net.minecraft.core.registries.Registries;
+import net.minecraft.resources.ResourceKey;
 import net.minecraft.core.Vec3i;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.world.RandomizableContainer;
 import net.minecraft.world.level.ChunkPos;
 import net.minecraft.world.level.block.Mirror;
 import net.minecraft.world.level.block.Rotation;
 import net.minecraft.world.level.levelgen.Heightmap;
+import net.minecraft.world.level.storage.loot.LootTable;
 import net.minecraft.world.level.levelgen.structure.templatesystem.BlockIgnoreProcessor;
 import net.minecraft.world.level.levelgen.structure.templatesystem.StructurePlaceSettings;
 
@@ -18,6 +22,10 @@ import java.util.Set;
 public final class RiftCubeGenerator {
 
     private static final ResourceLocation TEMPLATE_ID = ResourceLocation.fromNamespaceAndPath(UniverseGate.MOD_ID, "rift_cube");
+    private static final ResourceKey<LootTable> RIFT_CUBE_LOOT = ResourceKey.create(
+            Registries.LOOT_TABLE,
+            ResourceLocation.fromNamespaceAndPath(UniverseGate.MOD_ID, "chests/rift_cube")
+    );
     private static final int SPACING_CHUNKS = 40;
     private static final int CELL_RADIUS = 2;
     private static final int CHECK_EVERY_TICKS = 120;
@@ -99,6 +107,7 @@ public final class RiftCubeGenerator {
 
         boolean ok = template.placeInWorld(level, start, start, settings, level.random, 2);
         if (ok) {
+            applyLootToContainers(level, start, size);
             data.markGenerated(cellX, cellZ);
             UniverseGate.LOGGER.info("Generated rift_cube at {} in cell {},{}", start, cellX, cellZ);
             return true;
@@ -117,6 +126,17 @@ public final class RiftCubeGenerator {
             for (int cz = minChunkZ; cz <= maxChunkZ; cz++) {
                 level.getChunk(cx, cz);
             }
+        }
+    }
+
+    private static void applyLootToContainers(ServerLevel level, BlockPos start, Vec3i size) {
+        BlockPos end = start.offset(size.getX() - 1, size.getY() - 1, size.getZ() - 1);
+        for (BlockPos pos : BlockPos.betweenClosed(start, end)) {
+            var be = level.getBlockEntity(pos);
+            if (!(be instanceof RandomizableContainer randomizable)) continue;
+            randomizable.setLootTable(RIFT_CUBE_LOOT);
+            randomizable.setLootTableSeed(level.random.nextLong());
+            be.setChanged();
         }
     }
 
