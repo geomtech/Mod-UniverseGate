@@ -68,27 +68,55 @@ public final class RiftScenarioGenerator {
 
         var template = templateOpt.get();
 
-        for (int attempt = 0; attempt < 80; attempt++) {
+        // Prioritize a very visible ring around the broken portal.
+        int[] ringDistances = {12, 14, 16, 18, 20, 22, 24};
+        int[][] dirs = {
+                {1, 0}, {-1, 0}, {0, 1}, {0, -1},
+                {1, 1}, {1, -1}, {-1, 1}, {-1, -1}
+        };
+
+        for (int dist : ringDistances) {
+            for (int[] d : dirs) {
+                int x = brokenPortalPos.getX() + d[0] * dist;
+                int z = brokenPortalPos.getZ() + d[1] * dist;
+                Optional<PlacedTemplate> placed = tryPlaceOutpostAt(level, template, x, z);
+                if (placed.isPresent()) return placed;
+            }
+        }
+
+        // Fallback random attempts in the same near range.
+        for (int attempt = 0; attempt < 64; attempt++) {
             double angle = level.random.nextDouble() * Math.PI * 2.0;
             int dist = OUTPOST_MIN_DISTANCE + level.random.nextInt(OUTPOST_MAX_DISTANCE - OUTPOST_MIN_DISTANCE + 1);
 
             int x = brokenPortalPos.getX() + (int) Math.round(Math.cos(angle) * dist);
             int z = brokenPortalPos.getZ() + (int) Math.round(Math.sin(angle) * dist);
+            Optional<PlacedTemplate> placed = tryPlaceOutpostAt(level, template, x, z);
+            if (placed.isPresent()) return placed;
+        }
 
-            BlockPos top = level.getHeightmapPos(Heightmap.Types.WORLD_SURFACE, new BlockPos(x, 0, z));
-            BlockPos ground = findVoidGround(level, top);
-            if (ground == null) continue;
+        return Optional.empty();
+    }
 
-            Rotation rotation = HORIZONTAL_ROTATIONS[level.random.nextInt(HORIZONTAL_ROTATIONS.length)];
+    private static Optional<PlacedTemplate> tryPlaceOutpostAt(ServerLevel level,
+                                                              net.minecraft.world.level.levelgen.structure.templatesystem.StructureTemplate template,
+                                                              int x,
+                                                              int z) {
+        BlockPos top = level.getHeightmapPos(Heightmap.Types.WORLD_SURFACE, new BlockPos(x, 0, z));
+        BlockPos ground = findVoidGround(level, top);
+        if (ground == null) return Optional.empty();
+
+        for (Rotation rotation : HORIZONTAL_ROTATIONS) {
             Vec3i size = template.getSize(rotation);
-
-            BlockPos center = ground.above();
+            BlockPos center = ground;
             BlockPos start = center.offset(-size.getX() / 2, 0, -size.getZ() / 2);
+
+            loadChunksForTemplate(level, start, size);
 
             StructurePlaceSettings settings = new StructurePlaceSettings()
                     .setRotation(rotation)
                     .setMirror(Mirror.NONE)
-                    .setIgnoreEntities(false)
+                    .setIgnoreEntities(true)
                     .addProcessor(BlockIgnoreProcessor.STRUCTURE_BLOCK);
 
             boolean ok = template.placeInWorld(level, start, start, settings, level.random, 2);
@@ -100,16 +128,36 @@ public final class RiftScenarioGenerator {
         return Optional.empty();
     }
 
+    private static void loadChunksForTemplate(ServerLevel level, BlockPos start, Vec3i size) {
+        int minChunkX = Math.floorDiv(start.getX(), 16);
+        int minChunkZ = Math.floorDiv(start.getZ(), 16);
+        int maxChunkX = Math.floorDiv(start.getX() + size.getX(), 16);
+        int maxChunkZ = Math.floorDiv(start.getZ() + size.getZ(), 16);
+
+        for (int cx = minChunkX; cx <= maxChunkX; cx++) {
+            for (int cz = minChunkZ; cz <= maxChunkZ; cz++) {
+                level.getChunk(cx, cz);
+            }
+        }
+    }
+
     private static BlockPos placeWorkingPortalFarFromOutpost(ServerLevel level, BlockPos outpostCenter) {
-        for (int attempt = 0; attempt < 40; attempt++) {
+        for (int attempt = 0; attempt < 48; attempt++) {
             double angle = level.random.nextDouble() * Math.PI * 2.0;
             int x = outpostCenter.getX() + (int) Math.round(Math.cos(angle) * WORKING_PORTAL_DISTANCE);
             int z = outpostCenter.getZ() + (int) Math.round(Math.sin(angle) * WORKING_PORTAL_DISTANCE);
 
-            BlockPos near = findHighestVoidGroundNear(level, new BlockPos(x, 0, z), 96);
-            if (near == null) continue;
+            BlockPos desired = new BlockPos(x, 0, z);
+            BlockPos corePos = findPortalCoreNear(level, desired, 32);
+            if (corePos == null) {
+                if (attempt % 8 == 0) {
+                    UniverseGate.LOGGER.info("Rift waypoint attempt {}: no valid ground near {}", attempt, desired);
+                }
+                continue;
+            }
 
-            BlockPos corePos = near.above();
+            loadChunksForPortal(level, corePos);
+            clearPortalAirVolume(level, corePos);
             level.setBlock(corePos.below(), Blocks.LODESTONE.defaultBlockState(), 3);
 
             var right = level.random.nextBoolean() ? net.minecraft.core.Direction.EAST : net.minecraft.core.Direction.SOUTH;
@@ -120,10 +168,63 @@ public final class RiftScenarioGenerator {
             core.onPlaced();
             core.renamePortal("Rift Waypoint");
             PortalRegistrySavedData.get(level.getServer()).setHidden(core.getPortalId(), true);
+            UniverseGate.LOGGER.info("Placed working rift portal at {} (target around {})", corePos, desired);
             return corePos;
         }
 
         return null;
+    }
+
+    private static BlockPos findPortalCoreNear(ServerLevel level, BlockPos center, int radius) {
+        BlockPos best = null;
+        double bestDist = Double.MAX_VALUE;
+
+        for (int dx = -radius; dx <= radius; dx++) {
+            for (int dz = -radius; dz <= radius; dz++) {
+                int x = center.getX() + dx;
+                int z = center.getZ() + dz;
+                level.getChunk(Math.floorDiv(x, 16), Math.floorDiv(z, 16));
+
+                BlockPos top = level.getHeightmapPos(Heightmap.Types.WORLD_SURFACE, new BlockPos(x, 0, z));
+                BlockPos ground = findVoidGround(level, top);
+                if (ground == null) continue;
+
+                BlockPos corePos = ground.above();
+                double dist = corePos.distSqr(center);
+                if (dist < bestDist) {
+                    bestDist = dist;
+                    best = corePos;
+                }
+            }
+        }
+
+        return best;
+    }
+
+    private static void loadChunksForPortal(ServerLevel level, BlockPos corePos) {
+        int minChunkX = Math.floorDiv(corePos.getX() - 4, 16);
+        int minChunkZ = Math.floorDiv(corePos.getZ() - 4, 16);
+        int maxChunkX = Math.floorDiv(corePos.getX() + 4, 16);
+        int maxChunkZ = Math.floorDiv(corePos.getZ() + 4, 16);
+
+        for (int cx = minChunkX; cx <= maxChunkX; cx++) {
+            for (int cz = minChunkZ; cz <= maxChunkZ; cz++) {
+                level.getChunk(cx, cz);
+            }
+        }
+    }
+
+    private static void clearPortalAirVolume(ServerLevel level, BlockPos corePos) {
+        for (int dy = 1; dy <= 6; dy++) {
+            for (int dx = -3; dx <= 3; dx++) {
+                for (int dz = -3; dz <= 3; dz++) {
+                    BlockPos p = corePos.offset(dx, dy, dz);
+                    if (!level.getBlockState(p).isAir()) {
+                        level.setBlock(p, Blocks.AIR.defaultBlockState(), 3);
+                    }
+                }
+            }
+        }
     }
 
     private static void addCompassToOutpostContainers(ServerLevel level, PlacedTemplate outpost, BlockPos lodestonePos) {
@@ -172,30 +273,6 @@ public final class RiftScenarioGenerator {
             return p;
         }
         return null;
-    }
-
-    private static BlockPos findHighestVoidGroundNear(ServerLevel level, BlockPos center, int radius) {
-        BlockPos best = null;
-        int bestY = level.getMinBuildHeight();
-        double bestDist = Double.MAX_VALUE;
-
-        for (int dx = -radius; dx <= radius; dx++) {
-            for (int dz = -radius; dz <= radius; dz++) {
-                BlockPos top = level.getHeightmapPos(Heightmap.Types.WORLD_SURFACE, center.offset(dx, 0, dz));
-                BlockPos ground = findVoidGround(level, top);
-                if (ground == null) continue;
-
-                int y = ground.getY();
-                double dist = ground.distSqr(center);
-                if (y > bestY || (y == bestY && dist < bestDist)) {
-                    bestY = y;
-                    bestDist = dist;
-                    best = ground;
-                }
-            }
-        }
-
-        return best;
     }
 
     private record PlacedTemplate(BlockPos start, Vec3i size) {
