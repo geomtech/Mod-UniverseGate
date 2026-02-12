@@ -6,6 +6,7 @@ import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 
 import fr.geomtech.universegate.UniverseGateDimensions;
+import fr.geomtech.universegate.PortalRiftHelper;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -102,6 +103,10 @@ public final class PortalTeleportHandler {
 
         player.teleportTo(targetLevel, x, y, z, yaw, player.getXRot());
         lastTeleportTick.put(pid, now);
+
+        if (isRift) {
+            PortalRiftHelper.handleRiftArrival(targetLevel, targetEntry.pos());
+        }
     }
 
     private static int sideSignFromEntry(PortalFrameDetector.FrameMatch match, BlockPos corePos, ServerPlayer player) {

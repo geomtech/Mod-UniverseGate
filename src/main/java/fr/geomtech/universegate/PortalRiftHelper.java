@@ -3,6 +3,8 @@ package fr.geomtech.universegate;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.server.level.ServerLevel;
+import net.minecraft.world.level.ExplosionDamageCalculator;
+import net.minecraft.world.level.Level;
 
 import java.util.Optional;
 
@@ -97,6 +99,59 @@ public final class PortalRiftHelper {
         }
 
         return PortalConnectionManager.openBothSides(sourceLevel, sourceCorePos, riftEntry.id());
+    }
+
+    public static void handleRiftArrival(ServerLevel riftLevel, BlockPos corePos) {
+        if (!(riftLevel.getBlockEntity(corePos) instanceof PortalCoreBlockEntity core)) return;
+        if (!core.isActive()) return;
+
+        var match = PortalFrameDetector.find(riftLevel, corePos);
+
+        // Close portal first (removes field + closes other side)
+        PortalConnectionManager.forceCloseOneSide(riftLevel, corePos);
+
+        // Small visual-only explosion
+        double x = corePos.getX() + 0.5;
+        double y = corePos.getY() + 1.0;
+        double z = corePos.getZ() + 0.5;
+        riftLevel.explode(
+                null,
+                riftLevel.damageSources().explosion(null),
+                new ExplosionDamageCalculator() {
+                    @Override
+                    public boolean shouldDamageEntity(net.minecraft.world.level.Explosion explosion, net.minecraft.world.entity.Entity entity) {
+                        return false;
+                    }
+
+                    @Override
+                    public float getEntityDamageAmount(net.minecraft.world.level.Explosion explosion, net.minecraft.world.entity.Entity entity) {
+                        return 0.0F;
+                    }
+
+                    @Override
+                    public float getKnockbackMultiplier(net.minecraft.world.entity.Entity entity) {
+                        return 0.0F;
+                    }
+                },
+                x, y, z,
+                1.8F,
+                false,
+                Level.ExplosionInteraction.NONE
+        );
+
+        // Destroy core
+        riftLevel.destroyBlock(corePos, false);
+
+        // Break 30% of frame blocks
+        if (match.isPresent()) {
+            var frameBlocks = PortalFrameHelper.collectFrame(match.get(), corePos);
+            var rand = riftLevel.getRandom();
+            for (BlockPos p : frameBlocks) {
+                if (rand.nextFloat() <= 0.3F && riftLevel.getBlockState(p).is(ModBlocks.PORTAL_FRAME)) {
+                    riftLevel.destroyBlock(p, false);
+                }
+            }
+        }
     }
 
     private static PortalRegistrySavedData.PortalEntry ensureRiftPortal(ServerLevel rift, PortalRegistrySavedData reg) {
