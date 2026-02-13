@@ -4,6 +4,11 @@
     "universegate:void_block",
     "universegate:light_block",
     "universegate:white_purpur_block",
-    "universegate:white_purpur_pillar"
+    "universegate:white_purpur_pillar",
+    "universegate:light_beam_emitter",
+    "universegate:portal_core",
+    "universegate:portal_frame",
+    "universegate:portal_keyboard",
+    "universegate:charged_lightning_rod"
   ]
 }

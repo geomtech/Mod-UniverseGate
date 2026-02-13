@@ -20,6 +20,7 @@ public final class PortalConnectionManager {
     private static final long OPENING_BLACKOUT_TICKS = 20L * 2L;
     private static final double OPENING_PARTICLE_EXPONENT = 4.0D;
     private static final int OPENING_MAX_PARTICLES_PER_CELL = 7;
+    private static final int PORTAL_PRELOAD_RADIUS_CHUNKS = 1;
     private static final int KEYBOARD_RADIUS_XZ = 8;
     private static final int KEYBOARD_RADIUS_Y = 4;
 
@@ -62,6 +63,9 @@ public final class PortalConnectionManager {
         if (!(targetLevel.getBlockEntity(bEntry.pos()) instanceof PortalCoreBlockEntity b)) return false;
         if (b.getPortalId() == null) return false;
         if (b.isActiveOrOpening()) return false;
+
+        preloadPortalChunks(sourceLevel, sourceCorePos);
+        preloadPortalChunks(targetLevel, bEntry.pos());
 
         // Vérifier cadres (A et B)
         Optional<PortalFrameDetector.FrameMatch> frameA = PortalFrameDetector.find(sourceLevel, sourceCorePos);
@@ -542,6 +546,16 @@ public final class PortalConnectionManager {
         if (state.equals(updated)) return;
 
         level.setBlock(pos, updated, 3);
+    }
+
+    private static void preloadPortalChunks(ServerLevel level, BlockPos corePos) {
+        int centerChunkX = corePos.getX() >> 4;
+        int centerChunkZ = corePos.getZ() >> 4;
+        for (int dx = -PORTAL_PRELOAD_RADIUS_CHUNKS; dx <= PORTAL_PRELOAD_RADIUS_CHUNKS; dx++) {
+            for (int dz = -PORTAL_PRELOAD_RADIUS_CHUNKS; dz <= PORTAL_PRELOAD_RADIUS_CHUNKS; dz++) {
+                level.getChunk(centerChunkX + dx, centerChunkZ + dz);
+            }
+        }
     }
 
 }

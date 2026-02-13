@@ -58,7 +58,7 @@ public final class EngineerExpeditionManager {
 
         CommandRegistrationCallback.EVENT.register((dispatcher, registryAccess, environment) -> dispatcher.register(
                 Commands.literal("universegate")
-                        .requires(source -> source.hasPermission(2))
+                        .requires(source -> source.getEntity() instanceof ServerPlayer && source.hasPermission(2))
                         .then(Commands.literal("engineer_event")
                                 .then(Commands.literal("force").executes(EngineerExpeditionManager::forceEventCommand))
                                 .then(Commands.literal("status").executes(EngineerExpeditionManager::statusCommand))

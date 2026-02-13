@@ -18,9 +18,7 @@ import fr.geomtech.universegate.UniverseGateDimensions;
 import fr.geomtech.universegate.PortalRiftHelper;
 
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
 
@@ -33,10 +31,6 @@ public final class PortalTeleportHandler {
     private static final int KEYBOARD_RADIUS = 8;
     private static final int KEYBOARD_SEARCH_Y = 2;
 
-    private static final long TELEPORT_COOLDOWN_TICKS = 40; // 2s anti ping-pong
-    private static final long FUEL_CHARGE_COOLDOWN_TICKS = 10; // anti double facturation
-    private static final long BLOCKED_DIRECTION_MESSAGE_COOLDOWN_TICKS = 20; // anti spam action bar
-    private static final long COOLDOWN_MAP_RETENTION_TICKS = 20L * 60L * 10L;
     private static final float UNSTABLE_RIFT_CHANCE = 0.05F;
     private static final float UNSTABLE_DAMAGE_CHANCE = 0.40F;
     private static final float UNSTABLE_RANDOM_PORTAL_CHANCE = 0.10F;
@@ -44,11 +38,6 @@ public final class PortalTeleportHandler {
     private static final int UNSTABLE_NAUSEA_DURATION_TICKS = 20 * 3;
     private static final int UNSTABLE_SLOWNESS_DURATION_TICKS = 20 * 5;
     private static final int UNSTABLE_SLOWNESS_AMPLIFIER = 2; // slowness III
-
-    // --- état serveur ---
-    private static final Map<UUID, Long> lastTeleportTick = new HashMap<>();
-    private static final Map<UUID, Long> lastFuelChargeTick = new HashMap<>();
-    private static final Map<UUID, Long> lastBlockedDirectionMessageTick = new HashMap<>();
 
     private PortalTeleportHandler() {}
 
@@ -59,16 +48,8 @@ public final class PortalTeleportHandler {
         if (entity.isPassenger()) return;
 
         long now = sourceLevel.getGameTime();
-        if ((now & 127L) == 0L) {
-            cleanupCooldownMaps(now);
-        }
 
-        // 1) anti ping-pong
-        UUID entityId = entity.getUUID();
-        Long lastTp = lastTeleportTick.get(entityId);
-        if (lastTp != null && now - lastTp < TELEPORT_COOLDOWN_TICKS) return;
-
-        // 2) trouver le core associé au champ
+        // 1) trouver le core associé au champ
         BlockPos corePos = findCoreNear(sourceLevel, fieldPos);
         if (corePos == null) return;
 
@@ -76,7 +57,7 @@ public final class PortalTeleportHandler {
         if (!core.isActive()) return;
         if (!core.isOutboundTravelEnabled()) {
             if (entity instanceof ServerPlayer player) {
-                showBlockedDirectionMessage(player, now);
+                showBlockedDirectionMessage(player);
             }
             return;
         }
@@ -84,7 +65,7 @@ public final class PortalTeleportHandler {
         UUID targetId = core.getTargetPortalId();
         if (targetId == null) return;
 
-        // 3) resolve destination (cross-dimension)
+        // 2) resolve destination (cross-dimension)
         PortalRegistrySavedData registry = PortalRegistrySavedData.get(sourceLevel.getServer());
         PortalRegistrySavedData.PortalEntry targetEntry = registry.get(targetId);
         if (targetEntry == null) {
@@ -129,18 +110,13 @@ public final class PortalTeleportHandler {
         boolean consumeFuel = !isRift && entity instanceof ServerPlayer;
 
         if (consumeFuel) {
-            // 4) anti double facturation carburant (joueurs uniquement)
-            Long lastFuel = lastFuelChargeTick.get(entityId);
-            if (lastFuel != null && now - lastFuel < FUEL_CHARGE_COOLDOWN_TICKS) return;
-
-            // 5) consommer 1 rift ash dans le keyboard source
+            // 3) consommer 1 rift ash dans le keyboard source
             PortalKeyboardBlockEntity keyboard = findKeyboardNear(sourceLevel, corePos, KEYBOARD_RADIUS);
             if (keyboard == null || !keyboard.consumeOneFuel()) {
                 // plus de carburant => fermeture immédiate
                 PortalConnectionManager.forceCloseOneSide(sourceLevel, corePos);
                 return;
             }
-            lastFuelChargeTick.put(entityId, now);
         }
 
         ServerLevel targetLevel = sourceLevel.getServer().getLevel(targetEntry.dim());
@@ -152,7 +128,7 @@ public final class PortalTeleportHandler {
         // charger chunk destination (core)
         targetLevel.getChunk(targetEntry.pos());
 
-        // 6) point d’arrivée (orienté selon le portail)
+        // 4) point d’arrivée (orienté selon le portail)
         double x = targetEntry.pos().getX() + 0.5;
         double y = targetEntry.pos().getY() + 1.0;
         double z = targetEntry.pos().getZ() + 0.5;
@@ -182,7 +158,6 @@ public final class PortalTeleportHandler {
         if (!teleported) return;
 
         ModSounds.playAt(targetLevel, targetEntry.pos(), ModSounds.PORTAL_ENTITY_GOING_THROUGH, 0.9F, 1.05F);
-        lastTeleportTick.put(entityId, now);
         core.onEntityPassed(now);
         if (targetLevel.getBlockEntity(targetEntry.pos()) instanceof PortalCoreBlockEntity targetCore) {
             targetCore.onEntityPassed(targetLevel.getGameTime());
@@ -202,16 +177,11 @@ public final class PortalTeleportHandler {
         }
     }
 
-    private static void showBlockedDirectionMessage(ServerPlayer player, long now) {
-        UUID pid = player.getUUID();
-        Long lastMessageTick = lastBlockedDirectionMessageTick.get(pid);
-        if (lastMessageTick != null && now - lastMessageTick < BLOCKED_DIRECTION_MESSAGE_COOLDOWN_TICKS) return;
-
+    private static void showBlockedDirectionMessage(ServerPlayer player) {
         player.displayClientMessage(
                 Component.translatable("message.universegate.blocked_direction").withStyle(ChatFormatting.RED),
                 true
         );
-        lastBlockedDirectionMessageTick.put(pid, now);
     }
 
     private static int sideSignFromEntry(PortalFrameDetector.FrameMatch match, BlockPos corePos, Entity entity) {
@@ -321,13 +291,4 @@ public final class PortalTeleportHandler {
         living.addEffect(new MobEffectInstance(MobEffects.MOVEMENT_SLOWDOWN, UNSTABLE_SLOWNESS_DURATION_TICKS, UNSTABLE_SLOWNESS_AMPLIFIER));
     }
 
-    private static void cleanupCooldownMaps(long now) {
-        prune(lastTeleportTick, now);
-        prune(lastFuelChargeTick, now);
-        prune(lastBlockedDirectionMessageTick, now);
-    }
-
-    private static void prune(Map<UUID, Long> map, long now) {
-        map.entrySet().removeIf(entry -> now - entry.getValue() > COOLDOWN_MAP_RETENTION_TICKS);
-    }
 }

@@ -4,6 +4,9 @@
     "universegate:void_block",
     "universegate:light_block",
     "universegate:white_purpur_block",
-    "universegate:white_purpur_pillar"
+    "universegate:white_purpur_pillar",
+    "universegate:portal_core",
+    "universegate:portal_frame",
+    "universegate:portal_keyboard"
   ]
 }
