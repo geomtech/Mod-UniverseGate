@@ -17,8 +17,8 @@ import java.util.UUID;
 
 public class PortalCoreBlockEntity extends BlockEntity implements ExtendedScreenHandlerFactory<BlockPos> {
 
-    private static final long FOLLOW_UP_WINDOW_TICKS = 20L * 10L;
-    private static final long EXTENDED_OPEN_TICKS = 20L * 60L;
+    private static final long PER_ENTITY_EXTENSION_TICKS = 20L * 10L;
+    private static final long UNSTABLE_THRESHOLD_TICKS = 20L * 60L;
     private static final long OPENING_DURATION_FALLBACK_TICKS = 20L * 10L;
 
     private UUID portalId;
@@ -29,8 +29,8 @@ public class PortalCoreBlockEntity extends BlockEntity implements ExtendedScreen
     private UUID connectionId = null;
     private UUID targetPortalId = null;
     private long activeUntilGameTime = 0L; // fermeture auto
-    private long lastEntityPassGameTime = -1L;
-    private boolean extendedOpenWindow = false;
+    private long activeStartedGameTime = 0L;
+    private boolean visualUnstable = false;
     private boolean riftLightningLink = false;
     private boolean outboundTravelEnabled = false;
     private boolean opening = false;
@@ -92,9 +92,16 @@ public class PortalCoreBlockEntity extends BlockEntity implements ExtendedScreen
         if (!active) return;
 
         long now = sl.getGameTime();
+        if (activeStartedGameTime <= 0L || activeStartedGameTime > now) {
+            activeStartedGameTime = now;
+            setChanged();
+        }
         if (now >= activeUntilGameTime) {
             PortalConnectionManager.forceCloseOneSide(sl, worldPosition);
+            return;
         }
+
+        refreshInstabilityVisuals(sl, now);
     }
 
     private void spawnRiftParticles(ServerLevel level) {
@@ -128,9 +135,10 @@ public class PortalCoreBlockEntity extends BlockEntity implements ExtendedScreen
         var axis = frameMatch.right() == net.minecraft.core.Direction.EAST
                 ? net.minecraft.core.Direction.Axis.X
                 : net.minecraft.core.Direction.Axis.Z;
+        boolean unstableVisual = shouldUseUnstableVisuals(now);
         BlockState desiredFieldState = ModBlocks.PORTAL_FIELD.defaultBlockState()
                 .setValue(PortalFieldBlock.AXIS, axis)
-                .setValue(PortalFieldBlock.UNSTABLE, riftLightningLink);
+                .setValue(PortalFieldBlock.UNSTABLE, unstableVisual);
 
         for (BlockPos p : frameMatch.interior()) {
             BlockState current = sl.getBlockState(p);
@@ -147,13 +155,15 @@ public class PortalCoreBlockEntity extends BlockEntity implements ExtendedScreen
                     && state.hasProperty(PortalFrameBlock.BLINK_ON)) {
                 BlockState updated = state
                         .setValue(PortalFrameBlock.ACTIVE, true)
-                        .setValue(PortalFrameBlock.UNSTABLE, riftLightningLink)
-                        .setValue(PortalFrameBlock.BLINK_ON, riftLightningLink);
+                        .setValue(PortalFrameBlock.UNSTABLE, unstableVisual)
+                        .setValue(PortalFrameBlock.BLINK_ON, unstableVisual);
                 if (!updated.equals(state)) {
                     sl.setBlock(p, updated, 3);
                 }
             }
         }
+
+        visualUnstable = unstableVisual;
 
         PortalConnectionManager.setNearbyKeyboardsLit(sl, worldPosition, true);
 
@@ -174,21 +184,29 @@ public class PortalCoreBlockEntity extends BlockEntity implements ExtendedScreen
     public boolean isOutboundTravelEnabled() { return outboundTravelEnabled; }
     public long getOpeningStartedGameTime() { return openingStartedGameTime; }
     public long getOpeningCompleteGameTime() { return openingCompleteGameTime; }
+    public boolean isVortexUnstable(long now) {
+        return active
+                && activeStartedGameTime > 0L
+                && (now - activeStartedGameTime) > UNSTABLE_THRESHOLD_TICKS;
+    }
 
     void onEntityPassed(long now) {
         if (!active) return;
 
-        boolean quickFollowUp = lastEntityPassGameTime >= 0L
-                && now - lastEntityPassGameTime <= FOLLOW_UP_WINDOW_TICKS;
+        activeUntilGameTime = now + PER_ENTITY_EXTENSION_TICKS;
+        setChanged();
+    }
 
-        if (quickFollowUp) {
-            extendedOpenWindow = true;
-            activeUntilGameTime = Math.max(activeUntilGameTime, now + EXTENDED_OPEN_TICKS);
-        } else if (!extendedOpenWindow) {
-            activeUntilGameTime = now + FOLLOW_UP_WINDOW_TICKS;
-        }
+    private boolean shouldUseUnstableVisuals(long now) {
+        return riftLightningLink || isVortexUnstable(now);
+    }
 
-        lastEntityPassGameTime = now;
+    private void refreshInstabilityVisuals(ServerLevel level, long now) {
+        boolean unstableNow = shouldUseUnstableVisuals(now);
+        if (visualUnstable == unstableNow) return;
+
+        visualUnstable = unstableNow;
+        PortalConnectionManager.syncActivePortalInstability(level, worldPosition, unstableNow);
         setChanged();
     }
 
@@ -219,8 +237,8 @@ public class PortalCoreBlockEntity extends BlockEntity implements ExtendedScreen
         this.connectionId = connectionId;
         this.targetPortalId = targetPortalId;
         this.activeUntilGameTime = 0L;
-        this.lastEntityPassGameTime = -1L;
-        this.extendedOpenWindow = false;
+        this.activeStartedGameTime = 0L;
+        this.visualUnstable = false;
         this.riftLightningLink = riftLightningLink;
         this.outboundTravelEnabled = outboundTravelEnabled;
         this.openingStartedGameTime = openingStartedGameTime;
@@ -228,13 +246,13 @@ public class PortalCoreBlockEntity extends BlockEntity implements ExtendedScreen
         setChanged();
     }
 
-    void finalizeOpeningState(long activeUntilGameTime) {
+    void finalizeOpeningState(long activeUntilGameTime, long activeStartedGameTime) {
         if (!opening) return;
         this.opening = false;
         this.active = true;
         this.activeUntilGameTime = activeUntilGameTime;
-        this.lastEntityPassGameTime = -1L;
-        this.extendedOpenWindow = false;
+        this.activeStartedGameTime = Math.max(0L, activeStartedGameTime);
+        this.visualUnstable = riftLightningLink;
         this.openingStartedGameTime = 0L;
         this.openingCompleteGameTime = 0L;
         setChanged();
@@ -250,8 +268,8 @@ public class PortalCoreBlockEntity extends BlockEntity implements ExtendedScreen
         this.connectionId = connectionId;
         this.targetPortalId = targetPortalId;
         this.activeUntilGameTime = activeUntilGameTime;
-        this.lastEntityPassGameTime = -1L;
-        this.extendedOpenWindow = false;
+        this.activeStartedGameTime = 0L;
+        this.visualUnstable = riftLightningLink;
         this.riftLightningLink = riftLightningLink;
         this.outboundTravelEnabled = outboundTravelEnabled;
         this.openingStartedGameTime = 0L;
@@ -265,8 +283,8 @@ public class PortalCoreBlockEntity extends BlockEntity implements ExtendedScreen
         this.connectionId = null;
         this.targetPortalId = null;
         this.activeUntilGameTime = 0L;
-        this.lastEntityPassGameTime = -1L;
-        this.extendedOpenWindow = false;
+        this.activeStartedGameTime = 0L;
+        this.visualUnstable = false;
         this.riftLightningLink = false;
         this.outboundTravelEnabled = false;
         this.openingStartedGameTime = 0L;
@@ -287,8 +305,7 @@ public class PortalCoreBlockEntity extends BlockEntity implements ExtendedScreen
         if (connectionId != null) tag.putUUID("ConnectionId", connectionId);
         if (targetPortalId != null) tag.putUUID("TargetPortalId", targetPortalId);
         tag.putLong("ActiveUntil", activeUntilGameTime);
-        tag.putLong("LastEntityPass", lastEntityPassGameTime);
-        tag.putBoolean("ExtendedOpenWindow", extendedOpenWindow);
+        tag.putLong("ActiveStarted", activeStartedGameTime);
         tag.putBoolean("RiftLightning", riftLightningLink);
         tag.putBoolean("OutboundTravel", outboundTravelEnabled);
         tag.putLong("OpeningStart", openingStartedGameTime);
@@ -307,15 +324,15 @@ public class PortalCoreBlockEntity extends BlockEntity implements ExtendedScreen
         connectionId = tag.hasUUID("ConnectionId") ? tag.getUUID("ConnectionId") : null;
         targetPortalId = tag.hasUUID("TargetPortalId") ? tag.getUUID("TargetPortalId") : null;
         activeUntilGameTime = tag.getLong("ActiveUntil");
-        lastEntityPassGameTime = tag.contains("LastEntityPass") ? tag.getLong("LastEntityPass") : -1L;
-        extendedOpenWindow = tag.getBoolean("ExtendedOpenWindow");
+        activeStartedGameTime = tag.contains("ActiveStarted") ? tag.getLong("ActiveStarted") : 0L;
+        visualUnstable = false;
         riftLightningLink = tag.getBoolean("RiftLightning");
         outboundTravelEnabled = tag.contains("OutboundTravel") ? tag.getBoolean("OutboundTravel") : (active || opening);
         openingStartedGameTime = tag.contains("OpeningStart") ? tag.getLong("OpeningStart") : 0L;
         openingCompleteGameTime = tag.contains("OpeningComplete") ? tag.getLong("OpeningComplete") : 0L;
         if (!active) {
-            lastEntityPassGameTime = -1L;
-            extendedOpenWindow = false;
+            activeStartedGameTime = 0L;
+            visualUnstable = false;
         }
         if (!opening) {
             openingStartedGameTime = 0L;

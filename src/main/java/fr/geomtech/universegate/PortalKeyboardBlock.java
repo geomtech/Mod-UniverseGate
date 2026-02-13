@@ -134,6 +134,9 @@ public class PortalKeyboardBlock extends BaseEntityBlock {
     @Override
     public void onRemove(BlockState state, Level level, BlockPos pos, BlockState newState, boolean movedByPiston) {
         if (!level.isClientSide && !state.is(newState.getBlock())) {
+            if (level instanceof ServerLevel sl) {
+                PortalConnectionManager.forceCloseFromKeyboard(sl, pos);
+            }
             BlockEntity be = level.getBlockEntity(pos);
             if (be instanceof PortalKeyboardBlockEntity keyboard) {
                 Containers.dropContents(level, pos, keyboard);

@@ -4,15 +4,22 @@ import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.ChatFormatting;
 import net.minecraft.network.chat.Component;
+import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.util.RandomSource;
+import net.minecraft.world.effect.MobEffectInstance;
+import net.minecraft.world.effect.MobEffects;
 import net.minecraft.world.entity.Entity;
+import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.RelativeMovement;
 
 import fr.geomtech.universegate.UniverseGateDimensions;
 import fr.geomtech.universegate.PortalRiftHelper;
 
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
@@ -30,6 +37,13 @@ public final class PortalTeleportHandler {
     private static final long FUEL_CHARGE_COOLDOWN_TICKS = 10; // anti double facturation
     private static final long BLOCKED_DIRECTION_MESSAGE_COOLDOWN_TICKS = 20; // anti spam action bar
     private static final long COOLDOWN_MAP_RETENTION_TICKS = 20L * 60L * 10L;
+    private static final float UNSTABLE_RIFT_CHANCE = 0.05F;
+    private static final float UNSTABLE_DAMAGE_CHANCE = 0.40F;
+    private static final float UNSTABLE_RANDOM_PORTAL_CHANCE = 0.10F;
+    private static final float UNSTABLE_DAMAGE_AMOUNT = 8.0F; // 4 hearts
+    private static final int UNSTABLE_NAUSEA_DURATION_TICKS = 20 * 3;
+    private static final int UNSTABLE_SLOWNESS_DURATION_TICKS = 20 * 5;
+    private static final int UNSTABLE_SLOWNESS_AMPLIFIER = 2; // slowness III
 
     // --- état serveur ---
     private static final Map<UUID, Long> lastTeleportTick = new HashMap<>();
@@ -77,6 +91,37 @@ public final class PortalTeleportHandler {
             // destination inexistante => fermeture
             PortalConnectionManager.forceCloseOneSide(sourceLevel, corePos);
             return;
+        }
+
+        boolean unstableDamageRoll = false;
+        boolean instabilityTriggered = false;
+        if (core.isVortexUnstable(now)) {
+            boolean redirectToRift = sourceLevel.random.nextFloat() < UNSTABLE_RIFT_CHANCE;
+            boolean redirectToRandomPortal = sourceLevel.random.nextFloat() < UNSTABLE_RANDOM_PORTAL_CHANCE;
+            unstableDamageRoll = sourceLevel.random.nextFloat() < UNSTABLE_DAMAGE_CHANCE;
+
+            if (redirectToRandomPortal) {
+                PortalRegistrySavedData.PortalEntry randomEntry = pickRandomPortalDestination(
+                        sourceLevel.getServer(),
+                        registry,
+                        sourceLevel.random,
+                        core.getPortalId(),
+                        targetEntry.id()
+                );
+                if (randomEntry != null) {
+                    targetEntry = randomEntry;
+                    instabilityTriggered = true;
+                }
+            }
+
+            if (redirectToRift) {
+                PortalRegistrySavedData.PortalEntry riftEntry =
+                        findRiftPortalDestination(sourceLevel.getServer(), registry, core.getPortalId());
+                if (riftEntry != null) {
+                    targetEntry = riftEntry;
+                    instabilityTriggered = true;
+                }
+            }
         }
 
         boolean isRift = targetEntry.dim().equals(UniverseGateDimensions.RIFT);
@@ -141,6 +186,15 @@ public final class PortalTeleportHandler {
         core.onEntityPassed(now);
         if (targetLevel.getBlockEntity(targetEntry.pos()) instanceof PortalCoreBlockEntity targetCore) {
             targetCore.onEntityPassed(targetLevel.getGameTime());
+        }
+
+        LivingEntity livingEntity = entity instanceof LivingEntity living ? living : null;
+        if (unstableDamageRoll && livingEntity != null) {
+            livingEntity.hurt(targetLevel.damageSources().magic(), UNSTABLE_DAMAGE_AMOUNT);
+            instabilityTriggered = true;
+        }
+        if (instabilityTriggered && livingEntity != null) {
+            applyUnstableDebuffs(livingEntity);
         }
 
         if (isRift) {
@@ -224,6 +278,47 @@ public final class PortalTeleportHandler {
             }
         }
         return null;
+    }
+
+    private static PortalRegistrySavedData.PortalEntry findRiftPortalDestination(MinecraftServer server,
+                                                                                  PortalRegistrySavedData registry,
+                                                                                  UUID sourcePortalId) {
+        for (PortalRegistrySavedData.PortalEntry entry : registry.listAll()) {
+            if (!entry.dim().equals(UniverseGateDimensions.RIFT)) continue;
+            if (sourcePortalId != null && sourcePortalId.equals(entry.id())) continue;
+            if (!isPortalEntryUsable(server, entry)) continue;
+            return entry;
+        }
+        return null;
+    }
+
+    private static PortalRegistrySavedData.PortalEntry pickRandomPortalDestination(MinecraftServer server,
+                                                                                    PortalRegistrySavedData registry,
+                                                                                    RandomSource random,
+                                                                                    UUID sourcePortalId,
+                                                                                    UUID currentTargetId) {
+        List<PortalRegistrySavedData.PortalEntry> candidates = new ArrayList<>();
+        for (PortalRegistrySavedData.PortalEntry entry : registry.listAll()) {
+            if (sourcePortalId != null && sourcePortalId.equals(entry.id())) continue;
+            if (currentTargetId != null && currentTargetId.equals(entry.id())) continue;
+            if (!isPortalEntryUsable(server, entry)) continue;
+            candidates.add(entry);
+        }
+
+        if (candidates.isEmpty()) return null;
+        return candidates.get(random.nextInt(candidates.size()));
+    }
+
+    private static boolean isPortalEntryUsable(MinecraftServer server, PortalRegistrySavedData.PortalEntry entry) {
+        ServerLevel level = server.getLevel(entry.dim());
+        if (level == null) return false;
+        level.getChunk(entry.pos());
+        return level.getBlockEntity(entry.pos()) instanceof PortalCoreBlockEntity;
+    }
+
+    private static void applyUnstableDebuffs(LivingEntity living) {
+        living.addEffect(new MobEffectInstance(MobEffects.CONFUSION, UNSTABLE_NAUSEA_DURATION_TICKS, 0));
+        living.addEffect(new MobEffectInstance(MobEffects.MOVEMENT_SLOWDOWN, UNSTABLE_SLOWNESS_DURATION_TICKS, UNSTABLE_SLOWNESS_AMPLIFIER));
     }
 
     private static void cleanupCooldownMaps(long now) {

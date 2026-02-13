@@ -23,6 +23,8 @@ public class PortalKeyboardBlockEntity extends BlockEntity implements Container,
 
     private final net.minecraft.core.NonNullList<ItemStack> items =
             net.minecraft.core.NonNullList.withSize(SIZE, ItemStack.EMPTY);
+    private boolean suppressPortalCloseOnFuelConsumption = false;
+    private int lastKnownFuelCount = 0;
 
     public PortalKeyboardBlockEntity(BlockPos pos, BlockState state) {
         super(ModBlockEntities.PORTAL_KEYBOARD, pos, state);
@@ -32,14 +34,34 @@ public class PortalKeyboardBlockEntity extends BlockEntity implements Container,
     public boolean consumeOneFuel() {
         ItemStack s = items.get(SLOT_FUEL);
         if (s.isEmpty() || !s.is(ModItems.RIFT_ASH)) return false;
-        s.shrink(1);
-        setChanged();
+        suppressPortalCloseOnFuelConsumption = true;
+        try {
+            s.shrink(1);
+            setChanged();
+        } finally {
+            suppressPortalCloseOnFuelConsumption = false;
+        }
         return true;
     }
 
     public int fuelCount() {
         ItemStack s = items.get(SLOT_FUEL);
         return s.is(ModItems.RIFT_ASH) ? s.getCount() : 0;
+    }
+
+    @Override
+    public void setChanged() {
+        int previousFuelCount = lastKnownFuelCount;
+        int currentFuelCount = fuelCount();
+
+        super.setChanged();
+        lastKnownFuelCount = currentFuelCount;
+
+        if (suppressPortalCloseOnFuelConsumption) return;
+        if (currentFuelCount >= previousFuelCount) return;
+        if (!(level instanceof net.minecraft.server.level.ServerLevel sl)) return;
+
+        PortalConnectionManager.forceCloseFromKeyboard(sl, worldPosition);
     }
 
     // --- ExtendedScreenHandlerFactory ---
@@ -89,6 +111,7 @@ public class PortalKeyboardBlockEntity extends BlockEntity implements Container,
     @Override
     public void clearContent() {
         items.set(0, ItemStack.EMPTY);
+        setChanged();
     }
 
     // --- NBT (1.21+) ---
@@ -102,6 +125,7 @@ public class PortalKeyboardBlockEntity extends BlockEntity implements Container,
     protected void loadAdditional(CompoundTag tag, HolderLookup.Provider registries) {
         super.loadAdditional(tag, registries);
         ContainerHelper.loadAllItems(tag, items, registries);
+        lastKnownFuelCount = fuelCount();
     }
 
     @Override

@@ -171,8 +171,8 @@ public final class PortalConnectionManager {
         long untilA = sourceLevel.getGameTime() + ACTIVE_OPEN_DURATION_TICKS;
         long untilB = targetLevel.getGameTime() + ACTIVE_OPEN_DURATION_TICKS;
 
-        sourceCore.finalizeOpeningState(untilA);
-        targetCore.finalizeOpeningState(untilB);
+        sourceCore.finalizeOpeningState(untilA, sourceLevel.getGameTime());
+        targetCore.finalizeOpeningState(untilB, targetLevel.getGameTime());
 
         setFrameActive(sourceLevel, frameA.get(), sourceCorePos, true, unstableA);
         setFrameActive(targetLevel, frameB.get(), targetEntry.pos(), true, unstableB);
@@ -304,6 +304,18 @@ public final class PortalConnectionManager {
         b.setChanged();
     }
 
+    static void syncActivePortalInstability(ServerLevel level, BlockPos corePos, boolean unstable) {
+        var match = PortalFrameDetector.find(level, corePos);
+        if (match.isPresent()) {
+            setFieldInstability(level, match.get(), unstable);
+            setFrameActive(level, match.get(), corePos, true, unstable);
+            return;
+        }
+
+        setFieldInstabilityFallback(level, corePos, unstable);
+        setFrameActiveFallback(level, corePos, true, unstable);
+    }
+
     public static void syncKeyboardLitFromNearbyCore(ServerLevel level, BlockPos keyboardPos) {
         boolean lit = hasActiveCoreNear(level, keyboardPos, KEYBOARD_RADIUS_XZ, KEYBOARD_RADIUS_Y);
         setKeyboardLit(level, keyboardPos, lit);
@@ -326,6 +338,12 @@ public final class PortalConnectionManager {
         }
     }
 
+    public static void forceCloseFromKeyboard(ServerLevel level, BlockPos keyboardPos) {
+        BlockPos corePos = findActiveCoreNear(level, keyboardPos, KEYBOARD_RADIUS_XZ, KEYBOARD_RADIUS_Y);
+        if (corePos == null) return;
+        forceCloseOneSide(level, corePos);
+    }
+
     private static void setKeyboardLit(ServerLevel level, BlockPos keyboardPos, boolean lit) {
         var state = level.getBlockState(keyboardPos);
         if (!state.is(ModBlocks.PORTAL_KEYBOARD) || !state.hasProperty(PortalKeyboardBlock.LIT)) return;
@@ -335,6 +353,10 @@ public final class PortalConnectionManager {
     }
 
     private static boolean hasActiveCoreNear(ServerLevel level, BlockPos center, int rXZ, int rY) {
+        return findActiveCoreNear(level, center, rXZ, rY) != null;
+    }
+
+    private static BlockPos findActiveCoreNear(ServerLevel level, BlockPos center, int rXZ, int rY) {
         for (int dy = -rY; dy <= rY; dy++) {
             for (int dx = -rXZ; dx <= rXZ; dx++) {
                 for (int dz = -rXZ; dz <= rXZ; dz++) {
@@ -342,12 +364,12 @@ public final class PortalConnectionManager {
                     if (level.getBlockState(p).is(ModBlocks.PORTAL_CORE)
                             && level.getBlockEntity(p) instanceof PortalCoreBlockEntity core
                             && core.isActiveOrOpening()) {
-                        return true;
+                        return p;
                     }
                 }
             }
         }
-        return false;
+        return null;
     }
 
     // ----------------------------
@@ -379,6 +401,35 @@ public final class PortalConnectionManager {
                         && state.getValue(PortalFieldBlock.UNSTABLE);
                 spawnFieldCollapseParticles(level, p, axis, unstable);
                 level.setBlockAndUpdate(p, net.minecraft.world.level.block.Blocks.AIR.defaultBlockState());
+            }
+        }
+    }
+
+    private static void setFieldInstability(ServerLevel level, PortalFrameDetector.FrameMatch match, boolean unstable) {
+        for (BlockPos p : match.interior()) {
+            var state = level.getBlockState(p);
+            if (!state.is(ModBlocks.PORTAL_FIELD) || !state.hasProperty(PortalFieldBlock.UNSTABLE)) continue;
+            if (state.getValue(PortalFieldBlock.UNSTABLE) == unstable) continue;
+            level.setBlock(p, state.setValue(PortalFieldBlock.UNSTABLE, unstable), 3);
+        }
+    }
+
+    private static void setFieldInstabilityFallback(ServerLevel level, BlockPos corePos, boolean unstable) {
+        setFieldAreaInstability(level, corePos, net.minecraft.core.Direction.EAST, unstable);
+        setFieldAreaInstability(level, corePos, net.minecraft.core.Direction.SOUTH, unstable);
+    }
+
+    private static void setFieldAreaInstability(ServerLevel level,
+                                                BlockPos corePos,
+                                                net.minecraft.core.Direction right,
+                                                boolean unstable) {
+        for (int dy = 1; dy <= PortalFrameDetector.INNER_HEIGHT; dy++) {
+            for (int dx = -PortalFrameDetector.INNER_WIDTH / 2; dx <= PortalFrameDetector.INNER_WIDTH / 2; dx++) {
+                BlockPos p = corePos.offset(right.getStepX() * dx, dy, right.getStepZ() * dx);
+                var state = level.getBlockState(p);
+                if (!state.is(ModBlocks.PORTAL_FIELD) || !state.hasProperty(PortalFieldBlock.UNSTABLE)) continue;
+                if (state.getValue(PortalFieldBlock.UNSTABLE) == unstable) continue;
+                level.setBlock(p, state.setValue(PortalFieldBlock.UNSTABLE, unstable), 3);
             }
         }
     }
