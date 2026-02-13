@@ -1,0 +1,33 @@
+{
+  "parent": "universegate:portal_keyboard_placed",
+  "criteria": {
+    "entered_rift": {
+      "conditions": {
+        "to": "universegate:rift"
+      },
+      "trigger": "minecraft:changed_dimension"
+    }
+  },
+  "display": {
+    "announce_to_chat": true,
+    "description": {
+      "translate": "advancement.universegate.discover_rift_dimension.description"
+    },
+    "frame": "goal",
+    "hidden": false,
+    "icon": {
+      "count": 1,
+      "id": "universegate:void_block"
+    },
+    "show_toast": true,
+    "title": {
+      "translate": "advancement.universegate.discover_rift_dimension.title"
+    }
+  },
+  "requirements": [
+    [
+      "entered_rift"
+    ]
+  ],
+  "sends_telemetry_event": true
+}

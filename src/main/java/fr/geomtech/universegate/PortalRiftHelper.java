@@ -111,6 +111,8 @@ public final class PortalRiftHelper {
             return false;
         }
 
+        RiftScenarioGenerator.ensureGenerated(rift, riftEntry.pos());
+
         return PortalConnectionManager.openBothSides(sourceLevel, sourceCorePos, riftEntry.id(), true);
     }
 
@@ -216,7 +218,6 @@ public final class PortalRiftHelper {
             }
         }
 
-        RiftScenarioGenerator.ensureGenerated(riftLevel, corePos);
     }
 
     private static PortalRegistrySavedData.PortalEntry ensureRiftPortal(ServerLevel rift, PortalRegistrySavedData reg) {

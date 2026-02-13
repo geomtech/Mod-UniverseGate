@@ -1,0 +1,41 @@
+{
+  "parent": "universegate:discover_rift_dimension",
+  "criteria": {
+    "killed_rift_shade": {
+      "conditions": {
+        "entity": [
+          {
+            "condition": "minecraft:entity_properties",
+            "entity": "this",
+            "predicate": {
+              "type": "universegate:rift_shade"
+            }
+          }
+        ]
+      },
+      "trigger": "minecraft:player_killed_entity"
+    }
+  },
+  "display": {
+    "announce_to_chat": true,
+    "description": {
+      "translate": "advancement.universegate.first_rift_shade_kill.description"
+    },
+    "frame": "goal",
+    "hidden": false,
+    "icon": {
+      "count": 1,
+      "id": "universegate:rift_ash"
+    },
+    "show_toast": true,
+    "title": {
+      "translate": "advancement.universegate.first_rift_shade_kill.title"
+    }
+  },
+  "requirements": [
+    [
+      "killed_rift_shade"
+    ]
+  ],
+  "sends_telemetry_event": true
+}

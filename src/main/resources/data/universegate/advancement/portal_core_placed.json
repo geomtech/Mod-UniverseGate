@@ -1,0 +1,38 @@
+{
+  "criteria": {
+    "placed_portal_core": {
+      "conditions": {
+        "location": [
+          {
+            "block": "universegate:portal_core",
+            "condition": "minecraft:block_state_property"
+          }
+        ]
+      },
+      "trigger": "minecraft:placed_block"
+    }
+  },
+  "display": {
+    "announce_to_chat": true,
+    "background": "minecraft:textures/gui/advancements/backgrounds/end.png",
+    "description": {
+      "translate": "advancement.universegate.portal_core_placed.description"
+    },
+    "frame": "task",
+    "hidden": false,
+    "icon": {
+      "count": 1,
+      "id": "universegate:portal_core"
+    },
+    "show_toast": true,
+    "title": {
+      "translate": "advancement.universegate.portal_core_placed.title"
+    }
+  },
+  "requirements": [
+    [
+      "placed_portal_core"
+    ]
+  ],
+  "sends_telemetry_event": true
+}

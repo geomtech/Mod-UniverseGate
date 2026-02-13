@@ -1,0 +1,38 @@
+{
+  "parent": "universegate:portal_core_placed",
+  "criteria": {
+    "placed_portal_keyboard": {
+      "conditions": {
+        "location": [
+          {
+            "block": "universegate:portal_keyboard",
+            "condition": "minecraft:block_state_property"
+          }
+        ]
+      },
+      "trigger": "minecraft:placed_block"
+    }
+  },
+  "display": {
+    "announce_to_chat": true,
+    "description": {
+      "translate": "advancement.universegate.portal_keyboard_placed.description"
+    },
+    "frame": "task",
+    "hidden": false,
+    "icon": {
+      "count": 1,
+      "id": "universegate:portal_keyboard"
+    },
+    "show_toast": true,
+    "title": {
+      "translate": "advancement.universegate.portal_keyboard_placed.title"
+    }
+  },
+  "requirements": [
+    [
+      "placed_portal_keyboard"
+    ]
+  ],
+  "sends_telemetry_event": true
+}

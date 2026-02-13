@@ -24,5 +24,13 @@
   "message.universegate.use_keyboard_destination": "Use the Keyboard to set a destination.",
   "message.universegate.blocked_direction": "This vortex is one-way.",
   "dimension.universegate.rift": "The Rift",
-  "biome.universegate.rift_void": "The Rift"
+  "biome.universegate.rift_void": "The Rift",
+  "advancement.universegate.portal_core_placed.title": "Where To, Captain?",
+  "advancement.universegate.portal_core_placed.description": "You placed a Portal Core. This is either science or a very expensive button.",
+  "advancement.universegate.portal_keyboard_placed.title": "Cosmic Keyboard",
+  "advancement.universegate.portal_keyboard_placed.description": "You placed the Portal Controller. Try not to type your password into it.",
+  "advancement.universegate.discover_rift_dimension.title": "Hello? ... Nope.",
+  "advancement.universegate.discover_rift_dimension.description": "Welcome to the Rift: no neighbors, no signal, just you, the void, and your life choices.",
+  "advancement.universegate.first_rift_shade_kill.title": "First Shade Down",
+  "advancement.universegate.first_rift_shade_kill.description": "You defeated your first Rift Shade. The void now knows your name."
 }

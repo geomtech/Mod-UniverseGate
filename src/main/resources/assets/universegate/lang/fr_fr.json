@@ -24,5 +24,13 @@
   "message.universegate.use_keyboard_destination": "Utilise le clavier pour composer une destination.",
   "message.universegate.blocked_direction": "Le vortex est à sens unique.",
   "dimension.universegate.rift": "La Faille",
-  "biome.universegate.rift_void": "La Faille"
+  "biome.universegate.rift_void": "La Faille",
+  "advancement.universegate.portal_core_placed.title": "On va où, chef ?",
+  "advancement.universegate.portal_core_placed.description": "Tu as posé un Noyau de portail. C'est soit de la science, soit un très gros bouton.",
+  "advancement.universegate.portal_keyboard_placed.title": "Clavier cosmique",
+  "advancement.universegate.portal_keyboard_placed.description": "Tu as posé le Contrôleur du portail. Essaie juste de ne pas taper ton mot de passe dessus.",
+  "advancement.universegate.discover_rift_dimension.title": "Allô ? ... Ah non.",
+  "advancement.universegate.discover_rift_dimension.description": "Bienvenue dans la Faille : pas de voisins, pas de réseau, juste toi, le vide et tes choix de vie.",
+  "advancement.universegate.first_rift_shade_kill.title": "Première ombre au tableau",
+  "advancement.universegate.first_rift_shade_kill.description": "Tu as vaincu ta première Ombre de la faille. Le néant vient d'apprendre le respect."
 }

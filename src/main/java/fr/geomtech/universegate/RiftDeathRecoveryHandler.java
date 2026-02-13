@@ -95,7 +95,7 @@ public final class RiftDeathRecoveryHandler {
 
     private static boolean isRiftCompass(ItemStack stack) {
         if (stack.isEmpty()) return false;
-        if (!stack.is(Items.COMPASS) && !stack.is(ModItems.RIFT_COMPASS)) return false;
+        if (!stack.is(Items.COMPASS)) return false;
 
         LodestoneTracker tracker = stack.get(DataComponents.LODESTONE_TRACKER);
         if (tracker == null || tracker.target().isEmpty()) return false;

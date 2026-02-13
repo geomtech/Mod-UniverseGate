@@ -2,7 +2,6 @@ package fr.geomtech.universegate;
 
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.world.item.BlockItem;
-import net.minecraft.world.item.CompassItem;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.SpawnEggItem;
 import net.minecraft.resources.ResourceLocation;
@@ -48,11 +47,6 @@ public final class ModItems {
     public static final Item RIFT_SHADE_SPAWN_EGG = register(
             "rift_shade_spawn_egg",
             new SpawnEggItem(ModEntityTypes.RIFT_SHADE, 0x08080A, 0xF3F3F3, new Item.Properties())
-    );
-
-    public static final Item RIFT_COMPASS = register(
-            "rift_compass",
-            new CompassItem(new Item.Properties().stacksTo(1))
     );
 
     public static final Item PORTAL_CORE_ITEM = register(

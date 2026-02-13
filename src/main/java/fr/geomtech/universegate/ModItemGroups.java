@@ -34,7 +34,6 @@ public final class ModItemGroups {
                 output.accept(ModItems.KELO_PLANKS_ITEM);
 
                 output.accept(ModItems.RIFT_ASH);
-                output.accept(ModItems.RIFT_COMPASS);
                 output.accept(ModItems.RIFT_SHADE_SPAWN_EGG);
             })
             .build();
