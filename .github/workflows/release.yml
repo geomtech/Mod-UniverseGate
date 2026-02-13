@@ -1,0 +1,128 @@
+name: release
+
+on:
+  push:
+    branches:
+      - main
+      - master
+
+permissions:
+  contents: write
+
+concurrency:
+  group: release-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  release:
+    runs-on: ubuntu-24.04
+
+    steps:
+      - name: checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: validate gradle wrapper
+        uses: gradle/actions/wrapper-validation@v4
+
+      - name: detect manual version bump
+        id: manual_bump
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          before_sha="${{ github.event.before }}"
+          if [ "$before_sha" = "0000000000000000000000000000000000000000" ] || ! git cat-file -e "$before_sha^{commit}" 2>/dev/null; then
+            echo "skip=false" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+
+          if git diff --name-only "$before_sha" "${{ github.sha }}" | grep -Fxq "gradle.properties"; then
+            if git diff "$before_sha" "${{ github.sha }}" -- gradle.properties | grep -qE '^[+-]mod_version='; then
+              echo "skip=true" >> "$GITHUB_OUTPUT"
+              exit 0
+            fi
+          fi
+
+          echo "skip=false" >> "$GITHUB_OUTPUT"
+
+      - name: compute next patch version
+        id: version
+        if: steps.manual_bump.outputs.skip != 'true'
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          current_tag=$(git tag --points-at HEAD --list 'v*' | head -n 1 || true)
+          if [ -n "$current_tag" ]; then
+            echo "tag=$current_tag" >> "$GITHUB_OUTPUT"
+            echo "new_tag=false" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+
+          mod_version=$(grep '^mod_version=' gradle.properties | cut -d'=' -f2)
+          if [[ ! "$mod_version" =~ ^([0-9]+)\.([0-9]+)\.([0-9]+)$ ]]; then
+            echo "Invalid mod_version format: $mod_version"
+            exit 1
+          fi
+
+          major="${BASH_REMATCH[1]}"
+          minor="${BASH_REMATCH[2]}"
+          base_patch="${BASH_REMATCH[3]}"
+
+          latest_tag=$(git tag --list "v${major}.${minor}.*" --sort=-version:refname | head -n 1 || true)
+          if [ -n "$latest_tag" ]; then
+            latest_patch="${latest_tag##*.}"
+          else
+            latest_patch="$base_patch"
+          fi
+
+          next_patch=$((latest_patch + 1))
+          next_tag="v${major}.${minor}.${next_patch}"
+
+          if git rev-parse "$next_tag" >/dev/null 2>&1; then
+            echo "Tag already exists: $next_tag"
+            exit 1
+          fi
+
+          echo "tag=$next_tag" >> "$GITHUB_OUTPUT"
+          echo "new_tag=true" >> "$GITHUB_OUTPUT"
+
+      - name: setup jdk
+        if: steps.manual_bump.outputs.skip != 'true'
+        uses: actions/setup-java@v4
+        with:
+          java-version: '25'
+          distribution: 'microsoft'
+          cache: gradle
+
+      - name: make gradle wrapper executable
+        if: steps.manual_bump.outputs.skip != 'true'
+        run: chmod +x ./gradlew
+
+      - name: build
+        if: steps.manual_bump.outputs.skip != 'true'
+        run: ./gradlew build
+
+      - name: create git tag
+        if: steps.manual_bump.outputs.skip != 'true' && steps.version.outputs.new_tag == 'true'
+        shell: bash
+        run: |
+          set -euo pipefail
+          git tag "${{ steps.version.outputs.tag }}"
+          git push origin "${{ steps.version.outputs.tag }}"
+
+      - name: create github release
+        if: steps.manual_bump.outputs.skip != 'true'
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ steps.version.outputs.tag }}
+          generate_release_notes: true
+          files: |
+            build/libs/*.jar
+          fail_on_unmatched_files: true
+
+      - name: skip notice
+        if: steps.manual_bump.outputs.skip == 'true'
+        run: echo "mod_version changed manually in this push; auto patch release skipped."
