@@ -1,0 +1,48 @@
+{
+  "parent": "universegate:discover_rift_dimension",
+  "criteria": {
+    "stepped_on_cube_emitter": {
+      "conditions": {
+        "player": [
+          {
+            "condition": "minecraft:entity_properties",
+            "entity": "this",
+            "predicate": {
+              "location": {
+                "dimension": "universegate:rift"
+              },
+              "stepping_on": {
+                "block": {
+                  "blocks": "universegate:light_beam_emitter"
+                }
+              }
+            }
+          }
+        ]
+      },
+      "trigger": "minecraft:location"
+    }
+  },
+  "display": {
+    "announce_to_chat": true,
+    "description": {
+      "translate": "advancement.universegate.find_rift_cube.description"
+    },
+    "frame": "goal",
+    "hidden": false,
+    "icon": {
+      "count": 1,
+      "id": "universegate:light_beam_emitter"
+    },
+    "show_toast": true,
+    "title": {
+      "translate": "advancement.universegate.find_rift_cube.title"
+    }
+  },
+  "requirements": [
+    [
+      "stepped_on_cube_emitter"
+    ]
+  ],
+  "sends_telemetry_event": true
+}

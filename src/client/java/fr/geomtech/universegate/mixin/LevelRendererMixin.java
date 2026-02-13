@@ -8,6 +8,7 @@ import net.minecraft.client.Minecraft;
 import net.minecraft.client.multiplayer.ClientLevel;
 import net.minecraft.client.renderer.LevelRenderer;
 import net.minecraft.resources.ResourceLocation;
+import net.minecraft.world.phys.Vec3;
 import org.joml.Matrix4f;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Unique;
@@ -24,6 +25,15 @@ public abstract class LevelRendererMixin {
 
     @Unique
     private static final ResourceLocation UNIVERSEGATE$RIFT_MOON = ResourceLocation.fromNamespaceAndPath(UniverseGate.MOD_ID, "textures/environment/rift_moon_phases.png");
+
+    @Unique
+    private static final double UNIVERSEGATE$RIFT_SKY_MIN_BRIGHTNESS = 0.93D;
+
+    @Unique
+    private static final double UNIVERSEGATE$RIFT_SKY_SPARKLE_STRENGTH = 0.07D;
+
+    @Unique
+    private static final double UNIVERSEGATE$RIFT_SKY_SPARKLE_SPEED = 0.18D;
 
     @Unique
     private static boolean universegate$isInRift(ClientLevel level) {
@@ -43,6 +53,23 @@ public abstract class LevelRendererMixin {
         if (universegate$isInRift(level)) {
             ci.cancel();
         }
+    }
+
+    @Redirect(
+            method = "renderSky",
+            at = @At(
+                    value = "INVOKE",
+                    target = "Lnet/minecraft/client/multiplayer/ClientLevel;getSkyColor(Lnet/minecraft/world/phys/Vec3;F)Lnet/minecraft/world/phys/Vec3;"
+            )
+    )
+    private Vec3 universegate$makeRiftSkySparkling(ClientLevel level, Vec3 cameraPos, float partialTick) {
+        if (universegate$isInRift(level)) {
+            double worldTime = level.getDayTime() + partialTick;
+            double shimmer = (Math.sin(worldTime * UNIVERSEGATE$RIFT_SKY_SPARKLE_SPEED) + 1.0D) * 0.5D;
+            double brightness = UNIVERSEGATE$RIFT_SKY_MIN_BRIGHTNESS + shimmer * UNIVERSEGATE$RIFT_SKY_SPARKLE_STRENGTH;
+            return new Vec3(brightness, brightness, brightness);
+        }
+        return level.getSkyColor(cameraPos, partialTick);
     }
 
     @Redirect(

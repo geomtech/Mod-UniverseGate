@@ -32,5 +32,9 @@
   "advancement.universegate.discover_rift_dimension.title": "Hello? ... Nope.",
   "advancement.universegate.discover_rift_dimension.description": "Welcome to the Rift: no neighbors, no signal, just you, the void, and your life choices.",
   "advancement.universegate.first_rift_shade_kill.title": "First Shade Down",
-  "advancement.universegate.first_rift_shade_kill.description": "You defeated your first Rift Shade. The void now knows your name."
+  "advancement.universegate.first_rift_shade_kill.description": "You defeated your first Rift Shade. The void now knows your name.",
+  "advancement.universegate.find_rift_cube.title": "The Cube Was Real",
+  "advancement.universegate.find_rift_cube.description": "You found a Rift cube. It reminds me of my house built with dirt.",
+  "advancement.universegate.return_from_rift_to_overworld.title": "Back to Civilization",
+  "advancement.universegate.return_from_rift_to_overworld.description": "You made it from the Rift to the Overworld. Fresh air and creepers, just like home."
 }

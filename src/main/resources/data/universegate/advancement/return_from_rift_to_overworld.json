@@ -1,0 +1,34 @@
+{
+  "parent": "universegate:discover_rift_dimension",
+  "criteria": {
+    "returned_to_overworld": {
+      "conditions": {
+        "from": "universegate:rift",
+        "to": "minecraft:overworld"
+      },
+      "trigger": "minecraft:changed_dimension"
+    }
+  },
+  "display": {
+    "announce_to_chat": true,
+    "description": {
+      "translate": "advancement.universegate.return_from_rift_to_overworld.description"
+    },
+    "frame": "goal",
+    "hidden": false,
+    "icon": {
+      "count": 1,
+      "id": "minecraft:grass_block"
+    },
+    "show_toast": true,
+    "title": {
+      "translate": "advancement.universegate.return_from_rift_to_overworld.title"
+    }
+  },
+  "requirements": [
+    [
+      "returned_to_overworld"
+    ]
+  ],
+  "sends_telemetry_event": true
+}
