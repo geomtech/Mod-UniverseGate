@@ -84,6 +84,8 @@ public final class PortalConnectionManager {
 
         ModSounds.playAt(sourceLevel, sourceCorePos, ModSounds.PORTAL_OPENING, 1.0F, 1.0F);
         ModSounds.playAt(targetLevel, bEntry.pos(), ModSounds.PORTAL_OPENING, 1.0F, 1.0F);
+        ModSounds.playPortalAmbientAt(sourceLevel, sourceCorePos, riftLightningLink);
+        ModSounds.playPortalAmbientAt(targetLevel, bEntry.pos(), riftLightningLink);
 
         a.setChanged();
         b.setChanged();
@@ -95,6 +97,7 @@ public final class PortalConnectionManager {
         if (!(level.getBlockEntity(corePos) instanceof PortalCoreBlockEntity a)) return;
 
         UUID targetId = a.getTargetPortalId();
+        boolean unstable = a.isRiftLightningLink();
 
         // Recalculer frame + retirer champ
         var match = PortalFrameDetector.find(level, corePos);
@@ -108,6 +111,7 @@ public final class PortalConnectionManager {
         if (a.isActive()) {
             ModSounds.playAt(level, corePos, ModSounds.PORTAL_CLOSING, 1.0F, 1.0F);
         }
+        ModSounds.stopPortalAmbientNear(level, corePos, unstable);
         a.clearActiveState();
 
         // Essayer de fermer l’autre côté (si on peut le charger)
@@ -128,6 +132,7 @@ public final class PortalConnectionManager {
         targetLevel.getChunk(entry.pos());
 
         if (!(targetLevel.getBlockEntity(entry.pos()) instanceof PortalCoreBlockEntity b)) return;
+        boolean unstable = b.isRiftLightningLink();
 
         var match = PortalFrameDetector.find(targetLevel, entry.pos());
         if (match.isPresent()) {
@@ -140,6 +145,7 @@ public final class PortalConnectionManager {
         if (b.isActive()) {
             ModSounds.playAt(targetLevel, entry.pos(), ModSounds.PORTAL_CLOSING, 1.0F, 1.0F);
         }
+        ModSounds.stopPortalAmbientNear(targetLevel, entry.pos(), unstable);
         b.clearActiveState();
         b.setChanged();
     }

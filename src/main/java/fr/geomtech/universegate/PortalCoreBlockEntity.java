@@ -66,13 +66,6 @@ public class PortalCoreBlockEntity extends BlockEntity implements ExtendedScreen
         }
         if (!active) return;
 
-        if (sl.getGameTime() % 40L == 0L) {
-            ModSounds.playAt(sl, worldPosition,
-                    riftLightningLink ? ModSounds.PORTAL_UNSTABLE : ModSounds.PORTAL_IDLE,
-                    0.35F,
-                    1.0F);
-        }
-
         long now = sl.getGameTime();
         if (now >= activeUntilGameTime) {
             PortalConnectionManager.forceCloseOneSide(sl, worldPosition);
@@ -136,6 +129,8 @@ public class PortalCoreBlockEntity extends BlockEntity implements ExtendedScreen
                 }
             }
         }
+
+        ModSounds.playPortalAmbientAt(sl, worldPosition, riftLightningLink);
 
         return true;
     }

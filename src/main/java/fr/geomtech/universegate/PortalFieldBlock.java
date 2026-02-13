@@ -4,7 +4,6 @@ import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.core.particles.ParticleTypes;
 import net.minecraft.server.level.ServerLevel;
-import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.util.RandomSource;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.level.Explosion;
@@ -45,9 +44,8 @@ public class PortalFieldBlock extends Block implements EntityBlock {
     @Override
     public void entityInside(BlockState state, Level level, BlockPos pos, Entity entity) {
         if (level.isClientSide) return;
-        if (!(entity instanceof ServerPlayer player)) return;
 
-        PortalTeleportHandler.tryTeleport(player, pos);
+        PortalTeleportHandler.tryTeleport(entity, pos);
     }
 
     @Override

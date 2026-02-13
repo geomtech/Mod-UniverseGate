@@ -5,12 +5,15 @@ import net.minecraft.core.Direction;
 import net.minecraft.network.chat.Component;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.world.entity.Entity;
+import net.minecraft.world.entity.RelativeMovement;
 
 import fr.geomtech.universegate.UniverseGateDimensions;
 import fr.geomtech.universegate.PortalRiftHelper;
 
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Set;
 import java.util.UUID;
 
 public final class PortalTeleportHandler {
@@ -25,6 +28,7 @@ public final class PortalTeleportHandler {
     private static final long TELEPORT_COOLDOWN_TICKS = 40; // 2s anti ping-pong
     private static final long FUEL_CHARGE_COOLDOWN_TICKS = 10; // anti double facturation
     private static final long BLOCKED_DIRECTION_MESSAGE_COOLDOWN_TICKS = 20; // anti spam action bar
+    private static final long COOLDOWN_MAP_RETENTION_TICKS = 20L * 60L * 10L;
 
     // --- état serveur ---
     private static final Map<UUID, Long> lastTeleportTick = new HashMap<>();
@@ -33,14 +37,20 @@ public final class PortalTeleportHandler {
 
     private PortalTeleportHandler() {}
 
-    /** Appelé par PortalFieldBlock quand un joueur touche le champ. */
-    public static void tryTeleport(ServerPlayer player, BlockPos fieldPos) {
-        ServerLevel sourceLevel = player.serverLevel();
+    /** Appelé par PortalFieldBlock quand une entité touche le champ. */
+    public static void tryTeleport(Entity entity, BlockPos fieldPos) {
+        if (!(entity.level() instanceof ServerLevel sourceLevel)) return;
+        if (!entity.isAlive()) return;
+        if (entity.isPassenger()) return;
+
         long now = sourceLevel.getGameTime();
+        if ((now & 127L) == 0L) {
+            cleanupCooldownMaps(now);
+        }
 
         // 1) anti ping-pong
-        UUID pid = player.getUUID();
-        Long lastTp = lastTeleportTick.get(pid);
+        UUID entityId = entity.getUUID();
+        Long lastTp = lastTeleportTick.get(entityId);
         if (lastTp != null && now - lastTp < TELEPORT_COOLDOWN_TICKS) return;
 
         // 2) trouver le core associé au champ
@@ -50,7 +60,9 @@ public final class PortalTeleportHandler {
         if (!(sourceLevel.getBlockEntity(corePos) instanceof PortalCoreBlockEntity core)) return;
         if (!core.isActive()) return;
         if (!core.isOutboundTravelEnabled()) {
-            showBlockedDirectionMessage(player, now);
+            if (entity instanceof ServerPlayer player) {
+                showBlockedDirectionMessage(player, now);
+            }
             return;
         }
 
@@ -68,11 +80,13 @@ public final class PortalTeleportHandler {
 
         boolean isRift = targetEntry.dim().equals(UniverseGateDimensions.RIFT);
 
-        // 4) anti double facturation carburant
-        Long lastFuel = lastFuelChargeTick.get(pid);
-        if (lastFuel != null && now - lastFuel < FUEL_CHARGE_COOLDOWN_TICKS) return;
+        boolean consumeFuel = !isRift && entity instanceof ServerPlayer;
 
-        if (!isRift) {
+        if (consumeFuel) {
+            // 4) anti double facturation carburant (joueurs uniquement)
+            Long lastFuel = lastFuelChargeTick.get(entityId);
+            if (lastFuel != null && now - lastFuel < FUEL_CHARGE_COOLDOWN_TICKS) return;
+
             // 5) consommer 1 rift ash dans le keyboard source
             PortalKeyboardBlockEntity keyboard = findKeyboardNear(sourceLevel, corePos, KEYBOARD_RADIUS);
             if (keyboard == null || !keyboard.consumeOneFuel()) {
@@ -80,7 +94,7 @@ public final class PortalTeleportHandler {
                 PortalConnectionManager.forceCloseOneSide(sourceLevel, corePos);
                 return;
             }
-            lastFuelChargeTick.put(pid, now);
+            lastFuelChargeTick.put(entityId, now);
         }
 
         ServerLevel targetLevel = sourceLevel.getServer().getLevel(targetEntry.dim());
@@ -96,12 +110,12 @@ public final class PortalTeleportHandler {
         double x = targetEntry.pos().getX() + 0.5;
         double y = targetEntry.pos().getY() + 1.0;
         double z = targetEntry.pos().getZ() + 0.5;
-        float yaw = player.getYRot();
+        float yaw = entity.getYRot();
 
         var sourceMatch = PortalFrameDetector.find(sourceLevel, corePos);
         var targetMatch = PortalFrameDetector.find(targetLevel, targetEntry.pos());
         if (sourceMatch.isPresent() && targetMatch.isPresent()) {
-            int sideSign = sideSignFromEntry(sourceMatch.get(), corePos, player);
+            int sideSign = sideSignFromEntry(sourceMatch.get(), corePos, entity);
             Direction exitNormal = normalFromMatch(targetMatch.get(), sideSign);
             x += exitNormal.getStepX() * 1.2;
             z += exitNormal.getStepZ() * 1.2;
@@ -109,9 +123,17 @@ public final class PortalTeleportHandler {
         }
 
         ModSounds.playAt(sourceLevel, corePos, ModSounds.PORTAL_ENTITY_GOING_THROUGH, 0.9F, 1.0F);
-        player.teleportTo(targetLevel, x, y, z, yaw, player.getXRot());
+        boolean teleported;
+        if (entity instanceof ServerPlayer player) {
+            player.teleportTo(targetLevel, x, y, z, yaw, player.getXRot());
+            teleported = true;
+        } else {
+            teleported = entity.teleportTo(targetLevel, x, y, z, Set.<RelativeMovement>of(), yaw, entity.getXRot());
+        }
+        if (!teleported) return;
+
         ModSounds.playAt(targetLevel, targetEntry.pos(), ModSounds.PORTAL_ENTITY_GOING_THROUGH, 0.9F, 1.05F);
-        lastTeleportTick.put(pid, now);
+        lastTeleportTick.put(entityId, now);
 
         if (isRift) {
             PortalRiftHelper.handleRiftArrival(targetLevel, targetEntry.pos());
@@ -127,10 +149,10 @@ public final class PortalTeleportHandler {
         lastBlockedDirectionMessageTick.put(pid, now);
     }
 
-    private static int sideSignFromEntry(PortalFrameDetector.FrameMatch match, BlockPos corePos, ServerPlayer player) {
+    private static int sideSignFromEntry(PortalFrameDetector.FrameMatch match, BlockPos corePos, Entity entity) {
         double axisVelocity = match.right() == Direction.EAST
-                ? player.getDeltaMovement().z
-                : player.getDeltaMovement().x;
+                ? entity.getDeltaMovement().z
+                : entity.getDeltaMovement().x;
 
         if (Math.abs(axisVelocity) > 0.001D) {
             return axisVelocity >= 0 ? 1 : -1;
@@ -139,9 +161,9 @@ public final class PortalTeleportHandler {
         double centerX = corePos.getX() + 0.5;
         double centerZ = corePos.getZ() + 0.5;
         if (match.right() == Direction.EAST) {
-            return player.getZ() >= centerZ ? 1 : -1;
+            return entity.getZ() >= centerZ ? 1 : -1;
         }
-        return player.getX() >= centerX ? 1 : -1;
+        return entity.getX() >= centerX ? 1 : -1;
     }
 
     private static Direction normalFromMatch(PortalFrameDetector.FrameMatch match, int sideSign) {
@@ -176,5 +198,15 @@ public final class PortalTeleportHandler {
             }
         }
         return null;
+    }
+
+    private static void cleanupCooldownMaps(long now) {
+        prune(lastTeleportTick, now);
+        prune(lastFuelChargeTick, now);
+        prune(lastBlockedDirectionMessageTick, now);
+    }
+
+    private static void prune(Map<UUID, Long> map, long now) {
+        map.entrySet().removeIf(entry -> now - entry.getValue() > COOLDOWN_MAP_RETENTION_TICKS);
     }
 }

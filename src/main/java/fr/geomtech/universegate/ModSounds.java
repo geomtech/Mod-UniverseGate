@@ -3,8 +3,10 @@ package fr.geomtech.universegate;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Registry;
 import net.minecraft.core.registries.BuiltInRegistries;
+import net.minecraft.network.protocol.game.ClientboundStopSoundPacket;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.level.ServerLevel;
+import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.sounds.SoundEvent;
 import net.minecraft.sounds.SoundSource;
 
@@ -28,6 +30,39 @@ public final class ModSounds {
 
     public static void playAt(ServerLevel level, BlockPos pos, SoundEvent sound, float volume, float pitch) {
         level.playSound(null, pos, sound, SoundSource.BLOCKS, volume, pitch);
+    }
+
+    public static void playPortalAmbientAt(ServerLevel level, BlockPos pos, boolean unstable) {
+        playAt(level, pos, unstable ? PORTAL_UNSTABLE : PORTAL_IDLE, 0.35F, 1.0F);
+    }
+
+    public static void stopPortalAmbientNear(ServerLevel level, BlockPos pos) {
+        stopSoundNear(level, pos, PORTAL_IDLE);
+        stopSoundNear(level, pos, PORTAL_UNSTABLE);
+    }
+
+    public static void stopPortalAmbientNear(ServerLevel level, BlockPos pos, boolean unstable) {
+        stopSoundNear(level, pos, unstable ? PORTAL_UNSTABLE : PORTAL_IDLE);
+    }
+
+    private static void stopSoundNear(ServerLevel level, BlockPos pos, SoundEvent sound) {
+        ResourceLocation soundId = BuiltInRegistries.SOUND_EVENT.getKey(sound);
+        ClientboundStopSoundPacket packet = new ClientboundStopSoundPacket(soundId, SoundSource.BLOCKS);
+
+        double px = pos.getX() + 0.5;
+        double py = pos.getY() + 0.5;
+        double pz = pos.getZ() + 0.5;
+        double maxDistanceSqr = 128.0D * 128.0D;
+
+        for (ServerPlayer player : level.players()) {
+            double dx = player.getX() - px;
+            double dy = player.getY() - py;
+            double dz = player.getZ() - pz;
+            double distSqr = dx * dx + dy * dy + dz * dz;
+            if (distSqr <= maxDistanceSqr) {
+                player.connection.send(packet);
+            }
+        }
     }
 
     public static void register() {}
