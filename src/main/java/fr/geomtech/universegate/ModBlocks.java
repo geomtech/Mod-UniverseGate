@@ -74,7 +74,8 @@ public final class ModBlocks {
     public static final Block PORTAL_KEYBOARD = register(
             "portal_keyboard",
             new PortalKeyboardBlock(BlockBehaviour.Properties.ofFullCopy(Blocks.OBSIDIAN)
-                    .strength(60.0f, 1200.0f))
+                    .strength(60.0f, 1200.0f)
+                    .lightLevel(PortalKeyboardBlock::lightLevel))
     );
 
     public static final Block PORTAL_FIELD = register(
@@ -82,7 +83,7 @@ public final class ModBlocks {
             new PortalFieldBlock(
                     BlockBehaviour.Properties.of()
                             .noCollission()
-                            .strength(-1.0F, 0.0F)
+                            .strength(1.0F, 0.0F)
                             .lightLevel(state -> 10)
                             .noLootTable()
             )

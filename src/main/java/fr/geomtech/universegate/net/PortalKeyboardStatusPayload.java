@@ -7,7 +7,9 @@ import net.minecraft.network.codec.StreamCodec;
 import net.minecraft.network.protocol.common.custom.CustomPacketPayload;
 import net.minecraft.resources.ResourceLocation;
 
-public record PortalKeyboardStatusPayload(BlockPos keyboardPos, boolean active) implements CustomPacketPayload {
+public record PortalKeyboardStatusPayload(BlockPos keyboardPos,
+                                          boolean active,
+                                          boolean disconnectAllowed) implements CustomPacketPayload {
 
     public static final CustomPacketPayload.Type<PortalKeyboardStatusPayload> TYPE =
             new CustomPacketPayload.Type<>(ResourceLocation.fromNamespaceAndPath("universegate", "portal_keyboard_status"));
@@ -16,6 +18,7 @@ public record PortalKeyboardStatusPayload(BlockPos keyboardPos, boolean active) 
             StreamCodec.composite(
                     BlockPos.STREAM_CODEC, PortalKeyboardStatusPayload::keyboardPos,
                     ByteBufCodecs.BOOL, PortalKeyboardStatusPayload::active,
+                    ByteBufCodecs.BOOL, PortalKeyboardStatusPayload::disconnectAllowed,
                     PortalKeyboardStatusPayload::new
             );
 

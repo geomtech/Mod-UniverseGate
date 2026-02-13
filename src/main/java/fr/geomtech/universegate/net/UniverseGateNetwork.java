@@ -13,6 +13,7 @@ import net.minecraft.core.BlockPos;
 import net.minecraft.server.level.ServerLevel;
 
 import java.util.List;
+import java.util.UUID;
 import java.util.stream.Collectors;
 
 public final class UniverseGateNetwork {
@@ -47,7 +48,10 @@ public final class UniverseGateNetwork {
                 }
 
                 // Ouvrir Stargate A<->B
-                if (kb.fuelCount() <= 0) return;
+                if (kb.fuelCount() <= 0) {
+                    ModSounds.playAt(level, payload.keyboardPos(), ModSounds.PORTAL_ERROR, 0.9F, 1.0F);
+                    return;
+                }
                 boolean ok = PortalConnectionManager.openBothSides(level, corePos, payload.targetPortalId());
                 if (ok) {
                     kb.consumeOneFuel();
@@ -79,7 +83,9 @@ public final class UniverseGateNetwork {
                 BlockPos corePos = findCoreNear(level, payload.keyboardPos(), 8);
                 if (corePos == null) return;
 
-                if (level.getBlockEntity(corePos) instanceof PortalCoreBlockEntity core && core.isActive()) {
+                if (level.getBlockEntity(corePos) instanceof PortalCoreBlockEntity core
+                        && core.isActiveOrOpening()
+                        && core.isOutboundTravelEnabled()) {
                     PortalConnectionManager.forceCloseOneSide(level, corePos);
                 }
 
@@ -90,7 +96,16 @@ public final class UniverseGateNetwork {
 
     public static void sendPortalListToPlayer(net.minecraft.server.level.ServerPlayer player, BlockPos keyboardPos) {
         var reg = PortalRegistrySavedData.get(player.server);
+
+        UUID selfPortalId = null;
+        BlockPos corePos = findCoreNear(player.serverLevel(), keyboardPos, 8);
+        if (corePos != null && player.serverLevel().getBlockEntity(corePos) instanceof PortalCoreBlockEntity core) {
+            selfPortalId = core.getPortalId();
+        }
+
+        UUID excludedId = selfPortalId;
         List<PortalInfo> list = reg.listVisible().stream()
+                .filter(e -> excludedId == null || !excludedId.equals(e.id()))
                 .map(e -> new PortalInfo(e.id(), e.name().isEmpty() ? shortId(e.id()) : e.name(), e.dim().location(), e.pos()))
                 .collect(Collectors.toList());
 
@@ -99,11 +114,13 @@ public final class UniverseGateNetwork {
 
     public static void sendPortalKeyboardStatusToPlayer(net.minecraft.server.level.ServerPlayer player, BlockPos keyboardPos) {
         boolean active = false;
+        boolean disconnectAllowed = false;
         BlockPos corePos = findCoreNear(player.serverLevel(), keyboardPos, 8);
         if (corePos != null && player.serverLevel().getBlockEntity(corePos) instanceof PortalCoreBlockEntity core) {
-            active = core.isActive();
+            active = core.isActiveOrOpening();
+            disconnectAllowed = active && core.isOutboundTravelEnabled();
         }
-        ServerPlayNetworking.send(player, new PortalKeyboardStatusPayload(keyboardPos, active));
+        ServerPlayNetworking.send(player, new PortalKeyboardStatusPayload(keyboardPos, active, disconnectAllowed));
     }
 
     public static void sendPortalCoreNameToPlayer(net.minecraft.server.level.ServerPlayer player, BlockPos corePos) {

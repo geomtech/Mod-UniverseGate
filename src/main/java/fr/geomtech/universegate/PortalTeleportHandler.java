@@ -117,7 +117,10 @@ public final class PortalTeleportHandler {
         var targetMatch = PortalFrameDetector.find(targetLevel, targetEntry.pos());
         if (sourceMatch.isPresent() && targetMatch.isPresent()) {
             int sideSign = sideSignFromEntry(sourceMatch.get(), corePos, entity);
-            Direction exitNormal = normalFromMatch(targetMatch.get(), sideSign);
+            PortalKeyboardBlockEntity targetKeyboard = findKeyboardNear(targetLevel, targetEntry.pos(), KEYBOARD_RADIUS);
+            Direction exitNormal = targetKeyboard != null
+                    ? normalFromKeyboard(targetMatch.get(), targetEntry.pos(), targetKeyboard.getBlockPos(), sideSign)
+                    : normalFromMatch(targetMatch.get(), sideSign);
             x += exitNormal.getStepX() * 1.2;
             z += exitNormal.getStepZ() * 1.2;
             yaw = exitNormal.toYRot();
@@ -135,6 +138,10 @@ public final class PortalTeleportHandler {
 
         ModSounds.playAt(targetLevel, targetEntry.pos(), ModSounds.PORTAL_ENTITY_GOING_THROUGH, 0.9F, 1.05F);
         lastTeleportTick.put(entityId, now);
+        core.onEntityPassed(now);
+        if (targetLevel.getBlockEntity(targetEntry.pos()) instanceof PortalCoreBlockEntity targetCore) {
+            targetCore.onEntityPassed(targetLevel.getGameTime());
+        }
 
         if (isRift) {
             PortalRiftHelper.handleRiftArrival(targetLevel, targetEntry.pos());
@@ -175,6 +182,21 @@ public final class PortalTeleportHandler {
             return sideSign >= 0 ? Direction.SOUTH : Direction.NORTH;
         }
         return sideSign >= 0 ? Direction.EAST : Direction.WEST;
+    }
+
+    private static Direction normalFromKeyboard(PortalFrameDetector.FrameMatch match,
+                                                BlockPos corePos,
+                                                BlockPos keyboardPos,
+                                                int fallbackSign) {
+        if (match.right() == Direction.EAST) {
+            int dz = Integer.compare(keyboardPos.getZ(), corePos.getZ());
+            if (dz == 0) return normalFromMatch(match, fallbackSign);
+            return dz > 0 ? Direction.SOUTH : Direction.NORTH;
+        }
+
+        int dx = Integer.compare(keyboardPos.getX(), corePos.getX());
+        if (dx == 0) return normalFromMatch(match, fallbackSign);
+        return dx > 0 ? Direction.EAST : Direction.WEST;
     }
 
     private static BlockPos findCoreNear(ServerLevel level, BlockPos pos) {

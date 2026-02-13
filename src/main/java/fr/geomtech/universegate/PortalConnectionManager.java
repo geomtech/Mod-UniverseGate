@@ -1,9 +1,12 @@
 package fr.geomtech.universegate;
 
 import net.minecraft.core.BlockPos;
+import net.minecraft.core.Direction;
+import net.minecraft.core.particles.ParticleOptions;
 import net.minecraft.core.particles.ParticleTypes;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.level.ServerLevel;
+import net.minecraft.util.Mth;
 import net.minecraft.util.RandomSource;
 import net.minecraft.world.level.Level;
 
@@ -12,7 +15,13 @@ import java.util.UUID;
 
 public final class PortalConnectionManager {
 
-    private static final long OPEN_DURATION_TICKS = 20L * 60L; // 1 minute
+    private static final long ACTIVE_OPEN_DURATION_TICKS = 20L * 60L; // 1 minute
+    private static final long OPENING_DURATION_TICKS = 20L * 10L;
+    private static final long OPENING_BLACKOUT_TICKS = 20L * 2L;
+    private static final double OPENING_PARTICLE_EXPONENT = 4.0D;
+    private static final int OPENING_MAX_PARTICLES_PER_CELL = 7;
+    private static final int KEYBOARD_RADIUS_XZ = 8;
+    private static final int KEYBOARD_RADIUS_Y = 4;
 
     private PortalConnectionManager() {}
 
@@ -40,8 +49,8 @@ public final class PortalConnectionManager {
         // Interdire self link
         if (a.getPortalId().equals(targetId)) return false;
 
-        // Refuser si déjà actif
-        if (a.isActive()) return false;
+        // Refuser si déjà actif/en cours d’ouverture
+        if (a.isActiveOrOpening()) return false;
 
         // Charger la dimension B
         ServerLevel targetLevel = server.getLevel(bEntry.dim());
@@ -51,7 +60,8 @@ public final class PortalConnectionManager {
         targetLevel.getChunk(bEntry.pos());
 
         if (!(targetLevel.getBlockEntity(bEntry.pos()) instanceof PortalCoreBlockEntity b)) return false;
-        if (b.isActive()) return false;
+        if (b.getPortalId() == null) return false;
+        if (b.isActiveOrOpening()) return false;
 
         // Vérifier cadres (A et B)
         Optional<PortalFrameDetector.FrameMatch> frameA = PortalFrameDetector.find(sourceLevel, sourceCorePos);
@@ -61,35 +71,177 @@ public final class PortalConnectionManager {
         UUID connectionId = UUID.randomUUID();
         long nowA = sourceLevel.getGameTime();
         long nowB = targetLevel.getGameTime();
-        long untilA = nowA + OPEN_DURATION_TICKS;
-        long untilB = nowB + OPEN_DURATION_TICKS;
+        long openingCompleteA = nowA + OPENING_DURATION_TICKS;
+        long openingCompleteB = nowB + OPENING_DURATION_TICKS;
 
-        // --- OUVERTURE “ATOMIC” (si B rate => rollback A) ---
-        // 1) Place champ A
-        if (!placeField(sourceLevel, frameA.get(), riftLightningLink)) return false;
-
-        // 2) Place champ B
-        if (!placeField(targetLevel, frameB.get(), riftLightningLink)) {
-            // rollback A
-            removeField(sourceLevel, frameA.get());
-            return false;
-        }
-
-        // 3) Etat actif
-        a.setActiveState(connectionId, b.getPortalId(), untilA, riftLightningLink, true);
-        b.setActiveState(connectionId, a.getPortalId(), untilB, riftLightningLink, false);
+        a.setOpeningState(connectionId, b.getPortalId(), nowA, openingCompleteA, riftLightningLink, true);
+        b.setOpeningState(connectionId, a.getPortalId(), nowB, openingCompleteB, riftLightningLink, false);
 
         setFrameActive(sourceLevel, frameA.get(), sourceCorePos, true, riftLightningLink);
         setFrameActive(targetLevel, frameB.get(), bEntry.pos(), true, riftLightningLink);
+        setNearbyKeyboardsLit(sourceLevel, sourceCorePos, true);
+        setNearbyKeyboardsLit(targetLevel, bEntry.pos(), true);
 
         ModSounds.playAt(sourceLevel, sourceCorePos, ModSounds.PORTAL_OPENING, 1.0F, 1.0F);
         ModSounds.playAt(targetLevel, bEntry.pos(), ModSounds.PORTAL_OPENING, 1.0F, 1.0F);
-        ModSounds.playPortalAmbientAt(sourceLevel, sourceCorePos, riftLightningLink);
-        ModSounds.playPortalAmbientAt(targetLevel, bEntry.pos(), riftLightningLink);
 
         a.setChanged();
         b.setChanged();
         return true;
+    }
+
+    static void tickOpeningSequence(ServerLevel level, BlockPos corePos, PortalCoreBlockEntity core) {
+        if (!core.isOpening()) return;
+
+        long now = level.getGameTime();
+        Optional<PortalFrameDetector.FrameMatch> frame = PortalFrameDetector.find(level, corePos);
+        if (frame.isEmpty()) {
+            forceCloseOneSide(level, corePos);
+            return;
+        }
+
+        spawnOpeningParticles(level, frame.get(), now, core);
+
+        if (now < core.getOpeningCompleteGameTime()) return;
+
+        finalizeOpening(level, corePos, core);
+    }
+
+    private static void finalizeOpening(ServerLevel sourceLevel, BlockPos sourceCorePos, PortalCoreBlockEntity sourceCore) {
+        if (!sourceCore.isOpening()) return;
+
+        UUID targetId = sourceCore.getTargetPortalId();
+        if (targetId == null) {
+            forceCloseOneSide(sourceLevel, sourceCorePos);
+            return;
+        }
+
+        MinecraftServer server = sourceLevel.getServer();
+        PortalRegistrySavedData reg = PortalRegistrySavedData.get(server);
+        PortalRegistrySavedData.PortalEntry targetEntry = reg.get(targetId);
+        if (targetEntry == null) {
+            forceCloseOneSide(sourceLevel, sourceCorePos);
+            return;
+        }
+
+        ServerLevel targetLevel = server.getLevel(targetEntry.dim());
+        if (targetLevel == null) {
+            forceCloseOneSide(sourceLevel, sourceCorePos);
+            return;
+        }
+
+        targetLevel.getChunk(targetEntry.pos());
+        if (!(targetLevel.getBlockEntity(targetEntry.pos()) instanceof PortalCoreBlockEntity targetCore)
+                || !targetCore.isOpening()) {
+            forceCloseOneSide(sourceLevel, sourceCorePos);
+            return;
+        }
+
+        UUID connectionId = sourceCore.getConnectionId();
+        if (connectionId == null || !connectionId.equals(targetCore.getConnectionId())) {
+            forceCloseOneSide(sourceLevel, sourceCorePos);
+            return;
+        }
+
+        if (sourceLevel.getGameTime() < sourceCore.getOpeningCompleteGameTime()
+                || targetLevel.getGameTime() < targetCore.getOpeningCompleteGameTime()) {
+            return;
+        }
+
+        Optional<PortalFrameDetector.FrameMatch> frameA = PortalFrameDetector.find(sourceLevel, sourceCorePos);
+        Optional<PortalFrameDetector.FrameMatch> frameB = PortalFrameDetector.find(targetLevel, targetEntry.pos());
+        if (frameA.isEmpty() || frameB.isEmpty()) {
+            forceCloseOneSide(sourceLevel, sourceCorePos);
+            return;
+        }
+
+        boolean unstableA = sourceCore.isRiftLightningLink();
+        boolean unstableB = targetCore.isRiftLightningLink();
+
+        if (!placeField(sourceLevel, frameA.get(), unstableA)) {
+            forceCloseOneSide(sourceLevel, sourceCorePos);
+            return;
+        }
+        if (!placeField(targetLevel, frameB.get(), unstableB)) {
+            removeField(sourceLevel, frameA.get());
+            forceCloseOneSide(sourceLevel, sourceCorePos);
+            return;
+        }
+
+        long untilA = sourceLevel.getGameTime() + ACTIVE_OPEN_DURATION_TICKS;
+        long untilB = targetLevel.getGameTime() + ACTIVE_OPEN_DURATION_TICKS;
+
+        sourceCore.finalizeOpeningState(untilA);
+        targetCore.finalizeOpeningState(untilB);
+
+        setFrameActive(sourceLevel, frameA.get(), sourceCorePos, true, unstableA);
+        setFrameActive(targetLevel, frameB.get(), targetEntry.pos(), true, unstableB);
+        setNearbyKeyboardsLit(sourceLevel, sourceCorePos, true);
+        setNearbyKeyboardsLit(targetLevel, targetEntry.pos(), true);
+
+        ModSounds.playPortalAmbientAt(sourceLevel, sourceCorePos, unstableA);
+        ModSounds.playPortalAmbientAt(targetLevel, targetEntry.pos(), unstableB);
+
+        sourceCore.setChanged();
+        targetCore.setChanged();
+    }
+
+    private static void spawnOpeningParticles(ServerLevel level,
+                                              PortalFrameDetector.FrameMatch match,
+                                              long now,
+                                              PortalCoreBlockEntity core) {
+        long openingStart = core.getOpeningStartedGameTime();
+        long openingEnd = core.getOpeningCompleteGameTime();
+        if (openingEnd <= openingStart) {
+            openingStart = now;
+            openingEnd = now + OPENING_DURATION_TICKS;
+        }
+
+        long duration = Math.max(1L, openingEnd - openingStart);
+        double progress = Mth.clamp((double) (now - openingStart) / (double) duration, 0.0D, 1.0D);
+        double growth = Math.expm1(progress * OPENING_PARTICLE_EXPONENT) / Math.expm1(OPENING_PARTICLE_EXPONENT);
+
+        int baseCount = (int) Math.floor(growth * OPENING_MAX_PARTICLES_PER_CELL);
+        long blackStart = openingEnd - OPENING_BLACKOUT_TICKS;
+        double blackRatio = now <= blackStart
+                ? 0.0D
+                : Mth.clamp((double) (now - blackStart) / (double) Math.max(1L, OPENING_BLACKOUT_TICKS), 0.0D, 1.0D);
+
+        Direction.Axis axis = match.right() == Direction.EAST ? Direction.Axis.X : Direction.Axis.Z;
+        RandomSource random = level.random;
+
+        for (BlockPos p : match.interior()) {
+            int count = baseCount;
+            if (random.nextDouble() < growth) count++;
+            if (count <= 0) continue;
+
+            int blackCount = blackRatio <= 0.0D ? 0 : (int) Math.round(count * blackRatio);
+            blackCount = Math.min(blackCount, count);
+            int whiteCount = count - blackCount;
+
+            if (whiteCount > 0) {
+                sendOpeningParticles(level, p, axis, ParticleTypes.END_ROD, whiteCount, 0.002D);
+            }
+            if (blackCount > 0) {
+                sendOpeningParticles(level, p, axis, ParticleTypes.SQUID_INK, blackCount, 0.01D);
+            }
+        }
+    }
+
+    private static void sendOpeningParticles(ServerLevel level,
+                                             BlockPos pos,
+                                             Direction.Axis axis,
+                                             ParticleOptions particle,
+                                             int count,
+                                             double speed) {
+        double x = pos.getX() + 0.5;
+        double y = pos.getY() + 0.5;
+        double z = pos.getZ() + 0.5;
+        double xSpread = axis == Direction.Axis.X ? 0.43D : 0.06D;
+        double ySpread = 0.46D;
+        double zSpread = axis == Direction.Axis.X ? 0.06D : 0.43D;
+
+        level.sendParticles(particle, x, y, z, count, xSpread, ySpread, zSpread, speed);
     }
 
     /** Ferme un portail (un côté) + tente de fermer le target si chargé. */
@@ -113,6 +265,7 @@ public final class PortalConnectionManager {
         }
         ModSounds.stopPortalAmbientNear(level, corePos, unstable);
         a.clearActiveState();
+        setNearbyKeyboardsLit(level, corePos, false);
 
         // Essayer de fermer l’autre côté (si on peut le charger)
         if (targetId != null) {
@@ -147,7 +300,54 @@ public final class PortalConnectionManager {
         }
         ModSounds.stopPortalAmbientNear(targetLevel, entry.pos(), unstable);
         b.clearActiveState();
+        setNearbyKeyboardsLit(targetLevel, entry.pos(), false);
         b.setChanged();
+    }
+
+    public static void syncKeyboardLitFromNearbyCore(ServerLevel level, BlockPos keyboardPos) {
+        boolean lit = hasActiveCoreNear(level, keyboardPos, KEYBOARD_RADIUS_XZ, KEYBOARD_RADIUS_Y);
+        setKeyboardLit(level, keyboardPos, lit);
+    }
+
+    static void setNearbyKeyboardsLit(ServerLevel level, BlockPos corePos, boolean lit) {
+        for (int dy = -KEYBOARD_RADIUS_Y; dy <= KEYBOARD_RADIUS_Y; dy++) {
+            for (int dx = -KEYBOARD_RADIUS_XZ; dx <= KEYBOARD_RADIUS_XZ; dx++) {
+                for (int dz = -KEYBOARD_RADIUS_XZ; dz <= KEYBOARD_RADIUS_XZ; dz++) {
+                    BlockPos p = corePos.offset(dx, dy, dz);
+                    var state = level.getBlockState(p);
+                    if (!state.is(ModBlocks.PORTAL_KEYBOARD)) continue;
+                    if (lit) {
+                        setKeyboardLit(level, p, true);
+                    } else {
+                        syncKeyboardLitFromNearbyCore(level, p);
+                    }
+                }
+            }
+        }
+    }
+
+    private static void setKeyboardLit(ServerLevel level, BlockPos keyboardPos, boolean lit) {
+        var state = level.getBlockState(keyboardPos);
+        if (!state.is(ModBlocks.PORTAL_KEYBOARD) || !state.hasProperty(PortalKeyboardBlock.LIT)) return;
+        if (state.getValue(PortalKeyboardBlock.LIT) == lit) return;
+
+        level.setBlock(keyboardPos, state.setValue(PortalKeyboardBlock.LIT, lit), 3);
+    }
+
+    private static boolean hasActiveCoreNear(ServerLevel level, BlockPos center, int rXZ, int rY) {
+        for (int dy = -rY; dy <= rY; dy++) {
+            for (int dx = -rXZ; dx <= rXZ; dx++) {
+                for (int dz = -rXZ; dz <= rXZ; dz++) {
+                    BlockPos p = center.offset(dx, dy, dz);
+                    if (level.getBlockState(p).is(ModBlocks.PORTAL_CORE)
+                            && level.getBlockEntity(p) instanceof PortalCoreBlockEntity core
+                            && core.isActiveOrOpening()) {
+                        return true;
+                    }
+                }
+            }
+        }
+        return false;
     }
 
     // ----------------------------

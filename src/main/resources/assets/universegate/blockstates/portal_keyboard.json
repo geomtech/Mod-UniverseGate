@@ -1,7 +1,12 @@
 {
   "variants": {
-    "": {
-      "model": "universegate:block/portal_keyboard"
-    }
+    "facing=north,lit=false": { "model": "universegate:block/portal_keyboard" },
+    "facing=east,lit=false": { "model": "universegate:block/portal_keyboard", "y": 90 },
+    "facing=south,lit=false": { "model": "universegate:block/portal_keyboard", "y": 180 },
+    "facing=west,lit=false": { "model": "universegate:block/portal_keyboard", "y": 270 },
+    "facing=north,lit=true": { "model": "universegate:block/portal_keyboard_lit" },
+    "facing=east,lit=true": { "model": "universegate:block/portal_keyboard_lit", "y": 90 },
+    "facing=south,lit=true": { "model": "universegate:block/portal_keyboard_lit", "y": 180 },
+    "facing=west,lit=true": { "model": "universegate:block/portal_keyboard_lit", "y": 270 }
   }
 }

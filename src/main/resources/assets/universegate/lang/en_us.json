@@ -19,6 +19,7 @@
   "container.universegate.portal_core": "Portal Core",
   "container.universegate.portal_keyboard": "Portal Controller",
   "gui.universegate.disconnect": "Disconnect",
+  "gui.universegate.search_portal": "Search portal",
   "gui.universegate.portal_name": "Portal Name",
   "gui.universegate.rename": "Rename",
   "message.universegate.use_keyboard_destination": "Use the Keyboard to set a destination.",

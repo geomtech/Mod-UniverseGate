@@ -19,6 +19,7 @@
   "container.universegate.portal_core": "Noyau de portail",
   "container.universegate.portal_keyboard": "Contrôleur du portail",
   "gui.universegate.disconnect": "Déconnexion",
+  "gui.universegate.search_portal": "Rechercher un portail",
   "gui.universegate.portal_name": "Nom du portail",
   "gui.universegate.rename": "Renommer",
   "message.universegate.use_keyboard_destination": "Utilise le clavier pour composer une destination.",

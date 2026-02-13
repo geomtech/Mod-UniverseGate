@@ -7,6 +7,7 @@ import fr.geomtech.universegate.net.DisconnectPortalPayload;
 import net.fabricmc.fabric.api.client.networking.v1.ClientPlayNetworking;
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.gui.components.Button;
+import net.minecraft.client.gui.components.EditBox;
 import net.minecraft.client.gui.screens.inventory.AbstractContainerScreen;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceLocation;
@@ -15,6 +16,7 @@ import net.minecraft.util.Mth;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Locale;
 
 public class PortalKeyboardScreen extends AbstractContainerScreen<PortalKeyboardMenu> {
 
@@ -22,8 +24,12 @@ public class PortalKeyboardScreen extends AbstractContainerScreen<PortalKeyboard
             ResourceLocation.fromNamespaceAndPath("universegate", "textures/gui/portal_keyboard.png");
 
     private final List<PortalInfo> portals = new ArrayList<>();
+    private final List<PortalInfo> filteredPortals = new ArrayList<>();
     private final List<Button> portalButtons = new ArrayList<>();
+    private EditBox searchBox;
+    private String searchFilter = "";
     private boolean portalActive = false;
+    private boolean disconnectAllowed = false;
     private Button disconnectButton;
     private int scrollOffset = 0;
     private static final int VISIBLE_PORTALS = 3;
@@ -45,17 +51,37 @@ public class PortalKeyboardScreen extends AbstractContainerScreen<PortalKeyboard
         portals.clear();
         portals.addAll(newList);
         scrollOffset = 0;
+        refreshFilteredPortals();
         rebuildPortalButtons();
     }
 
-    public void setPortalActive(boolean active) {
+    public void setPortalStatus(boolean active, boolean disconnectAllowed) {
         this.portalActive = active;
+        this.disconnectAllowed = disconnectAllowed;
         updateDisconnectButton();
     }
 
     @Override
     protected void init() {
         super.init();
+
+        searchBox = new EditBox(this.font,
+                leftPos + 10,
+                topPos + 10,
+                150,
+                16,
+                Component.translatable("gui.universegate.search_portal"));
+        searchBox.setMaxLength(32);
+        searchBox.setValue(searchFilter);
+        searchBox.setHint(Component.translatable("gui.universegate.search_portal"));
+        searchBox.setResponder((value) -> {
+            searchFilter = value == null ? "" : value;
+            scrollOffset = 0;
+            refreshFilteredPortals();
+            rebuildPortalButtons();
+        });
+        this.addRenderableWidget(searchBox);
+
         disconnectButton = Button.builder(Component.translatable("gui.universegate.disconnect"), (btn) -> {
                     ClientPlayNetworking.send(new DisconnectPortalPayload(this.menu.getKeyboardPos()));
                 })
@@ -63,6 +89,7 @@ public class PortalKeyboardScreen extends AbstractContainerScreen<PortalKeyboard
                 .build();
         this.addRenderableWidget(disconnectButton);
         updateDisconnectButton();
+        refreshFilteredPortals();
         rebuildPortalButtons();
     }
 
@@ -74,15 +101,15 @@ public class PortalKeyboardScreen extends AbstractContainerScreen<PortalKeyboard
         for (Button b : portalButtons) this.removeWidget(b);
         portalButtons.clear();
 
-        clampScrollOffset();
-        int max = Math.min(VISIBLE_PORTALS, portals.size() - scrollOffset);
+        clampScrollOffset(filteredPortals.size());
+        int max = Math.min(VISIBLE_PORTALS, filteredPortals.size() - scrollOffset);
         int buttonWidth = 200;
         int buttonHeight = 20;
         int x = leftPos + (imageWidth - buttonWidth) / 2;
-        int y = topPos + 28;
+        int y = topPos + 34;
 
         for (int i = 0; i < max; i++) {
-            PortalInfo p = portals.get(i + scrollOffset);
+            PortalInfo p = filteredPortals.get(i + scrollOffset);
 
             String dimShort = shortDim(p.dimId());
             Component label = Component.literal(dimShort + " - " + p.name());
@@ -114,12 +141,12 @@ public class PortalKeyboardScreen extends AbstractContainerScreen<PortalKeyboard
     protected void renderBg(GuiGraphics g, float partialTicks, int mouseX, int mouseY) {
         g.blit(TEXTURE, leftPos, topPos, 0, 0, imageWidth, imageHeight, 256, 200);
 
-        if (portals.size() > VISIBLE_PORTALS) {
+        if (filteredPortals.size() > VISIBLE_PORTALS) {
             int trackX = leftPos + imageWidth - 28;
-            int trackY = topPos + 34;
+            int trackY = topPos + 40;
             int trackH = 60;
-            int handleH = Math.max(10, trackH * VISIBLE_PORTALS / portals.size());
-            int maxOffset = Math.max(1, portals.size() - VISIBLE_PORTALS);
+            int handleH = Math.max(10, trackH * VISIBLE_PORTALS / filteredPortals.size());
+            int maxOffset = Math.max(1, filteredPortals.size() - VISIBLE_PORTALS);
             int handleY = trackY + (trackH - handleH) * scrollOffset / maxOffset;
             g.fill(trackX, trackY, trackX + 3, trackY + trackH, 0xFF1E222B);
             g.fill(trackX, handleY, trackX + 3, handleY + handleH, 0xFF7E6BC6);
@@ -139,22 +166,49 @@ public class PortalKeyboardScreen extends AbstractContainerScreen<PortalKeyboard
 
     @Override
     public boolean mouseScrolled(double mouseX, double mouseY, double deltaX, double deltaY) {
-        if (portals.size() <= VISIBLE_PORTALS) return super.mouseScrolled(mouseX, mouseY, deltaX, deltaY);
+        if (filteredPortals.size() <= VISIBLE_PORTALS) return super.mouseScrolled(mouseX, mouseY, deltaX, deltaY);
         int direction = deltaY > 0 ? -1 : 1;
-        scrollOffset = Mth.clamp(scrollOffset + direction, 0, portals.size() - VISIBLE_PORTALS);
+        scrollOffset = Mth.clamp(scrollOffset + direction, 0, filteredPortals.size() - VISIBLE_PORTALS);
         rebuildPortalButtons();
         return true;
     }
 
-    private void clampScrollOffset() {
-        int maxOffset = Math.max(0, portals.size() - VISIBLE_PORTALS);
+    private void clampScrollOffset(int portalCount) {
+        int maxOffset = Math.max(0, portalCount - VISIBLE_PORTALS);
         scrollOffset = Mth.clamp(scrollOffset, 0, maxOffset);
+    }
+
+    private void refreshFilteredPortals() {
+        filteredPortals.clear();
+        String query = searchFilter == null ? "" : searchFilter.trim().toLowerCase(Locale.ROOT);
+
+        for (PortalInfo portal : portals) {
+            if (query.isEmpty() || portal.name().toLowerCase(Locale.ROOT).contains(query)) {
+                filteredPortals.add(portal);
+            }
+        }
+    }
+
+    @Override
+    public boolean keyPressed(int keyCode, int scanCode, int modifiers) {
+        if (searchBox != null && searchBox.isFocused() && this.minecraft != null) {
+            if (this.minecraft.options.keyInventory.matches(keyCode, scanCode)) return true;
+            if (searchBox.keyPressed(keyCode, scanCode, modifiers)) return true;
+        }
+        return super.keyPressed(keyCode, scanCode, modifiers);
+    }
+
+    @Override
+    public boolean charTyped(char codePoint, int modifiers) {
+        if (searchBox != null && searchBox.isFocused() && searchBox.charTyped(codePoint, modifiers)) return true;
+        return super.charTyped(codePoint, modifiers);
     }
 
     private void updateDisconnectButton() {
         if (disconnectButton == null) return;
-        disconnectButton.visible = portalActive;
-        disconnectButton.active = portalActive;
+        boolean canDisconnect = portalActive && disconnectAllowed;
+        disconnectButton.visible = canDisconnect;
+        disconnectButton.active = canDisconnect;
     }
 
     @Override

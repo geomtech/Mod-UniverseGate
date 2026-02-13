@@ -104,7 +104,7 @@ public class PortalFrameBlock extends Block implements EntityBlock {
     public void onRemove(BlockState state, Level level, BlockPos pos, BlockState newState, boolean movedByPiston) {
         if (!level.isClientSide && !state.is(newState.getBlock())) {
             BlockPos corePos = findCoreNear((ServerLevel) level, pos, 4, 5);
-            if (corePos != null && level.getBlockEntity(corePos) instanceof PortalCoreBlockEntity core && core.isActive()) {
+            if (corePos != null && level.getBlockEntity(corePos) instanceof PortalCoreBlockEntity core && core.isActiveOrOpening()) {
                 PortalConnectionManager.forceCloseOneSide((ServerLevel) level, corePos);
             }
         }

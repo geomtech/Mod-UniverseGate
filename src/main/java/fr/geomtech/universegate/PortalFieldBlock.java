@@ -6,6 +6,8 @@ import net.minecraft.core.particles.ParticleTypes;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.util.RandomSource;
 import net.minecraft.world.entity.Entity;
+import net.minecraft.world.entity.player.Player;
+import net.minecraft.world.level.BlockGetter;
 import net.minecraft.world.level.Explosion;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.Block;
@@ -74,6 +76,25 @@ public class PortalFieldBlock extends Block implements EntityBlock {
             }
         }
         super.wasExploded(level, pos, explosion);
+    }
+
+    @Override
+    public float getDestroyProgress(BlockState state, Player player, BlockGetter level, BlockPos pos) {
+        // Survie: indestructible. Créatif: destructible.
+        return player.getAbilities().instabuild ? 1.0F : 0.0F;
+    }
+
+    @Override
+    public BlockState playerWillDestroy(Level level, BlockPos pos, BlockState state, Player player) {
+        if (!level.isClientSide
+                && player.getAbilities().instabuild
+                && level instanceof ServerLevel sl) {
+            BlockPos corePos = findCoreNear(sl, pos, 4, 5);
+            if (corePos != null && sl.getBlockEntity(corePos) instanceof PortalCoreBlockEntity core && core.isActive()) {
+                PortalConnectionManager.forceCloseOneSide(sl, corePos);
+            }
+        }
+        return super.playerWillDestroy(level, pos, state, player);
     }
 
     @Override

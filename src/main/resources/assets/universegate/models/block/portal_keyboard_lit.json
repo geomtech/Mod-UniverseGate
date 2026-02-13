@@ -3,7 +3,7 @@
   "textures": {
     "particle": "universegate:block/portal_keyboard_case",
     "case": "universegate:block/portal_keyboard_case",
-    "keys": "universegate:block/portal_keyboard"
+    "keys": "universegate:block/portal_keyboard_lit"
   },
   "elements": [
     {

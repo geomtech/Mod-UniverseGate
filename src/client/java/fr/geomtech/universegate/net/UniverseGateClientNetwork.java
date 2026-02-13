@@ -23,7 +23,7 @@ public final class UniverseGateClientNetwork {
             context.client().execute(() -> {
                 if (context.client().screen instanceof PortalKeyboardScreen screen) {
                     if (screen.getKeyboardPos().equals(payload.keyboardPos())) {
-                        screen.setPortalActive(payload.active());
+                        screen.setPortalStatus(payload.active(), payload.disconnectAllowed());
                     }
                 }
             });

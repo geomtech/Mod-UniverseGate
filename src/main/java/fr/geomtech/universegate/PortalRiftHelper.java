@@ -83,7 +83,7 @@ public final class PortalRiftHelper {
             return;
         }
         if (!(level.getBlockEntity(corePos) instanceof PortalCoreBlockEntity core)) return;
-        if (core.isActive()) return;
+        if (core.isActiveOrOpening()) return;
 
         if (!(level.getBlockEntity(rodPos) instanceof ChargedLightningRodBlockEntity be)) return;
         if (!be.hasCharge()) return;
@@ -96,7 +96,7 @@ public final class PortalRiftHelper {
 
     public static boolean openRiftPortal(ServerLevel sourceLevel, BlockPos sourceCorePos) {
         if (!(sourceLevel.getBlockEntity(sourceCorePos) instanceof PortalCoreBlockEntity core)) return false;
-        if (core.isActive()) return false;
+        if (core.isActiveOrOpening()) return false;
 
         ServerLevel rift = UniverseGateDimensions.getRiftLevel(sourceLevel.getServer());
         if (rift == null) {
