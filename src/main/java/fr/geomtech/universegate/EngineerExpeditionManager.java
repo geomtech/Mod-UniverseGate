@@ -42,6 +42,7 @@ public final class EngineerExpeditionManager {
     private static final double PARTY_SEARCH_RADIUS = 40.0D;
     private static final double PLAYER_DETECTION_RADIUS = 28.0D;
     private static final double PARTY_MOVE_SPEED = 0.95D;
+    private static final double HOME_ARRIVAL_RADIUS_SQR = 24.0D * 24.0D;
 
     private static final int MIN_COMPANIONS = 2;
     private static final int MAX_COMPANIONS = 3;
@@ -221,7 +222,12 @@ public final class EngineerExpeditionManager {
         guidePartyTowardPortal(targetLevel, expedition.targetCorePos, expedition.partyIds, forceTeleport);
 
         boolean engineerHome = isEngineerNearCore(sourceLevel, expedition.engineerId, expedition.sourceCorePos);
-        int membersStillAway = countPartyMembersInLevel(targetLevel, expedition.partyIds);
+        int membersStillAway = countPartyMembersAwayFromHome(
+                sourceLevel,
+                targetLevel,
+                expedition.sourceCorePos,
+                expedition.partyIds
+        );
 
         if (engineerHome && membersStillAway <= 0) {
             finishExpedition(server, "succes");
@@ -400,15 +406,34 @@ public final class EngineerExpeditionManager {
     private static boolean isEngineerNearCore(ServerLevel level, UUID engineerId, BlockPos corePos) {
         Villager villager = getVillagerInLevel(level, engineerId);
         if (villager == null || !villager.isAlive()) return false;
-        return villager.distanceToSqr(corePos.getX() + 0.5, corePos.getY() + 0.5, corePos.getZ() + 0.5) <= 24.0D * 24.0D;
+        return villager.distanceToSqr(corePos.getX() + 0.5, corePos.getY() + 0.5, corePos.getZ() + 0.5) <= HOME_ARRIVAL_RADIUS_SQR;
     }
 
-    private static int countPartyMembersInLevel(ServerLevel level, List<UUID> partyIds) {
-        int count = 0;
+    private static int countPartyMembersAwayFromHome(ServerLevel sourceLevel,
+                                                     ServerLevel targetLevel,
+                                                     BlockPos sourceCorePos,
+                                                     List<UUID> partyIds) {
+        int away = 0;
+        boolean sameDimension = sourceLevel == targetLevel;
+        double homeX = sourceCorePos.getX() + 0.5;
+        double homeY = sourceCorePos.getY() + 0.5;
+        double homeZ = sourceCorePos.getZ() + 0.5;
+
         for (UUID id : partyIds) {
-            if (getVillagerInLevel(level, id) != null) count++;
+            Villager inSource = getVillagerInLevel(sourceLevel, id);
+            if (inSource != null && inSource.isAlive()) {
+                if (sameDimension && inSource.distanceToSqr(homeX, homeY, homeZ) > HOME_ARRIVAL_RADIUS_SQR) {
+                    away++;
+                }
+                continue;
+            }
+
+            Villager inTarget = getVillagerInLevel(targetLevel, id);
+            if (inTarget != null && inTarget.isAlive()) {
+                away++;
+            }
         }
-        return count;
+        return away;
     }
 
     private static @Nullable Villager findVillager(MinecraftServer server, ExpeditionState expedition, UUID id) {
