@@ -39,13 +39,13 @@ public class PortalCoreScreen extends AbstractContainerScreen<PortalCoreMenu> {
         int x = leftPos + 8;
         int y = topPos + 24;
 
-        nameBox = new EditBox(this.font, x, y, 160, 18, Component.literal("Portal Name"));
+        nameBox = new EditBox(this.font, x, y, 160, 18, Component.translatable("gui.universegate.portal_name"));
         nameBox.setMaxLength(32);
         nameBox.setValue(pendingName);
         this.addRenderableWidget(nameBox);
         this.setInitialFocus(nameBox);
 
-        Button rename = Button.builder(Component.literal("Rename"), (btn) -> submitRename())
+        Button rename = Button.builder(Component.translatable("gui.universegate.rename"), (btn) -> submitRename())
                 .bounds(leftPos + 8, topPos + 50, 160, 16)
                 .build();
         this.addRenderableWidget(rename);
@@ -81,7 +81,7 @@ public class PortalCoreScreen extends AbstractContainerScreen<PortalCoreMenu> {
     @Override
     protected void renderBg(GuiGraphics g, float partialTicks, int mouseX, int mouseY) {
         g.blit(TEXTURE, leftPos, topPos, 0, 0, imageWidth, imageHeight, 176, 80);
-        g.drawString(this.font, "Portal Name", leftPos + 8, topPos + 8, 0xC0C0C0, false);
+        g.drawString(this.font, Component.translatable("gui.universegate.portal_name"), leftPos + 8, topPos + 8, 0xC0C0C0, false);
     }
 
     @Override

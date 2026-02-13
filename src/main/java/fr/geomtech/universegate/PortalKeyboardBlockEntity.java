@@ -45,7 +45,7 @@ public class PortalKeyboardBlockEntity extends BlockEntity implements Container,
     // --- ExtendedScreenHandlerFactory ---
     @Override
     public Component getDisplayName() {
-        return Component.literal("Portal Keyboard");
+        return Component.translatable("container.universegate.portal_keyboard");
     }
 
     @Override

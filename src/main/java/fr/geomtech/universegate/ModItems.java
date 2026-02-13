@@ -77,7 +77,7 @@ public final class ModItems {
 
     public static final Item RIFT_ASH = register(
             "rift_ash",
-            new Item(new Item.Properties().stacksTo(16))
+            new Item(new Item.Properties().stacksTo(64))
     );
 
     private static Item register(String id, Item item) {

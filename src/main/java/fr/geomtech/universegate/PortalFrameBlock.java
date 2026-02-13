@@ -45,6 +45,12 @@ public class PortalFrameBlock extends Block implements EntityBlock {
     }
 
     @Override
+    public void onPlace(BlockState state, Level level, BlockPos pos, BlockState oldState, boolean movedByPiston) {
+        super.onPlace(state, level, pos, oldState, movedByPiston);
+        PortalFireGuard.clearFireAbove(level, pos);
+    }
+
+    @Override
     public @Nullable <T extends BlockEntity> BlockEntityTicker<T> getTicker(Level level,
                                                                              BlockState state,
                                                                              BlockEntityType<T> type) {
@@ -81,6 +87,17 @@ public class PortalFrameBlock extends Block implements EntityBlock {
         double vy = 0.005 + random.nextDouble() * 0.01;
         double vz = (random.nextDouble() - 0.5) * 0.01;
         level.addParticle(ParticleTypes.END_ROD, x, y, z, vx, vy, vz);
+    }
+
+    @Override
+    protected void neighborChanged(BlockState state,
+                                   Level level,
+                                   BlockPos pos,
+                                   Block neighborBlock,
+                                   BlockPos neighborPos,
+                                   boolean movedByPiston) {
+        PortalFireGuard.clearFireAbove(level, pos);
+        super.neighborChanged(state, level, pos, neighborBlock, neighborPos, movedByPiston);
     }
 
     @Override

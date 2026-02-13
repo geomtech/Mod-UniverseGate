@@ -56,7 +56,7 @@ public class PortalKeyboardScreen extends AbstractContainerScreen<PortalKeyboard
     @Override
     protected void init() {
         super.init();
-        disconnectButton = Button.builder(Component.literal("Déconnexion"), (btn) -> {
+        disconnectButton = Button.builder(Component.translatable("gui.universegate.disconnect"), (btn) -> {
                     ClientPlayNetworking.send(new DisconnectPortalPayload(this.menu.getKeyboardPos()));
                 })
                 .bounds(leftPos + imageWidth - 88, topPos + 10, 78, 16)

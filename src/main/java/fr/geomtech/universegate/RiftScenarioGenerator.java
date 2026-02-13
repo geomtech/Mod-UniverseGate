@@ -240,7 +240,7 @@ public final class RiftScenarioGenerator {
 
     private static void addCompassToOutpostContainers(ServerLevel level, PlacedTemplate outpost, BlockPos targetCorePos) {
         ItemStack compass = new ItemStack(Items.COMPASS);
-        compass.set(DataComponents.CUSTOM_NAME, Component.literal("Rift Compass"));
+        compass.set(DataComponents.CUSTOM_NAME, Component.translatable("item.universegate.rift_compass"));
         compass.set(
                 DataComponents.LODESTONE_TRACKER,
                 new LodestoneTracker(Optional.of(GlobalPos.of(UniverseGateDimensions.RIFT, targetCorePos)), false)

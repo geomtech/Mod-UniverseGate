@@ -2,6 +2,7 @@ package fr.geomtech.universegate;
 
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
+import net.minecraft.ChatFormatting;
 import net.minecraft.network.chat.Component;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
@@ -145,7 +146,10 @@ public final class PortalTeleportHandler {
         Long lastMessageTick = lastBlockedDirectionMessageTick.get(pid);
         if (lastMessageTick != null && now - lastMessageTick < BLOCKED_DIRECTION_MESSAGE_COOLDOWN_TICKS) return;
 
-        player.displayClientMessage(Component.literal("§cPassage interdit dans ce sens."), true);
+        player.displayClientMessage(
+                Component.translatable("message.universegate.blocked_direction").withStyle(ChatFormatting.RED),
+                true
+        );
         lastBlockedDirectionMessageTick.put(pid, now);
     }
 

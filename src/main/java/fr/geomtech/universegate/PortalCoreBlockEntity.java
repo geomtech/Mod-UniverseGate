@@ -218,7 +218,7 @@ public class PortalCoreBlockEntity extends BlockEntity implements ExtendedScreen
 
     @Override
     public Component getDisplayName() {
-        return Component.literal("Portal Core");
+        return Component.translatable("container.universegate.portal_core");
     }
 
     @Override
