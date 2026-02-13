@@ -4,6 +4,11 @@
       "universegate:portal_opening"
     ]
   },
+  "portal_opening_end": {
+    "sounds": [
+      "universegate:portal_opening_end"
+    ]
+  },
   "portal_idle": {
     "sounds": [
       "universegate:portal_idle"

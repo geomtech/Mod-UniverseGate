@@ -34,8 +34,8 @@ public class LightBeamEmitterBlockEntity extends BlockEntity {
             // Dense luminous core
             sl.sendParticles(ParticleTypes.END_ROD, x, py, z, 3, 0.02, 0.16, 0.02, 0.0);
 
-            // Soft white volume around the core
-            sl.sendParticles(ParticleTypes.SNOWFLAKE, x, py, z, 4, 0.16, 0.12, 0.16, 0.001);
+            // Soft volume around the core (still END_ROD-based)
+            sl.sendParticles(ParticleTypes.END_ROD, x, py, z, 2, 0.18, 0.10, 0.18, 0.0);
 
             // Two rotating strands to make the column feel alive
             double angle = t * 0.22 + i * 0.65;
@@ -44,7 +44,7 @@ public class LightBeamEmitterBlockEntity extends BlockEntity {
 
             // Occasional sparkle pulses
             if (sl.random.nextFloat() < 0.22F) {
-                sl.sendParticles(ParticleTypes.FIREWORK, x, py, z, 1, 0.10, 0.05, 0.10, 0.0);
+                sl.sendParticles(ParticleTypes.END_ROD, x, py, z, 2, 0.10, 0.05, 0.10, 0.0);
             }
 
             heightReached = i + 1;
@@ -54,7 +54,7 @@ public class LightBeamEmitterBlockEntity extends BlockEntity {
         if (heightReached > 0) {
             double topY = y + heightReached - 0.1;
             sl.sendParticles(ParticleTypes.END_ROD, x, topY, z, 8, 0.18, 0.05, 0.18, 0.0);
-            sl.sendParticles(ParticleTypes.FIREWORK, x, topY, z, 2, 0.12, 0.04, 0.12, 0.0);
+            sl.sendParticles(ParticleTypes.END_ROD, x, topY, z, 3, 0.12, 0.04, 0.12, 0.0);
         }
     }
 

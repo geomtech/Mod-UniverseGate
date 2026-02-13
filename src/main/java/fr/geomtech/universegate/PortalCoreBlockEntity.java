@@ -19,7 +19,8 @@ public class PortalCoreBlockEntity extends BlockEntity implements ExtendedScreen
 
     private static final long PER_ENTITY_EXTENSION_TICKS = 20L * 10L;
     private static final long UNSTABLE_THRESHOLD_TICKS = 20L * 60L;
-    private static final long OPENING_DURATION_FALLBACK_TICKS = 20L * 10L;
+    private static final long OPENING_DURATION_FALLBACK_TICKS = 20L * 9L;
+    private static final long AMBIENT_LOOP_INTERVAL_TICKS = 20L * 27L;
 
     private UUID portalId;
     private String portalName = "";
@@ -36,6 +37,7 @@ public class PortalCoreBlockEntity extends BlockEntity implements ExtendedScreen
     private boolean opening = false;
     private long openingStartedGameTime = 0L;
     private long openingCompleteGameTime = 0L;
+    private long nextAmbientLoopGameTime = 0L;
     private boolean restorePending = false;
 
     public PortalCoreBlockEntity(BlockPos pos, BlockState state) {
@@ -102,6 +104,7 @@ public class PortalCoreBlockEntity extends BlockEntity implements ExtendedScreen
         }
 
         refreshInstabilityVisuals(sl, now);
+        tickPortalAmbientLoop(sl, now);
     }
 
     private void spawnRiftParticles(ServerLevel level) {
@@ -167,9 +170,13 @@ public class PortalCoreBlockEntity extends BlockEntity implements ExtendedScreen
 
         PortalConnectionManager.setNearbyKeyboardsLit(sl, worldPosition, true);
 
-        ModSounds.playPortalAmbientAt(sl, worldPosition, riftLightningLink);
+        startPortalAmbient(sl, now);
 
         return true;
+    }
+
+    void onPortalAmbientStarted(long now) {
+        nextAmbientLoopGameTime = now + AMBIENT_LOOP_INTERVAL_TICKS;
     }
 
     // ---------- State helpers ----------
@@ -207,7 +214,19 @@ public class PortalCoreBlockEntity extends BlockEntity implements ExtendedScreen
 
         visualUnstable = unstableNow;
         PortalConnectionManager.syncActivePortalInstability(level, worldPosition, unstableNow);
+        ModSounds.stopPortalAmbientNear(level, worldPosition);
+        startPortalAmbient(level, now);
         setChanged();
+    }
+
+    private void startPortalAmbient(ServerLevel level, long now) {
+        ModSounds.playPortalAmbientAt(level, worldPosition, visualUnstable);
+        onPortalAmbientStarted(now);
+    }
+
+    private void tickPortalAmbientLoop(ServerLevel level, long now) {
+        if (nextAmbientLoopGameTime > now) return;
+        startPortalAmbient(level, now);
     }
 
     public void setPortalName(String name) { this.portalName = name == null ? "" : name; setChanged(); }
@@ -243,6 +262,7 @@ public class PortalCoreBlockEntity extends BlockEntity implements ExtendedScreen
         this.outboundTravelEnabled = outboundTravelEnabled;
         this.openingStartedGameTime = openingStartedGameTime;
         this.openingCompleteGameTime = openingCompleteGameTime;
+        this.nextAmbientLoopGameTime = 0L;
         setChanged();
     }
 
@@ -255,6 +275,7 @@ public class PortalCoreBlockEntity extends BlockEntity implements ExtendedScreen
         this.visualUnstable = riftLightningLink;
         this.openingStartedGameTime = 0L;
         this.openingCompleteGameTime = 0L;
+        this.nextAmbientLoopGameTime = 0L;
         setChanged();
     }
 
@@ -274,6 +295,7 @@ public class PortalCoreBlockEntity extends BlockEntity implements ExtendedScreen
         this.outboundTravelEnabled = outboundTravelEnabled;
         this.openingStartedGameTime = 0L;
         this.openingCompleteGameTime = 0L;
+        this.nextAmbientLoopGameTime = 0L;
         setChanged();
     }
 
@@ -289,6 +311,7 @@ public class PortalCoreBlockEntity extends BlockEntity implements ExtendedScreen
         this.outboundTravelEnabled = false;
         this.openingStartedGameTime = 0L;
         this.openingCompleteGameTime = 0L;
+        this.nextAmbientLoopGameTime = 0L;
         setChanged();
     }
 
@@ -333,6 +356,7 @@ public class PortalCoreBlockEntity extends BlockEntity implements ExtendedScreen
         if (!active) {
             activeStartedGameTime = 0L;
             visualUnstable = false;
+            nextAmbientLoopGameTime = 0L;
         }
         if (!opening) {
             openingStartedGameTime = 0L;

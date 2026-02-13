@@ -13,6 +13,7 @@ import net.minecraft.sounds.SoundSource;
 public final class ModSounds {
 
     public static final SoundEvent PORTAL_OPENING = register("portal_opening");
+    public static final SoundEvent PORTAL_OPENING_END = register("portal_opening_end");
     public static final SoundEvent PORTAL_IDLE = register("portal_idle");
     public static final SoundEvent PORTAL_CLOSING = register("portal_closing");
     public static final SoundEvent PORTAL_ERROR = register("portal_error");
@@ -36,6 +37,17 @@ public final class ModSounds {
         playAt(level, pos, unstable ? PORTAL_UNSTABLE : PORTAL_IDLE, 0.35F, 1.0F);
     }
 
+    public static void playPortalOpenedAt(ServerLevel level, BlockPos pos, boolean unstable) {
+        stopPortalOpeningNear(level, pos);
+        playAt(level, pos, PORTAL_OPENING_END, 1.0F, 1.0F);
+        playPortalAmbientAt(level, pos, unstable);
+    }
+
+    public static void stopPortalOpeningNear(ServerLevel level, BlockPos pos) {
+        stopSoundNear(level, pos, PORTAL_OPENING);
+        stopSoundNear(level, pos, PORTAL_OPENING_END);
+    }
+
     public static void stopPortalAmbientNear(ServerLevel level, BlockPos pos) {
         stopSoundNear(level, pos, PORTAL_IDLE);
         stopSoundNear(level, pos, PORTAL_UNSTABLE);
@@ -43,6 +55,16 @@ public final class ModSounds {
 
     public static void stopPortalAmbientNear(ServerLevel level, BlockPos pos, boolean unstable) {
         stopSoundNear(level, pos, unstable ? PORTAL_UNSTABLE : PORTAL_IDLE);
+    }
+
+    public static void stopPortalLifecycleNear(ServerLevel level, BlockPos pos) {
+        stopPortalOpeningNear(level, pos);
+        stopPortalAmbientNear(level, pos);
+    }
+
+    public static void stopPortalLifecycleNear(ServerLevel level, BlockPos pos, boolean unstable) {
+        stopPortalOpeningNear(level, pos);
+        stopPortalAmbientNear(level, pos, unstable);
     }
 
     private static void stopSoundNear(ServerLevel level, BlockPos pos, SoundEvent sound) {

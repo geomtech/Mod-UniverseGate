@@ -16,7 +16,7 @@ import java.util.UUID;
 public final class PortalConnectionManager {
 
     private static final long ACTIVE_OPEN_DURATION_TICKS = 20L * 60L; // 1 minute
-    private static final long OPENING_DURATION_TICKS = 20L * 10L;
+    private static final long OPENING_DURATION_TICKS = 20L * 9L;
     private static final long OPENING_BLACKOUT_TICKS = 20L * 2L;
     private static final double OPENING_PARTICLE_EXPONENT = 4.0D;
     private static final int OPENING_MAX_PARTICLES_PER_CELL = 7;
@@ -179,8 +179,10 @@ public final class PortalConnectionManager {
         setNearbyKeyboardsLit(sourceLevel, sourceCorePos, true);
         setNearbyKeyboardsLit(targetLevel, targetEntry.pos(), true);
 
-        ModSounds.playPortalAmbientAt(sourceLevel, sourceCorePos, unstableA);
-        ModSounds.playPortalAmbientAt(targetLevel, targetEntry.pos(), unstableB);
+        ModSounds.playPortalOpenedAt(sourceLevel, sourceCorePos, unstableA);
+        ModSounds.playPortalOpenedAt(targetLevel, targetEntry.pos(), unstableB);
+        sourceCore.onPortalAmbientStarted(sourceLevel.getGameTime());
+        targetCore.onPortalAmbientStarted(targetLevel.getGameTime());
 
         sourceCore.setChanged();
         targetCore.setChanged();
@@ -249,7 +251,6 @@ public final class PortalConnectionManager {
         if (!(level.getBlockEntity(corePos) instanceof PortalCoreBlockEntity a)) return;
 
         UUID targetId = a.getTargetPortalId();
-        boolean unstable = a.isRiftLightningLink();
 
         // Recalculer frame + retirer champ
         var match = PortalFrameDetector.find(level, corePos);
@@ -263,7 +264,7 @@ public final class PortalConnectionManager {
         if (a.isActive()) {
             ModSounds.playAt(level, corePos, ModSounds.PORTAL_CLOSING, 1.0F, 1.0F);
         }
-        ModSounds.stopPortalAmbientNear(level, corePos, unstable);
+        ModSounds.stopPortalLifecycleNear(level, corePos);
         a.clearActiveState();
         setNearbyKeyboardsLit(level, corePos, false);
 
@@ -285,7 +286,6 @@ public final class PortalConnectionManager {
         targetLevel.getChunk(entry.pos());
 
         if (!(targetLevel.getBlockEntity(entry.pos()) instanceof PortalCoreBlockEntity b)) return;
-        boolean unstable = b.isRiftLightningLink();
 
         var match = PortalFrameDetector.find(targetLevel, entry.pos());
         if (match.isPresent()) {
@@ -298,7 +298,7 @@ public final class PortalConnectionManager {
         if (b.isActive()) {
             ModSounds.playAt(targetLevel, entry.pos(), ModSounds.PORTAL_CLOSING, 1.0F, 1.0F);
         }
-        ModSounds.stopPortalAmbientNear(targetLevel, entry.pos(), unstable);
+        ModSounds.stopPortalLifecycleNear(targetLevel, entry.pos());
         b.clearActiveState();
         setNearbyKeyboardsLit(targetLevel, entry.pos(), false);
         b.setChanged();
@@ -341,6 +341,10 @@ public final class PortalConnectionManager {
     public static void forceCloseFromKeyboard(ServerLevel level, BlockPos keyboardPos) {
         BlockPos corePos = findActiveCoreNear(level, keyboardPos, KEYBOARD_RADIUS_XZ, KEYBOARD_RADIUS_Y);
         if (corePos == null) return;
+
+        if (!(level.getBlockEntity(corePos) instanceof PortalCoreBlockEntity core)) return;
+        if (core.isRiftLightningLink() || !core.isOutboundTravelEnabled()) return;
+
         forceCloseOneSide(level, corePos);
     }
 
