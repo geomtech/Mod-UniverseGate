@@ -1,6 +1,7 @@
 package fr.geomtech.universegate;
 
 import net.fabricmc.fabric.api.object.builder.v1.entity.FabricDefaultAttributeRegistry;
+import net.fabricmc.fabric.api.object.builder.v1.entity.FabricEntityType;
 import net.minecraft.core.Registry;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.resources.ResourceLocation;
@@ -15,12 +16,17 @@ public final class ModEntityTypes {
     public static final EntityType<RiftShadeEntity> RIFT_SHADE = Registry.register(
             BuiltInRegistries.ENTITY_TYPE,
             ResourceLocation.fromNamespaceAndPath(UniverseGate.MOD_ID, "rift_shade"),
-            EntityType.Builder.of(RiftShadeEntity::new, MobCategory.MONSTER)
-                    .sized(0.7F, 2.2F)
-                    .eyeHeight(1.95F)
-                    .clientTrackingRange(8)
-                    .build("rift_shade")
+            createRiftShadeType()
     );
+
+    private static EntityType<RiftShadeEntity> createRiftShadeType() {
+        EntityType.Builder<RiftShadeEntity> builder = EntityType.Builder.of(RiftShadeEntity::new, MobCategory.MONSTER)
+                .sized(0.7F, 2.2F)
+                .eyeHeight(1.95F)
+                .clientTrackingRange(8);
+
+        return ((FabricEntityType.Builder<RiftShadeEntity>) builder).build();
+    }
 
     public static void register() {
         FabricDefaultAttributeRegistry.register(RIFT_SHADE, RiftShadeEntity.createAttributes());
