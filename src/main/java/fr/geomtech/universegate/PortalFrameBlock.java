@@ -36,9 +36,7 @@ public class PortalFrameBlock extends Block implements EntityBlock {
     }
 
     public static int lightLevel(BlockState state) {
-        if (!state.getValue(ACTIVE)) return 0;
-        if (state.getValue(UNSTABLE) && !state.getValue(BLINK_ON)) return 0;
-        return 12;
+        return state.getValue(ACTIVE) && state.getValue(BLINK_ON) ? 12 : 0;
     }
 
     @Override
@@ -58,7 +56,7 @@ public class PortalFrameBlock extends Block implements EntityBlock {
     public void animateTick(BlockState state, Level level, BlockPos pos, RandomSource random) {
         if (!state.getValue(ACTIVE)) return;
         boolean unstable = state.getValue(UNSTABLE);
-        if (unstable && !state.getValue(BLINK_ON)) return;
+        if (!state.getValue(BLINK_ON)) return;
 
         if (unstable) {
             if (random.nextFloat() > 0.62F) return;

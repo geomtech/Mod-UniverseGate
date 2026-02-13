@@ -130,7 +130,7 @@ public class PortalCoreBlockEntity extends BlockEntity implements ExtendedScreen
                 BlockState updated = state
                         .setValue(PortalFrameBlock.ACTIVE, true)
                         .setValue(PortalFrameBlock.UNSTABLE, riftLightningLink)
-                        .setValue(PortalFrameBlock.BLINK_ON, true);
+                        .setValue(PortalFrameBlock.BLINK_ON, riftLightningLink);
                 if (!updated.equals(state)) {
                     sl.setBlock(p, updated, 3);
                 }

@@ -1,8 +1,10 @@
 package fr.geomtech.universegate;
 
 import net.minecraft.core.BlockPos;
+import net.minecraft.core.particles.ParticleTypes;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.level.ServerLevel;
+import net.minecraft.util.RandomSource;
 import net.minecraft.world.level.Level;
 
 import java.util.Optional;
@@ -160,7 +162,16 @@ public final class PortalConnectionManager {
 
     private static void removeField(ServerLevel level, PortalFrameDetector.FrameMatch match) {
         for (BlockPos p : match.interior()) {
-            if (level.getBlockState(p).is(ModBlocks.PORTAL_FIELD)) {
+            var state = level.getBlockState(p);
+            if (state.is(ModBlocks.PORTAL_FIELD)) {
+                var axis = state.hasProperty(PortalFieldBlock.AXIS)
+                        ? state.getValue(PortalFieldBlock.AXIS)
+                        : (match.right() == net.minecraft.core.Direction.EAST
+                        ? net.minecraft.core.Direction.Axis.X
+                        : net.minecraft.core.Direction.Axis.Z);
+                boolean unstable = state.hasProperty(PortalFieldBlock.UNSTABLE)
+                        && state.getValue(PortalFieldBlock.UNSTABLE);
+                spawnFieldCollapseParticles(level, p, axis, unstable);
                 level.setBlockAndUpdate(p, net.minecraft.world.level.block.Blocks.AIR.defaultBlockState());
             }
         }
@@ -175,10 +186,46 @@ public final class PortalConnectionManager {
         for (int dy = 1; dy <= PortalFrameDetector.INNER_HEIGHT; dy++) {
             for (int dx = -PortalFrameDetector.INNER_WIDTH / 2; dx <= PortalFrameDetector.INNER_WIDTH / 2; dx++) {
                 BlockPos p = corePos.offset(right.getStepX() * dx, dy, right.getStepZ() * dx);
-                if (level.getBlockState(p).is(ModBlocks.PORTAL_FIELD)) {
+                var state = level.getBlockState(p);
+                if (state.is(ModBlocks.PORTAL_FIELD)) {
+                    var axis = state.hasProperty(PortalFieldBlock.AXIS)
+                            ? state.getValue(PortalFieldBlock.AXIS)
+                            : (right == net.minecraft.core.Direction.EAST
+                            ? net.minecraft.core.Direction.Axis.X
+                            : net.minecraft.core.Direction.Axis.Z);
+                    boolean unstable = state.hasProperty(PortalFieldBlock.UNSTABLE)
+                            && state.getValue(PortalFieldBlock.UNSTABLE);
+                    spawnFieldCollapseParticles(level, p, axis, unstable);
                     level.setBlockAndUpdate(p, net.minecraft.world.level.block.Blocks.AIR.defaultBlockState());
                 }
             }
+        }
+    }
+
+    private static void spawnFieldCollapseParticles(ServerLevel level,
+                                                    BlockPos pos,
+                                                    net.minecraft.core.Direction.Axis axis,
+                                                    boolean unstable) {
+        RandomSource random = level.random;
+        int count = unstable ? 12 : 8;
+
+        for (int i = 0; i < count; i++) {
+            double x = pos.getX() + 0.5;
+            double y = pos.getY() + random.nextDouble();
+            double z = pos.getZ() + 0.5;
+
+            if (axis == net.minecraft.core.Direction.Axis.X) {
+                x += (random.nextDouble() - 0.5) * 0.9;
+                z += (random.nextDouble() - 0.5) * 0.12;
+            } else {
+                x += (random.nextDouble() - 0.5) * 0.12;
+                z += (random.nextDouble() - 0.5) * 0.9;
+            }
+
+            double vx = (random.nextDouble() - 0.5) * 0.05;
+            double vy = (random.nextDouble() - 0.5) * 0.04;
+            double vz = (random.nextDouble() - 0.5) * 0.05;
+            level.sendParticles(ParticleTypes.END_ROD, x, y, z, 1, vx, vy, vz, 0.0);
         }
     }
 
@@ -225,7 +272,7 @@ public final class PortalConnectionManager {
             return;
         }
 
-        boolean blinkOn = active;
+        boolean blinkOn = active && unstable;
 
         var updated = state
                 .setValue(PortalFrameBlock.ACTIVE, active)

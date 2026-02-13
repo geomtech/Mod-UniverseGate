@@ -27,4 +27,33 @@ public final class PortalFrameHelper {
 
         return result;
     }
+
+    public static List<BlockPos> collectFrameRotationPath(PortalFrameDetector.FrameMatch match, BlockPos corePos) {
+        List<BlockPos> result = new ArrayList<>();
+        int halfWidth = PortalFrameDetector.INNER_WIDTH / 2 + 1;
+        int topY = PortalFrameDetector.INNER_HEIGHT + 1;
+
+        result.add(offset(corePos, match, -1, 0));
+        result.add(offset(corePos, match, -halfWidth, 0));
+
+        for (int dy = 1; dy <= topY; dy++) {
+            result.add(offset(corePos, match, -halfWidth, dy));
+        }
+
+        for (int dx = -halfWidth + 1; dx <= halfWidth; dx++) {
+            result.add(offset(corePos, match, dx, topY));
+        }
+
+        for (int dy = topY - 1; dy >= 1; dy--) {
+            result.add(offset(corePos, match, halfWidth, dy));
+        }
+
+        result.add(offset(corePos, match, halfWidth, 0));
+        result.add(offset(corePos, match, 1, 0));
+        return result;
+    }
+
+    private static BlockPos offset(BlockPos corePos, PortalFrameDetector.FrameMatch match, int dx, int dy) {
+        return corePos.offset(match.right().getStepX() * dx, dy, match.right().getStepZ() * dx);
+    }
 }

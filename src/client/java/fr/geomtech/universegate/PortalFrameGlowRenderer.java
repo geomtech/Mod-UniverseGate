@@ -26,12 +26,9 @@ public class PortalFrameGlowRenderer implements BlockEntityRenderer<PortalFrameB
         BlockState state = blockEntity.getBlockState();
         if (!state.hasProperty(PortalFrameBlock.ACTIVE) || !state.getValue(PortalFrameBlock.ACTIVE)) return;
         if (blockEntity.getLevel() == null) return;
+        if (state.hasProperty(PortalFrameBlock.BLINK_ON) && !state.getValue(PortalFrameBlock.BLINK_ON)) return;
 
         boolean unstable = state.hasProperty(PortalFrameBlock.UNSTABLE) && state.getValue(PortalFrameBlock.UNSTABLE);
-        if (unstable && state.hasProperty(PortalFrameBlock.BLINK_ON) && !state.getValue(PortalFrameBlock.BLINK_ON)) {
-            return;
-        }
-
         float time = blockEntity.getLevel().getGameTime() + partialTick;
         float pulse;
         float half;
@@ -114,5 +111,10 @@ public class PortalFrameGlowRenderer implements BlockEntityRenderer<PortalFrameB
         consumer.addVertex(matrix, x2, y2, z2).setColor(255, 255, 255, alpha);
         consumer.addVertex(matrix, x3, y3, z3).setColor(255, 255, 255, alpha);
         consumer.addVertex(matrix, x4, y4, z4).setColor(255, 255, 255, alpha);
+
+        consumer.addVertex(matrix, x4, y4, z4).setColor(255, 255, 255, alpha);
+        consumer.addVertex(matrix, x3, y3, z3).setColor(255, 255, 255, alpha);
+        consumer.addVertex(matrix, x2, y2, z2).setColor(255, 255, 255, alpha);
+        consumer.addVertex(matrix, x1, y1, z1).setColor(255, 255, 255, alpha);
     }
 }
