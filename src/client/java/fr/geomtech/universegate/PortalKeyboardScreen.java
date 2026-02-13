@@ -31,6 +31,7 @@ public class PortalKeyboardScreen extends AbstractContainerScreen<PortalKeyboard
     private boolean portalActive = false;
     private boolean disconnectAllowed = false;
     private Button disconnectButton;
+    private boolean activationRequested = false;
     private int scrollOffset = 0;
     private static final int VISIBLE_PORTALS = 3;
 
@@ -39,7 +40,6 @@ public class PortalKeyboardScreen extends AbstractContainerScreen<PortalKeyboard
         this.imageWidth = 256;
         this.imageHeight = 200;
         this.inventoryLabelY = this.imageHeight - 94;
-        this.titleLabelX = 10;
     }
 
     public net.minecraft.core.BlockPos getKeyboardPos() {
@@ -56,9 +56,14 @@ public class PortalKeyboardScreen extends AbstractContainerScreen<PortalKeyboard
     }
 
     public void setPortalStatus(boolean active, boolean disconnectAllowed) {
+        boolean shouldClose = activationRequested && !this.portalActive && active;
+        activationRequested = false;
         this.portalActive = active;
         this.disconnectAllowed = disconnectAllowed;
         updateDisconnectButton();
+        if (shouldClose) {
+            this.onClose();
+        }
     }
 
     @Override
@@ -118,6 +123,7 @@ public class PortalKeyboardScreen extends AbstractContainerScreen<PortalKeyboard
 
             Button b = Button.builder(label, (btn) -> {
                         // Envoie la demande de connexion au serveur
+                        activationRequested = true;
                         ClientPlayNetworking.send(new ConnectPortalPayload(this.menu.getKeyboardPos(), p.id()));
                     })
                     .bounds(x, btnY, buttonWidth, buttonHeight)
@@ -155,12 +161,6 @@ public class PortalKeyboardScreen extends AbstractContainerScreen<PortalKeyboard
 
     @Override
     protected void renderLabels(GuiGraphics g, int mouseX, int mouseY) {
-        g.pose().pushPose();
-        g.pose().translate(0.0F, 0.0F, 0.0F);
-        g.pose().scale(1.2F, 1.2F, 1.0F);
-        g.drawString(this.font, this.title, (int) (titleLabelX / 1.2F), (int) (titleLabelY / 1.2F), 0xE0E0E0, true);
-        g.pose().popPose();
-
         g.drawString(this.font, this.playerInventoryTitle, inventoryLabelX, inventoryLabelY, 0xA0A0A0, false);
     }
 

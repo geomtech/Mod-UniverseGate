@@ -9,6 +9,11 @@
       "universegate:portal_opening_end"
     ]
   },
+  "portal_dial": {
+    "sounds": [
+      "universegate:portal_dial"
+    ]
+  },
   "portal_idle": {
     "sounds": [
       "universegate:portal_idle"

@@ -82,8 +82,8 @@ public final class PortalConnectionManager {
         setNearbyKeyboardsLit(sourceLevel, sourceCorePos, true);
         setNearbyKeyboardsLit(targetLevel, bEntry.pos(), true);
 
-        ModSounds.playAt(sourceLevel, sourceCorePos, ModSounds.PORTAL_OPENING, 1.0F, 1.0F);
-        ModSounds.playAt(targetLevel, bEntry.pos(), ModSounds.PORTAL_OPENING, 1.0F, 1.0F);
+        ModSounds.playPortalDialingAt(sourceLevel, sourceCorePos);
+        ModSounds.playPortalDialingAt(targetLevel, bEntry.pos());
 
         a.setChanged();
         b.setChanged();

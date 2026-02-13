@@ -14,6 +14,7 @@ public final class ModSounds {
 
     public static final SoundEvent PORTAL_OPENING = register("portal_opening");
     public static final SoundEvent PORTAL_OPENING_END = register("portal_opening_end");
+    public static final SoundEvent PORTAL_DIAL = register("portal_dial");
     public static final SoundEvent PORTAL_IDLE = register("portal_idle");
     public static final SoundEvent PORTAL_CLOSING = register("portal_closing");
     public static final SoundEvent PORTAL_ERROR = register("portal_error");
@@ -43,7 +44,13 @@ public final class ModSounds {
         playPortalAmbientAt(level, pos, unstable);
     }
 
+    public static void playPortalDialingAt(ServerLevel level, BlockPos pos) {
+        playAt(level, pos, PORTAL_DIAL, 1.0F, 1.0F);
+        playAt(level, pos, PORTAL_OPENING, 1.0F, 1.0F);
+    }
+
     public static void stopPortalOpeningNear(ServerLevel level, BlockPos pos) {
+        stopSoundNear(level, pos, PORTAL_DIAL);
         stopSoundNear(level, pos, PORTAL_OPENING);
         stopSoundNear(level, pos, PORTAL_OPENING_END);
     }
