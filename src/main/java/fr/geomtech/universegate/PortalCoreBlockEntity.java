@@ -106,9 +106,34 @@ public class PortalCoreBlockEntity extends BlockEntity implements ExtendedScreen
             return false;
         }
 
-        for (BlockPos p : match.get().interior()) {
-            if (!sl.getBlockState(p).is(ModBlocks.PORTAL_FIELD)) {
-                sl.setBlock(p, ModBlocks.PORTAL_FIELD.defaultBlockState(), 3);
+        var frameMatch = match.get();
+        var axis = frameMatch.right() == net.minecraft.core.Direction.EAST
+                ? net.minecraft.core.Direction.Axis.X
+                : net.minecraft.core.Direction.Axis.Z;
+        BlockState desiredFieldState = ModBlocks.PORTAL_FIELD.defaultBlockState()
+                .setValue(PortalFieldBlock.AXIS, axis)
+                .setValue(PortalFieldBlock.UNSTABLE, riftLightningLink);
+
+        for (BlockPos p : frameMatch.interior()) {
+            BlockState current = sl.getBlockState(p);
+            if (!current.equals(desiredFieldState)) {
+                sl.setBlock(p, desiredFieldState, 3);
+            }
+        }
+
+        for (BlockPos p : PortalFrameHelper.collectFrame(frameMatch, worldPosition)) {
+            BlockState state = sl.getBlockState(p);
+            if (state.is(ModBlocks.PORTAL_FRAME)
+                    && state.hasProperty(PortalFrameBlock.ACTIVE)
+                    && state.hasProperty(PortalFrameBlock.UNSTABLE)
+                    && state.hasProperty(PortalFrameBlock.BLINK_ON)) {
+                BlockState updated = state
+                        .setValue(PortalFrameBlock.ACTIVE, true)
+                        .setValue(PortalFrameBlock.UNSTABLE, riftLightningLink)
+                        .setValue(PortalFrameBlock.BLINK_ON, true);
+                if (!updated.equals(state)) {
+                    sl.setBlock(p, updated, 3);
+                }
             }
         }
 

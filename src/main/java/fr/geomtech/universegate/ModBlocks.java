@@ -67,7 +67,8 @@ public final class ModBlocks {
     public static final Block PORTAL_FRAME = register(
             "portal_frame",
             new PortalFrameBlock(BlockBehaviour.Properties.ofFullCopy(Blocks.OBSIDIAN)
-                    .strength(60.0f, 1200.0f))
+                    .strength(60.0f, 1200.0f)
+                    .lightLevel(PortalFrameBlock::lightLevel))
     );
 
     public static final Block PORTAL_KEYBOARD = register(

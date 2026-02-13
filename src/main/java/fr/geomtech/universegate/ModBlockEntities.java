@@ -21,6 +21,20 @@ public final class ModBlockEntities {
                     BlockEntityType.Builder.of(PortalKeyboardBlockEntity::new, ModBlocks.PORTAL_KEYBOARD).build(null)
             );
 
+    public static final BlockEntityType<PortalFrameBlockEntity> PORTAL_FRAME =
+            Registry.register(
+                    BuiltInRegistries.BLOCK_ENTITY_TYPE,
+                    ResourceLocation.fromNamespaceAndPath(UniverseGate.MOD_ID, "portal_frame"),
+                    BlockEntityType.Builder.of(PortalFrameBlockEntity::new, ModBlocks.PORTAL_FRAME).build(null)
+            );
+
+    public static final BlockEntityType<PortalFieldBlockEntity> PORTAL_FIELD =
+            Registry.register(
+                    BuiltInRegistries.BLOCK_ENTITY_TYPE,
+                    ResourceLocation.fromNamespaceAndPath(UniverseGate.MOD_ID, "portal_field"),
+                    BlockEntityType.Builder.of(PortalFieldBlockEntity::new, ModBlocks.PORTAL_FIELD).build(null)
+            );
+
     public static final BlockEntityType<ChargedLightningRodBlockEntity> CHARGED_LIGHTNING_ROD =
             Registry.register(
                     BuiltInRegistries.BLOCK_ENTITY_TYPE,

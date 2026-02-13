@@ -64,10 +64,10 @@ public final class PortalConnectionManager {
 
         // --- OUVERTURE “ATOMIC” (si B rate => rollback A) ---
         // 1) Place champ A
-        if (!placeField(sourceLevel, frameA.get())) return false;
+        if (!placeField(sourceLevel, frameA.get(), riftLightningLink)) return false;
 
         // 2) Place champ B
-        if (!placeField(targetLevel, frameB.get())) {
+        if (!placeField(targetLevel, frameB.get(), riftLightningLink)) {
             // rollback A
             removeField(sourceLevel, frameA.get());
             return false;
@@ -76,6 +76,9 @@ public final class PortalConnectionManager {
         // 3) Etat actif
         a.setActiveState(connectionId, b.getPortalId(), untilA, riftLightningLink, true);
         b.setActiveState(connectionId, a.getPortalId(), untilB, riftLightningLink, false);
+
+        setFrameActive(sourceLevel, frameA.get(), sourceCorePos, true, riftLightningLink);
+        setFrameActive(targetLevel, frameB.get(), bEntry.pos(), true, riftLightningLink);
 
         ModSounds.playAt(sourceLevel, sourceCorePos, ModSounds.PORTAL_OPENING, 1.0F, 1.0F);
         ModSounds.playAt(targetLevel, bEntry.pos(), ModSounds.PORTAL_OPENING, 1.0F, 1.0F);
@@ -93,8 +96,13 @@ public final class PortalConnectionManager {
 
         // Recalculer frame + retirer champ
         var match = PortalFrameDetector.find(level, corePos);
-        if (match.isPresent()) removeField(level, match.get());
-        else removeFieldFallback(level, corePos);
+        if (match.isPresent()) {
+            removeField(level, match.get());
+            setFrameActive(level, match.get(), corePos, false, false);
+        } else {
+            removeFieldFallback(level, corePos);
+            setFrameActiveFallback(level, corePos, false, false);
+        }
         if (a.isActive()) {
             ModSounds.playAt(level, corePos, ModSounds.PORTAL_CLOSING, 1.0F, 1.0F);
         }
@@ -120,8 +128,13 @@ public final class PortalConnectionManager {
         if (!(targetLevel.getBlockEntity(entry.pos()) instanceof PortalCoreBlockEntity b)) return;
 
         var match = PortalFrameDetector.find(targetLevel, entry.pos());
-        if (match.isPresent()) removeField(targetLevel, match.get());
-        else removeFieldFallback(targetLevel, entry.pos());
+        if (match.isPresent()) {
+            removeField(targetLevel, match.get());
+            setFrameActive(targetLevel, match.get(), entry.pos(), false, false);
+        } else {
+            removeFieldFallback(targetLevel, entry.pos());
+            setFrameActiveFallback(targetLevel, entry.pos(), false, false);
+        }
         if (b.isActive()) {
             ModSounds.playAt(targetLevel, entry.pos(), ModSounds.PORTAL_CLOSING, 1.0F, 1.0F);
         }
@@ -132,12 +145,15 @@ public final class PortalConnectionManager {
     // ----------------------------
     // Champ portal (à brancher ensuite)
     // ----------------------------
-    private static boolean placeField(ServerLevel level, PortalFrameDetector.FrameMatch match) {
+    private static boolean placeField(ServerLevel level, PortalFrameDetector.FrameMatch match, boolean unstable) {
         var axis = match.right() == net.minecraft.core.Direction.EAST
                 ? net.minecraft.core.Direction.Axis.X
                 : net.minecraft.core.Direction.Axis.Z;
+        var fieldState = ModBlocks.PORTAL_FIELD.defaultBlockState()
+                .setValue(PortalFieldBlock.AXIS, axis)
+                .setValue(PortalFieldBlock.UNSTABLE, unstable);
         for (BlockPos p : match.interior()) {
-            level.setBlock(p, ModBlocks.PORTAL_FIELD.defaultBlockState().setValue(PortalFieldBlock.AXIS, axis), 3);
+            level.setBlock(p, fieldState, 3);
         }
         return true;
     }
@@ -164,6 +180,60 @@ public final class PortalConnectionManager {
                 }
             }
         }
+    }
+
+    private static void setFrameActive(ServerLevel level,
+                                       PortalFrameDetector.FrameMatch match,
+                                       BlockPos corePos,
+                                       boolean active,
+                                       boolean unstable) {
+        for (BlockPos p : PortalFrameHelper.collectFrame(match, corePos)) {
+            setFrameBlockState(level, p, active, unstable);
+        }
+    }
+
+    private static void setFrameActiveFallback(ServerLevel level, BlockPos corePos, boolean active, boolean unstable) {
+        setFrameAreaActive(level, corePos, net.minecraft.core.Direction.EAST, active, unstable);
+        setFrameAreaActive(level, corePos, net.minecraft.core.Direction.SOUTH, active, unstable);
+    }
+
+    private static void setFrameAreaActive(ServerLevel level,
+                                           BlockPos corePos,
+                                           net.minecraft.core.Direction right,
+                                           boolean active,
+                                           boolean unstable) {
+        int halfWidth = PortalFrameDetector.INNER_WIDTH / 2 + 1;
+        int topY = PortalFrameDetector.INNER_HEIGHT + 1;
+
+        for (int dy = 0; dy <= topY; dy++) {
+            for (int dx = -halfWidth; dx <= halfWidth; dx++) {
+                boolean isBorder = dy == 0 || dy == topY || dx == -halfWidth || dx == halfWidth;
+                if (!isBorder || (dx == 0 && dy == 0)) continue;
+
+                BlockPos p = corePos.offset(right.getStepX() * dx, dy, right.getStepZ() * dx);
+                setFrameBlockState(level, p, active, unstable);
+            }
+        }
+    }
+
+    private static void setFrameBlockState(ServerLevel level, BlockPos pos, boolean active, boolean unstable) {
+        var state = level.getBlockState(pos);
+        if (!state.is(ModBlocks.PORTAL_FRAME)) return;
+        if (!state.hasProperty(PortalFrameBlock.ACTIVE)
+                || !state.hasProperty(PortalFrameBlock.UNSTABLE)
+                || !state.hasProperty(PortalFrameBlock.BLINK_ON)) {
+            return;
+        }
+
+        boolean blinkOn = active;
+
+        var updated = state
+                .setValue(PortalFrameBlock.ACTIVE, active)
+                .setValue(PortalFrameBlock.UNSTABLE, unstable)
+                .setValue(PortalFrameBlock.BLINK_ON, blinkOn);
+        if (state.equals(updated)) return;
+
+        level.setBlock(pos, updated, 3);
     }
 
 }
