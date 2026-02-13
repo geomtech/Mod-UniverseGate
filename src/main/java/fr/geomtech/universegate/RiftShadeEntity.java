@@ -2,7 +2,6 @@ package fr.geomtech.universegate;
 
 import net.minecraft.core.BlockPos;
 import net.minecraft.sounds.SoundEvent;
-import net.minecraft.sounds.SoundEvents;
 import net.minecraft.util.RandomSource;
 import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.MobSpawnType;
@@ -56,17 +55,17 @@ public class RiftShadeEntity extends Monster {
 
     @Override
     protected SoundEvent getAmbientSound() {
-        return SoundEvents.ENDERMAN_AMBIENT;
+        return ModSounds.RIFT_SHADE_SOUND;
     }
 
     @Override
     protected SoundEvent getHurtSound(net.minecraft.world.damagesource.DamageSource damageSource) {
-        return SoundEvents.ENDERMAN_HURT;
+        return ModSounds.RIFT_SHADE_HIT;
     }
 
     @Override
     protected SoundEvent getDeathSound() {
-        return SoundEvents.ENDERMAN_DEATH;
+        return ModSounds.RIFT_SHADE_DEATH;
     }
 
     @Override

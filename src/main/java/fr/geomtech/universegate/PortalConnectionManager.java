@@ -15,9 +15,9 @@ public final class PortalConnectionManager {
     private PortalConnectionManager() {}
 
     /**
-     * Ouvre A <-> B (deux côtés) façon Stargate.
-     * sourceLevel/sourcePos = core A (où le joueur est)
-     * targetId = portail B choisi via UI
+     * Ouvre A => B (sens unique) en activant les deux côtés.
+     * sourceLevel/sourcePos = core A (origine, où le joueur est)
+     * targetId = portail B (destination) choisi via UI
      */
     public static boolean openBothSides(ServerLevel sourceLevel, BlockPos sourceCorePos, UUID targetId) {
         return openBothSides(sourceLevel, sourceCorePos, targetId, false);
@@ -74,8 +74,11 @@ public final class PortalConnectionManager {
         }
 
         // 3) Etat actif
-        a.setActiveState(connectionId, b.getPortalId(), untilA, riftLightningLink);
-        b.setActiveState(connectionId, a.getPortalId(), untilB, riftLightningLink);
+        a.setActiveState(connectionId, b.getPortalId(), untilA, riftLightningLink, true);
+        b.setActiveState(connectionId, a.getPortalId(), untilB, riftLightningLink, false);
+
+        ModSounds.playAt(sourceLevel, sourceCorePos, ModSounds.PORTAL_OPENING, 1.0F, 1.0F);
+        ModSounds.playAt(targetLevel, bEntry.pos(), ModSounds.PORTAL_OPENING, 1.0F, 1.0F);
 
         a.setChanged();
         b.setChanged();
@@ -92,6 +95,9 @@ public final class PortalConnectionManager {
         var match = PortalFrameDetector.find(level, corePos);
         if (match.isPresent()) removeField(level, match.get());
         else removeFieldFallback(level, corePos);
+        if (a.isActive()) {
+            ModSounds.playAt(level, corePos, ModSounds.PORTAL_CLOSING, 1.0F, 1.0F);
+        }
         a.clearActiveState();
 
         // Essayer de fermer l’autre côté (si on peut le charger)
@@ -116,6 +122,9 @@ public final class PortalConnectionManager {
         var match = PortalFrameDetector.find(targetLevel, entry.pos());
         if (match.isPresent()) removeField(targetLevel, match.get());
         else removeFieldFallback(targetLevel, entry.pos());
+        if (b.isActive()) {
+            ModSounds.playAt(targetLevel, entry.pos(), ModSounds.PORTAL_CLOSING, 1.0F, 1.0F);
+        }
         b.clearActiveState();
         b.setChanged();
     }

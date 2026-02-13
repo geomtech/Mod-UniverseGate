@@ -26,6 +26,7 @@ public class PortalCoreBlockEntity extends BlockEntity implements ExtendedScreen
     private UUID targetPortalId = null;
     private long activeUntilGameTime = 0L; // fermeture auto
     private boolean riftLightningLink = false;
+    private boolean outboundTravelEnabled = false;
     private boolean restorePending = false;
 
     public PortalCoreBlockEntity(BlockPos pos, BlockState state) {
@@ -64,6 +65,13 @@ public class PortalCoreBlockEntity extends BlockEntity implements ExtendedScreen
                     .ifPresent((rod) -> spawnRiftParticles(sl));
         }
         if (!active) return;
+
+        if (sl.getGameTime() % 40L == 0L) {
+            ModSounds.playAt(sl, worldPosition,
+                    riftLightningLink ? ModSounds.PORTAL_UNSTABLE : ModSounds.PORTAL_IDLE,
+                    0.35F,
+                    1.0F);
+        }
 
         long now = sl.getGameTime();
         if (now >= activeUntilGameTime) {
@@ -114,6 +122,7 @@ public class PortalCoreBlockEntity extends BlockEntity implements ExtendedScreen
     public UUID getConnectionId() { return connectionId; }
     public long getActiveUntilGameTime() { return activeUntilGameTime; }
     public boolean isRiftLightningLink() { return riftLightningLink; }
+    public boolean isOutboundTravelEnabled() { return outboundTravelEnabled; }
 
     public void setPortalName(String name) { this.portalName = name == null ? "" : name; setChanged(); }
     public String getPortalName() { return portalName; }
@@ -131,12 +140,17 @@ public class PortalCoreBlockEntity extends BlockEntity implements ExtendedScreen
         setChanged();
     }
 
-    void setActiveState(UUID connectionId, UUID targetPortalId, long activeUntilGameTime, boolean riftLightningLink) {
+    void setActiveState(UUID connectionId,
+                        UUID targetPortalId,
+                        long activeUntilGameTime,
+                        boolean riftLightningLink,
+                        boolean outboundTravelEnabled) {
         this.active = true;
         this.connectionId = connectionId;
         this.targetPortalId = targetPortalId;
         this.activeUntilGameTime = activeUntilGameTime;
         this.riftLightningLink = riftLightningLink;
+        this.outboundTravelEnabled = outboundTravelEnabled;
         setChanged();
     }
 
@@ -146,6 +160,7 @@ public class PortalCoreBlockEntity extends BlockEntity implements ExtendedScreen
         this.targetPortalId = null;
         this.activeUntilGameTime = 0L;
         this.riftLightningLink = false;
+        this.outboundTravelEnabled = false;
         setChanged();
     }
 
@@ -162,6 +177,7 @@ public class PortalCoreBlockEntity extends BlockEntity implements ExtendedScreen
         if (targetPortalId != null) tag.putUUID("TargetPortalId", targetPortalId);
         tag.putLong("ActiveUntil", activeUntilGameTime);
         tag.putBoolean("RiftLightning", riftLightningLink);
+        tag.putBoolean("OutboundTravel", outboundTravelEnabled);
     }
 
     @Override
@@ -176,6 +192,7 @@ public class PortalCoreBlockEntity extends BlockEntity implements ExtendedScreen
         targetPortalId = tag.hasUUID("TargetPortalId") ? tag.getUUID("TargetPortalId") : null;
         activeUntilGameTime = tag.getLong("ActiveUntil");
         riftLightningLink = tag.getBoolean("RiftLightning");
+        outboundTravelEnabled = tag.contains("OutboundTravel") ? tag.getBoolean("OutboundTravel") : active;
         restorePending = active;
     }
 

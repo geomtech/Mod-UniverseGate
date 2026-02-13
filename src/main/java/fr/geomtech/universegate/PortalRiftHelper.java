@@ -2,18 +2,31 @@ package fr.geomtech.universegate;
 
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
+import net.minecraft.resources.ResourceKey;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.level.ExplosionDamageCalculator;
 import net.minecraft.world.level.Level;
 
+import java.util.HashMap;
+import java.util.Iterator;
+import java.util.Map;
 import java.util.Optional;
 
 public final class PortalRiftHelper {
 
     private static final String RIFT_PORTAL_NAME = "Rift Anchor";
     private static final BlockPos RIFT_CORE_ANCHOR = new BlockPos(0, 0, 0);
+    private static final long RIFT_COLLAPSE_DELAY_TICKS = 20L * 10L;
+    private static final long RIFT_UNSTABLE_SOUND_INTERVAL_TICKS = 10L;
+    private static final float RIFT_UNSTABLE_MIN_VOLUME = 0.35F;
+    private static final float RIFT_UNSTABLE_MAX_VOLUME = 2.6F;
+    private static final float RIFT_UNSTABLE_PITCH = 1.0F;
+    private static final double RIFT_UNSTABLE_EXPONENT = 4.0D;
+    private static final Map<ResourceKey<Level>, Map<BlockPos, PendingRiftCollapse>> PENDING_RIFT_COLLAPSES = new HashMap<>();
 
     private PortalRiftHelper() {}
+
+    private record PendingRiftCollapse(BlockPos corePos, long startTick, long explodeTick) {}
 
     public static Optional<ChargedLightningRodBlockEntity> findNearestChargedRod(ServerLevel level, BlockPos portalPos, int radius) {
         BlockPos fixed = portalPos.above(6);
@@ -106,9 +119,58 @@ public final class PortalRiftHelper {
         if (!core.isActive()) return;
         if (!core.isRiftLightningLink()) return;
 
+        // Keep portal active for 10s, then collapse.
+        scheduleRiftCollapse(riftLevel, corePos);
+    }
+
+    public static void tickWorld(ServerLevel level) {
+        Map<BlockPos, PendingRiftCollapse> scheduled = PENDING_RIFT_COLLAPSES.get(level.dimension());
+        if (scheduled == null || scheduled.isEmpty()) return;
+
+        long now = level.getGameTime();
+        Iterator<Map.Entry<BlockPos, PendingRiftCollapse>> it = scheduled.entrySet().iterator();
+        while (it.hasNext()) {
+            PendingRiftCollapse collapse = it.next().getValue();
+            if (now >= collapse.explodeTick()) {
+                detonateRiftArrivalPortal(level, collapse.corePos());
+                it.remove();
+                continue;
+            }
+
+            long elapsed = now - collapse.startTick();
+            if (elapsed > 0L && elapsed % RIFT_UNSTABLE_SOUND_INTERVAL_TICKS == 0L) {
+                double progress = Math.min(1.0D, (double) elapsed / (double) RIFT_COLLAPSE_DELAY_TICKS);
+                float volume = computeUnstableVolume(progress);
+                ModSounds.playAt(level, collapse.corePos(), ModSounds.PORTAL_UNSTABLE, volume, RIFT_UNSTABLE_PITCH);
+            }
+        }
+
+        if (scheduled.isEmpty()) {
+            PENDING_RIFT_COLLAPSES.remove(level.dimension());
+        }
+    }
+
+    private static void scheduleRiftCollapse(ServerLevel riftLevel, BlockPos corePos) {
+        Map<BlockPos, PendingRiftCollapse> byDimension =
+                PENDING_RIFT_COLLAPSES.computeIfAbsent(riftLevel.dimension(), ignored -> new HashMap<>());
+        BlockPos key = corePos.immutable();
+        if (byDimension.containsKey(key)) return;
+
+        long now = riftLevel.getGameTime();
+        byDimension.put(key, new PendingRiftCollapse(key, now, now + RIFT_COLLAPSE_DELAY_TICKS));
+        ModSounds.playAt(riftLevel, key, ModSounds.PORTAL_UNSTABLE, RIFT_UNSTABLE_MIN_VOLUME, RIFT_UNSTABLE_PITCH);
+    }
+
+    private static float computeUnstableVolume(double progress) {
+        double clamped = Math.max(0.0D, Math.min(1.0D, progress));
+        double curve = Math.expm1(RIFT_UNSTABLE_EXPONENT * clamped) / Math.expm1(RIFT_UNSTABLE_EXPONENT);
+        return (float) (RIFT_UNSTABLE_MIN_VOLUME + (RIFT_UNSTABLE_MAX_VOLUME - RIFT_UNSTABLE_MIN_VOLUME) * curve);
+    }
+
+    private static void detonateRiftArrivalPortal(ServerLevel riftLevel, BlockPos corePos) {
         var match = PortalFrameDetector.find(riftLevel, corePos);
 
-        // Close portal first (removes field + closes other side)
+        // Close portal exactly at collapse time (removes field + closes other side)
         PortalConnectionManager.forceCloseOneSide(riftLevel, corePos);
 
         // Small visual-only explosion

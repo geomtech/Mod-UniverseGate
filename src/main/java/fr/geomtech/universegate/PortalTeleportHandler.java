@@ -2,6 +2,7 @@ package fr.geomtech.universegate;
 
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
+import net.minecraft.network.chat.Component;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 
@@ -23,10 +24,12 @@ public final class PortalTeleportHandler {
 
     private static final long TELEPORT_COOLDOWN_TICKS = 40; // 2s anti ping-pong
     private static final long FUEL_CHARGE_COOLDOWN_TICKS = 10; // anti double facturation
+    private static final long BLOCKED_DIRECTION_MESSAGE_COOLDOWN_TICKS = 20; // anti spam action bar
 
     // --- état serveur ---
     private static final Map<UUID, Long> lastTeleportTick = new HashMap<>();
     private static final Map<UUID, Long> lastFuelChargeTick = new HashMap<>();
+    private static final Map<UUID, Long> lastBlockedDirectionMessageTick = new HashMap<>();
 
     private PortalTeleportHandler() {}
 
@@ -46,6 +49,10 @@ public final class PortalTeleportHandler {
 
         if (!(sourceLevel.getBlockEntity(corePos) instanceof PortalCoreBlockEntity core)) return;
         if (!core.isActive()) return;
+        if (!core.isOutboundTravelEnabled()) {
+            showBlockedDirectionMessage(player, now);
+            return;
+        }
 
         UUID targetId = core.getTargetPortalId();
         if (targetId == null) return;
@@ -101,12 +108,23 @@ public final class PortalTeleportHandler {
             yaw = exitNormal.toYRot();
         }
 
+        ModSounds.playAt(sourceLevel, corePos, ModSounds.PORTAL_ENTITY_GOING_THROUGH, 0.9F, 1.0F);
         player.teleportTo(targetLevel, x, y, z, yaw, player.getXRot());
+        ModSounds.playAt(targetLevel, targetEntry.pos(), ModSounds.PORTAL_ENTITY_GOING_THROUGH, 0.9F, 1.05F);
         lastTeleportTick.put(pid, now);
 
         if (isRift) {
             PortalRiftHelper.handleRiftArrival(targetLevel, targetEntry.pos());
         }
+    }
+
+    private static void showBlockedDirectionMessage(ServerPlayer player, long now) {
+        UUID pid = player.getUUID();
+        Long lastMessageTick = lastBlockedDirectionMessageTick.get(pid);
+        if (lastMessageTick != null && now - lastMessageTick < BLOCKED_DIRECTION_MESSAGE_COOLDOWN_TICKS) return;
+
+        player.displayClientMessage(Component.literal("§cPassage interdit dans ce sens."), true);
+        lastBlockedDirectionMessageTick.put(pid, now);
     }
 
     private static int sideSignFromEntry(PortalFrameDetector.FrameMatch match, BlockPos corePos, ServerPlayer player) {

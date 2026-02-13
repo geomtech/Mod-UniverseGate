@@ -1,0 +1,52 @@
+{
+  "portal_opening": {
+    "sounds": [
+      "universegate:portal_opening"
+    ]
+  },
+  "portal_idle": {
+    "sounds": [
+      "universegate:portal_idle"
+    ]
+  },
+  "portal_closing": {
+    "sounds": [
+      "universegate:portal_closing"
+    ]
+  },
+  "portal_error": {
+    "sounds": [
+      "universegate:portal_error"
+    ]
+  },
+  "portal_unstable": {
+    "sounds": [
+      "universegate:portal_unstable"
+    ]
+  },
+  "portal_entity_going_through": {
+    "sounds": [
+      "universegate:portal_entity_going_through"
+    ]
+  },
+  "rift_shade_sound": {
+    "sounds": [
+      "universegate:rift_shade_sound"
+    ]
+  },
+  "rift_shade_hit": {
+    "sounds": [
+      "universegate:rift_shade_hit"
+    ]
+  },
+  "rift_shade_death": {
+    "sounds": [
+      "universegate:rift_shade_death"
+    ]
+  },
+  "rift_dimension_ambient_sound": {
+    "sounds": [
+      "universegate:rift_dimension_ambient_sound"
+    ]
+  }
+}

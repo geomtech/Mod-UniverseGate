@@ -1,6 +1,7 @@
 package fr.geomtech.universegate.net;
 
 import fr.geomtech.universegate.ModBlocks;
+import fr.geomtech.universegate.ModSounds;
 import fr.geomtech.universegate.PortalConnectionManager;
 import fr.geomtech.universegate.PortalCoreBlockEntity;
 import fr.geomtech.universegate.PortalKeyboardBlockEntity;
@@ -50,6 +51,8 @@ public final class UniverseGateNetwork {
                 boolean ok = PortalConnectionManager.openBothSides(level, corePos, payload.targetPortalId());
                 if (ok) {
                     kb.consumeOneFuel();
+                } else {
+                    ModSounds.playAt(level, corePos, ModSounds.PORTAL_ERROR, 0.9F, 1.0F);
                 }
                 // (Optionnel: feedback joueur)
                 // player.displayClientMessage(Component.literal(ok ? "§aConnexion établie" : "§cConnexion impossible"), true);
