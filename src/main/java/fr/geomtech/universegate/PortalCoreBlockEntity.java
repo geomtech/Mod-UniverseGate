@@ -179,6 +179,16 @@ public class PortalCoreBlockEntity extends BlockEntity implements ExtendedScreen
         nextAmbientLoopGameTime = now + AMBIENT_LOOP_INTERVAL_TICKS;
     }
 
+    private boolean emitsRedstoneSignal() {
+        return active || opening;
+    }
+
+    private void updateRedstoneSignal(boolean previouslyEmitting) {
+        if (previouslyEmitting == emitsRedstoneSignal()) return;
+        if (level == null || level.isClientSide) return;
+        level.updateNeighborsAt(worldPosition, getBlockState().getBlock());
+    }
+
     // ---------- State helpers ----------
     public UUID getPortalId() { return portalId; }
     public boolean isActive() { return active; }
@@ -251,6 +261,7 @@ public class PortalCoreBlockEntity extends BlockEntity implements ExtendedScreen
                          long openingCompleteGameTime,
                          boolean riftLightningLink,
                          boolean outboundTravelEnabled) {
+        boolean previouslyEmitting = emitsRedstoneSignal();
         this.active = false;
         this.opening = true;
         this.connectionId = connectionId;
@@ -264,10 +275,12 @@ public class PortalCoreBlockEntity extends BlockEntity implements ExtendedScreen
         this.openingCompleteGameTime = openingCompleteGameTime;
         this.nextAmbientLoopGameTime = 0L;
         setChanged();
+        updateRedstoneSignal(previouslyEmitting);
     }
 
     void finalizeOpeningState(long activeUntilGameTime, long activeStartedGameTime) {
         if (!opening) return;
+        boolean previouslyEmitting = emitsRedstoneSignal();
         this.opening = false;
         this.active = true;
         this.activeUntilGameTime = activeUntilGameTime;
@@ -277,6 +290,7 @@ public class PortalCoreBlockEntity extends BlockEntity implements ExtendedScreen
         this.openingCompleteGameTime = 0L;
         this.nextAmbientLoopGameTime = 0L;
         setChanged();
+        updateRedstoneSignal(previouslyEmitting);
     }
 
     void setActiveState(UUID connectionId,
@@ -284,6 +298,7 @@ public class PortalCoreBlockEntity extends BlockEntity implements ExtendedScreen
                         long activeUntilGameTime,
                         boolean riftLightningLink,
                         boolean outboundTravelEnabled) {
+        boolean previouslyEmitting = emitsRedstoneSignal();
         this.active = true;
         this.opening = false;
         this.connectionId = connectionId;
@@ -297,9 +312,11 @@ public class PortalCoreBlockEntity extends BlockEntity implements ExtendedScreen
         this.openingCompleteGameTime = 0L;
         this.nextAmbientLoopGameTime = 0L;
         setChanged();
+        updateRedstoneSignal(previouslyEmitting);
     }
 
     void clearActiveState() {
+        boolean previouslyEmitting = emitsRedstoneSignal();
         this.active = false;
         this.opening = false;
         this.connectionId = null;
@@ -313,6 +330,7 @@ public class PortalCoreBlockEntity extends BlockEntity implements ExtendedScreen
         this.openingCompleteGameTime = 0L;
         this.nextAmbientLoopGameTime = 0L;
         setChanged();
+        updateRedstoneSignal(previouslyEmitting);
     }
 
     // ---------- NBT ----------
