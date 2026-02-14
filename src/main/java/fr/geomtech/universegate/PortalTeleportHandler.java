@@ -14,6 +14,7 @@ import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.RelativeMovement;
 import net.minecraft.world.entity.projectile.AbstractArrow;
+import net.minecraft.world.entity.vehicle.AbstractMinecart;
 import net.minecraft.world.phys.Vec3;
 
 import fr.geomtech.universegate.UniverseGateDimensions;
@@ -39,6 +40,8 @@ public final class PortalTeleportHandler {
     private static final double PORTAL_INNER_HEIGHT = PortalFrameDetector.INNER_HEIGHT;
     private static final double PORTAL_POSITION_EPSILON = 0.01D;
     private static final double PORTAL_MIN_EXIT_OFFSET = 0.35D;
+    private static final double PORTAL_FIELD_CLEARANCE = 0.55D;
+    private static final double PORTAL_MINECART_EXTRA_OFFSET = 0.18D;
 
     private static final long FUEL_CHARGE_COOLDOWN_TICKS = 10L;
     private static final long FUEL_CHARGE_MAP_RETENTION_TICKS = 20L * 60L * 10L;
@@ -198,7 +201,10 @@ public final class PortalTeleportHandler {
             double clampedLateral = clamp(lateralOffset, -lateralLimit, lateralLimit);
             double mirroredLateral = -clampedLateral;
             double clampedVertical = clamp(verticalOffset, 0.0D, verticalMax);
-            double exitOffset = Math.max(PORTAL_MIN_EXIT_OFFSET, (entity.getBbWidth() * 0.5D) + 0.05D);
+            double exitOffset = Math.max(PORTAL_MIN_EXIT_OFFSET, (entity.getBbWidth() * 0.5D) + PORTAL_FIELD_CLEARANCE);
+            if (entity instanceof AbstractMinecart) {
+                exitOffset += PORTAL_MINECART_EXTRA_OFFSET;
+            }
 
             x = targetEntry.pos().getX() + 0.5 + targetSurfaceRight.getStepX() * mirroredLateral;
             y = targetEntry.pos().getY() + 1.0 + clampedVertical;
@@ -414,7 +420,7 @@ public final class PortalTeleportHandler {
     }
 
     private static boolean shouldPreserveProjectileMomentum(Entity entity) {
-        return entity instanceof AbstractArrow;
+        return entity instanceof AbstractArrow || entity instanceof AbstractMinecart;
     }
 
 }
