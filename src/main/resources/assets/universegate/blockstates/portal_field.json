@@ -4,13 +4,13 @@
       "model": "universegate:block/portal_field_ns"
     },
     "axis=x,unstable=true": {
-      "model": "universegate:block/portal_field_ns"
+      "model": "universegate:block/portal_field_ns_unstable"
     },
     "axis=z,unstable=false": {
       "model": "universegate:block/portal_field_ew"
     },
     "axis=z,unstable=true": {
-      "model": "universegate:block/portal_field_ew"
+      "model": "universegate:block/portal_field_ew_unstable"
     }
   }
 }

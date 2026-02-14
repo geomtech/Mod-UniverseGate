@@ -61,13 +61,15 @@ public final class ModBlocks {
     public static final Block PORTAL_CORE = register(
             "portal_core",
             new PortalCoreBlock(BlockBehaviour.Properties.ofFullCopy(Blocks.OBSIDIAN)
-                    .strength(50.0f, 1200.0f))
+                    .strength(50.0f, 1200.0f)
+                    .requiresCorrectToolForDrops())
     );
 
     public static final Block PORTAL_FRAME = register(
             "portal_frame",
             new PortalFrameBlock(BlockBehaviour.Properties.ofFullCopy(Blocks.OBSIDIAN)
                     .strength(60.0f, 1200.0f)
+                    .requiresCorrectToolForDrops()
                     .lightLevel(PortalFrameBlock::lightLevel))
     );
 
@@ -75,6 +77,7 @@ public final class ModBlocks {
             "portal_keyboard",
             new PortalKeyboardBlock(BlockBehaviour.Properties.ofFullCopy(Blocks.OBSIDIAN)
                     .strength(60.0f, 1200.0f)
+                    .requiresCorrectToolForDrops()
                     .lightLevel(PortalKeyboardBlock::lightLevel))
     );
 
@@ -86,6 +89,9 @@ public final class ModBlocks {
                             .strength(1.0F, 0.0F)
                             .lightLevel(state -> 10)
                             .noLootTable()
+                            .noOcclusion()
+                            .isSuffocating((state, level, pos) -> false)
+                            .isViewBlocking((state, level, pos) -> false)
             )
     );
 

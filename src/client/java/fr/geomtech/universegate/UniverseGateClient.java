@@ -1,8 +1,10 @@
 package fr.geomtech.universegate;
 
 import net.fabricmc.api.ClientModInitializer;
+import net.fabricmc.fabric.api.blockrenderlayer.v1.BlockRenderLayerMap;
 import net.fabricmc.fabric.api.client.rendering.v1.EntityModelLayerRegistry;
 import net.fabricmc.fabric.api.client.rendering.v1.EntityRendererRegistry;
+import net.minecraft.client.renderer.RenderType;
 import net.minecraft.client.renderer.blockentity.BlockEntityRenderers;
 import net.minecraft.client.gui.screens.MenuScreens;
 
@@ -11,10 +13,10 @@ public class UniverseGateClient implements ClientModInitializer {
 	public void onInitializeClient() {
 		MenuScreens.register(ModMenuTypes.PORTAL_KEYBOARD, PortalKeyboardScreen::new);
 		MenuScreens.register(ModMenuTypes.PORTAL_CORE, PortalCoreScreen::new);
+		BlockRenderLayerMap.INSTANCE.putBlock(ModBlocks.PORTAL_FIELD, RenderType.translucent());
 		EntityModelLayerRegistry.registerModelLayer(RiftShadeModel.LAYER_LOCATION, RiftShadeModel::createBodyLayer);
 		EntityRendererRegistry.register(ModEntityTypes.RIFT_SHADE, RiftShadeRenderer::new);
 		BlockEntityRenderers.register(ModBlockEntities.PORTAL_FRAME, PortalFrameGlowRenderer::new);
-		BlockEntityRenderers.register(ModBlockEntities.PORTAL_FIELD, PortalFieldBlinkRenderer::new);
 		fr.geomtech.universegate.net.UniverseGateClientNetwork.registerClient();
 	}
 }
