@@ -22,6 +22,7 @@ public class PortalCoreBlockEntity extends BlockEntity implements ExtendedScreen
     private static final long UNSTABLE_THRESHOLD_TICKS = 20L * 60L;
     private static final long OPENING_DURATION_FALLBACK_TICKS = 20L * 9L;
     private static final long AMBIENT_LOOP_INTERVAL_TICKS = 20L * 27L;
+    private static final long UNSTABLE_AMBIENT_LOOP_INTERVAL_TICKS = 10L;
 
     private UUID portalId;
     private String portalName = "";
@@ -182,7 +183,13 @@ public class PortalCoreBlockEntity extends BlockEntity implements ExtendedScreen
     }
 
     void onPortalAmbientStarted(long now) {
-        nextAmbientLoopGameTime = now + AMBIENT_LOOP_INTERVAL_TICKS;
+        nextAmbientLoopGameTime = now + getAmbientLoopIntervalTicks(now);
+    }
+
+    private long getAmbientLoopIntervalTicks(long now) {
+        return shouldUseUnstableVisuals(now)
+                ? UNSTABLE_AMBIENT_LOOP_INTERVAL_TICKS
+                : AMBIENT_LOOP_INTERVAL_TICKS;
     }
 
     private boolean emitsRedstoneSignal() {
