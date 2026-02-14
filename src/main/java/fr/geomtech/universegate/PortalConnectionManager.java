@@ -6,6 +6,7 @@ import net.minecraft.core.particles.ParticleOptions;
 import net.minecraft.core.particles.ParticleTypes;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.level.ServerLevel;
+import net.minecraft.tags.FluidTags;
 import net.minecraft.util.Mth;
 import net.minecraft.util.RandomSource;
 import net.minecraft.world.level.Level;
@@ -387,11 +388,12 @@ public final class PortalConnectionManager {
         var axis = match.right() == net.minecraft.core.Direction.EAST
                 ? net.minecraft.core.Direction.Axis.X
                 : net.minecraft.core.Direction.Axis.Z;
-        var fieldState = ModBlocks.PORTAL_FIELD.defaultBlockState()
+        var baseFieldState = ModBlocks.PORTAL_FIELD.defaultBlockState()
                 .setValue(PortalFieldBlock.AXIS, axis)
                 .setValue(PortalFieldBlock.UNSTABLE, unstable);
         for (BlockPos p : match.interior()) {
-            level.setBlock(p, fieldState, 3);
+            boolean waterlogged = level.getFluidState(p).is(FluidTags.WATER);
+            level.setBlock(p, baseFieldState.setValue(PortalFieldBlock.WATERLOGGED, waterlogged), 3);
         }
         return true;
     }
@@ -408,7 +410,14 @@ public final class PortalConnectionManager {
                 boolean unstable = state.hasProperty(PortalFieldBlock.UNSTABLE)
                         && state.getValue(PortalFieldBlock.UNSTABLE);
                 spawnFieldCollapseParticles(level, p, axis, unstable);
-                level.setBlockAndUpdate(p, net.minecraft.world.level.block.Blocks.AIR.defaultBlockState());
+                boolean waterlogged = state.hasProperty(PortalFieldBlock.WATERLOGGED)
+                        && state.getValue(PortalFieldBlock.WATERLOGGED);
+                level.setBlockAndUpdate(
+                        p,
+                        waterlogged
+                                ? net.minecraft.world.level.block.Blocks.WATER.defaultBlockState()
+                                : net.minecraft.world.level.block.Blocks.AIR.defaultBlockState()
+                );
             }
         }
     }
@@ -461,7 +470,14 @@ public final class PortalConnectionManager {
                     boolean unstable = state.hasProperty(PortalFieldBlock.UNSTABLE)
                             && state.getValue(PortalFieldBlock.UNSTABLE);
                     spawnFieldCollapseParticles(level, p, axis, unstable);
-                    level.setBlockAndUpdate(p, net.minecraft.world.level.block.Blocks.AIR.defaultBlockState());
+                    boolean waterlogged = state.hasProperty(PortalFieldBlock.WATERLOGGED)
+                            && state.getValue(PortalFieldBlock.WATERLOGGED);
+                    level.setBlockAndUpdate(
+                            p,
+                            waterlogged
+                                    ? net.minecraft.world.level.block.Blocks.WATER.defaultBlockState()
+                                    : net.minecraft.world.level.block.Blocks.AIR.defaultBlockState()
+                    );
                 }
             }
         }

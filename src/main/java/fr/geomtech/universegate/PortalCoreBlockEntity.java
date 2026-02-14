@@ -8,6 +8,7 @@ import net.minecraft.network.chat.Component;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.core.particles.ParticleTypes;
 import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.tags.FluidTags;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.inventory.AbstractContainerMenu;
 import net.minecraft.world.level.block.entity.BlockEntity;
@@ -139,12 +140,17 @@ public class PortalCoreBlockEntity extends BlockEntity implements ExtendedScreen
                 ? net.minecraft.core.Direction.Axis.X
                 : net.minecraft.core.Direction.Axis.Z;
         boolean unstableVisual = shouldUseUnstableVisuals(now);
-        BlockState desiredFieldState = ModBlocks.PORTAL_FIELD.defaultBlockState()
+        BlockState desiredFieldBaseState = ModBlocks.PORTAL_FIELD.defaultBlockState()
                 .setValue(PortalFieldBlock.AXIS, axis)
                 .setValue(PortalFieldBlock.UNSTABLE, unstableVisual);
 
         for (BlockPos p : frameMatch.interior()) {
             BlockState current = sl.getBlockState(p);
+            boolean waterlogged = current.is(ModBlocks.PORTAL_FIELD)
+                    && current.hasProperty(PortalFieldBlock.WATERLOGGED)
+                    ? current.getValue(PortalFieldBlock.WATERLOGGED)
+                    : sl.getFluidState(p).is(FluidTags.WATER);
+            BlockState desiredFieldState = desiredFieldBaseState.setValue(PortalFieldBlock.WATERLOGGED, waterlogged);
             if (!current.equals(desiredFieldState)) {
                 sl.setBlock(p, desiredFieldState, 3);
             }
