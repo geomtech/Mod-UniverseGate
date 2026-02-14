@@ -42,11 +42,6 @@ public final class UniverseGateNetwork {
                 BlockPos corePos = findCoreNear(level, payload.keyboardPos(), 8);
                 if (corePos == null) return;
 
-                if (fr.geomtech.universegate.PortalRiftHelper.tryConsumeChargeAndOpenRift(level, corePos, fr.geomtech.universegate.ChargedLightningRodBlock.PORTAL_RADIUS)) {
-                    sendPortalKeyboardStatusToPlayer(player, payload.keyboardPos());
-                    return;
-                }
-
                 // Ouvrir Stargate A<->B
                 if (kb.fuelCount() <= 0) {
                     ModSounds.playAt(level, payload.keyboardPos(), ModSounds.PORTAL_ERROR, 0.9F, 1.0F);
