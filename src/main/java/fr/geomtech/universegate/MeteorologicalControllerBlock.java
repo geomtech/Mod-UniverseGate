@@ -10,8 +10,11 @@ import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.context.BlockPlaceContext;
 import net.minecraft.world.level.BlockGetter;
 import net.minecraft.world.level.Level;
+import net.minecraft.world.level.LevelAccessor;
+import net.minecraft.world.level.LevelReader;
 import net.minecraft.world.level.block.BaseEntityBlock;
 import net.minecraft.world.level.block.Block;
+import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.Mirror;
 import net.minecraft.world.level.block.RenderShape;
 import net.minecraft.world.level.block.Rotation;
@@ -36,9 +39,10 @@ public class MeteorologicalControllerBlock extends BaseEntityBlock {
     public static final DirectionProperty FACING = BlockStateProperties.HORIZONTAL_FACING;
 
     private static final VoxelShape SHAPE_NORTH = Shapes.or(
-            Block.box(1.0D, 0.0D, 1.0D, 15.0D, 2.0D, 15.0D),
-            Block.box(5.0D, 2.0D, 5.0D, 11.0D, 9.0D, 11.0D),
-            Block.box(1.0D, 9.0D, 2.0D, 15.0D, 13.0D, 16.0D)
+            Block.box(3.0D, 4.0D, 14.0D, 13.0D, 13.0D, 16.0D),
+            Block.box(4.0D, 5.0D, 13.0D, 12.0D, 12.0D, 14.0D),
+            Block.box(5.0D, 6.0D, 12.0D, 11.0D, 11.0D, 13.0D),
+            Block.box(4.0D, 4.0D, 13.0D, 12.0D, 5.0D, 14.0D)
     );
     private static final VoxelShape SHAPE_EAST = rotate90Y(SHAPE_NORTH);
     private static final VoxelShape SHAPE_SOUTH = rotate90Y(SHAPE_EAST);
@@ -75,7 +79,37 @@ public class MeteorologicalControllerBlock extends BaseEntityBlock {
 
     @Override
     public BlockState getStateForPlacement(BlockPlaceContext context) {
-        return this.defaultBlockState().setValue(FACING, context.getHorizontalDirection().getOpposite());
+        Direction facing = context.getClickedFace();
+        if (!facing.getAxis().isHorizontal()) {
+            facing = context.getHorizontalDirection().getOpposite();
+        }
+
+        BlockState state = this.defaultBlockState().setValue(FACING, facing);
+        return state.canSurvive(context.getLevel(), context.getClickedPos()) ? state : null;
+    }
+
+    @Override
+    protected boolean canSurvive(BlockState state, LevelReader level, BlockPos pos) {
+        Direction supportDirection = state.getValue(FACING).getOpposite();
+        BlockPos supportPos = pos.relative(supportDirection);
+        if (!level.getBlockState(supportPos).is(ModBlocks.METEOROLOGICAL_CONDENSER)) {
+            return false;
+        }
+        return level.getBlockState(supportPos.below()).is(ModBlocks.METEOROLOGICAL_CONDENSER);
+    }
+
+    @Override
+    protected BlockState updateShape(BlockState state,
+                                     Direction direction,
+                                     BlockState neighborState,
+                                     LevelAccessor level,
+                                     BlockPos currentPos,
+                                     BlockPos neighborPos) {
+        Direction supportDirection = state.getValue(FACING).getOpposite();
+        if (direction == supportDirection && !canSurvive(state, level, currentPos)) {
+            return Blocks.AIR.defaultBlockState();
+        }
+        return super.updateShape(state, direction, neighborState, level, currentPos, neighborPos);
     }
 
     @Override
