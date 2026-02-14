@@ -44,6 +44,31 @@ public final class ModItems {
             new BlockItem(ModBlocks.LIGHT_BEAM_EMITTER, new Item.Properties())
     );
 
+    public static final Item ENERGY_CONDENSER_ITEM = register(
+            "energy_condenser",
+            new BlockItem(ModBlocks.ENERGY_CONDENSER, new Item.Properties())
+    );
+
+    public static final Item PARABOLA_BLOCK_ITEM = register(
+            "parabola_block",
+            new BlockItem(ModBlocks.PARABOLA_BLOCK, new Item.Properties())
+    );
+
+    public static final Item METEOROLOGICAL_CATALYST_ITEM = register(
+            "meteorological_catalyst",
+            new BlockItem(ModBlocks.METEOROLOGICAL_CATALYST, new Item.Properties())
+    );
+
+    public static final Item METEOROLOGICAL_CONTROLLER_ITEM = register(
+            "meteorological_controller",
+            new BlockItem(ModBlocks.METEOROLOGICAL_CONTROLLER, new Item.Properties())
+    );
+
+    public static final Item ENERGY_CONDUIT_ITEM = register(
+            "energy_conduit",
+            new BlockItem(ModBlocks.ENERGY_CONDUIT, new Item.Properties())
+    );
+
     public static final Item RIFT_SHADE_SPAWN_EGG = register(
             "rift_shade_spawn_egg",
             new SpawnEggItem(ModEntityTypes.RIFT_SHADE, 0x08080A, 0xF3F3F3, new Item.Properties())
@@ -71,6 +96,11 @@ public final class ModItems {
 
     public static final Item RIFT_ASH = register(
             "rift_ash",
+            new Item(new Item.Properties().stacksTo(64))
+    );
+
+    public static final Item ENERGY_CRYSTAL = register(
+            "energy_crystal",
             new Item(new Item.Properties().stacksTo(64))
     );
 

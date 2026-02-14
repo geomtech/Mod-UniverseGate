@@ -1,0 +1,17 @@
+{
+  "multipart": [
+    {
+      "apply": {
+        "model": "universegate:block/meteorological_catalyst"
+      }
+    },
+    {
+      "when": {
+        "has_crystal": "true"
+      },
+      "apply": {
+        "model": "universegate:block/meteorological_catalyst_crystal"
+      }
+    }
+  ]
+}

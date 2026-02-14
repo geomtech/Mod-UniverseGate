@@ -28,6 +28,16 @@ public final class ModMenuTypes {
                     )
             );
 
+    public static final ExtendedScreenHandlerType<MeteorologicalControllerMenu, BlockPos> METEOROLOGICAL_CONTROLLER =
+            Registry.register(
+                    BuiltInRegistries.MENU,
+                    ResourceLocation.fromNamespaceAndPath(UniverseGate.MOD_ID, "meteorological_controller"),
+                    new ExtendedScreenHandlerType<>(
+                            MeteorologicalControllerMenu::new,
+                            BlockPos.STREAM_CODEC
+                    )
+            );
+
     public static void register() {}
 
     private ModMenuTypes() {}

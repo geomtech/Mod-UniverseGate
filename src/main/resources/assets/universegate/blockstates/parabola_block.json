@@ -1,0 +1,19 @@
+{
+  "variants": {
+    "facing=north": {
+      "model": "universegate:block/parabola_block"
+    },
+    "facing=east": {
+      "model": "universegate:block/parabola_block",
+      "y": 90
+    },
+    "facing=south": {
+      "model": "universegate:block/parabola_block",
+      "y": 180
+    },
+    "facing=west": {
+      "model": "universegate:block/parabola_block",
+      "y": 270
+    }
+  }
+}

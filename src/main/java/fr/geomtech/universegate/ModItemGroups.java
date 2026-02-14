@@ -25,6 +25,11 @@ public final class ModItemGroups {
                 output.accept(ModItems.PORTAL_KEYBOARD_ITEM);
                 output.accept(ModItems.CHARGED_LIGHTNING_ROD_ITEM);
                 output.accept(ModItems.LIGHT_BEAM_EMITTER_ITEM);
+                output.accept(ModItems.ENERGY_CONDENSER_ITEM);
+                output.accept(ModItems.PARABOLA_BLOCK_ITEM);
+                output.accept(ModItems.METEOROLOGICAL_CATALYST_ITEM);
+                output.accept(ModItems.METEOROLOGICAL_CONTROLLER_ITEM);
+                output.accept(ModItems.ENERGY_CONDUIT_ITEM);
 
                 output.accept(ModItems.VOID_BLOCK_ITEM);
                 output.accept(ModItems.LIGHT_BLOCK_ITEM);
@@ -34,6 +39,7 @@ public final class ModItemGroups {
                 output.accept(ModItems.KELO_PLANKS_ITEM);
 
                 output.accept(ModItems.RIFT_ASH);
+                output.accept(ModItems.ENERGY_CRYSTAL);
                 output.accept(ModItems.RIFT_SHADE_SPAWN_EGG);
             })
             .build();

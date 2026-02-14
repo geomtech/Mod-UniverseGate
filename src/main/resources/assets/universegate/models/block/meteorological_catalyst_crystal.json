@@ -1,0 +1,48 @@
+{
+  "parent": "minecraft:block/block",
+  "textures": {
+    "particle": "universegate:block/energy_crystal",
+    "crystal": "universegate:block/energy_crystal"
+  },
+  "elements": [
+    {
+      "from": [6.5, 6, 6.5],
+      "to": [9.5, 10, 9.5],
+      "shade": false,
+      "faces": {
+        "down": { "texture": "#crystal" },
+        "up": { "texture": "#crystal" },
+        "north": { "texture": "#crystal" },
+        "south": { "texture": "#crystal" },
+        "west": { "texture": "#crystal" },
+        "east": { "texture": "#crystal" }
+      }
+    },
+    {
+      "from": [7, 10, 7],
+      "to": [9, 14, 9],
+      "shade": false,
+      "faces": {
+        "down": { "texture": "#crystal" },
+        "up": { "texture": "#crystal" },
+        "north": { "texture": "#crystal" },
+        "south": { "texture": "#crystal" },
+        "west": { "texture": "#crystal" },
+        "east": { "texture": "#crystal" }
+      }
+    },
+    {
+      "from": [7.25, 14, 7.25],
+      "to": [8.75, 16, 8.75],
+      "shade": false,
+      "faces": {
+        "down": { "texture": "#crystal" },
+        "up": { "texture": "#crystal" },
+        "north": { "texture": "#crystal" },
+        "south": { "texture": "#crystal" },
+        "west": { "texture": "#crystal" },
+        "east": { "texture": "#crystal" }
+      }
+    }
+  ]
+}

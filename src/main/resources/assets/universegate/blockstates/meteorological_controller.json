@@ -1,0 +1,8 @@
+{
+  "variants": {
+    "facing=north": { "model": "universegate:block/meteorological_controller" },
+    "facing=east": { "model": "universegate:block/meteorological_controller", "y": 90 },
+    "facing=south": { "model": "universegate:block/meteorological_controller", "y": 180 },
+    "facing=west": { "model": "universegate:block/meteorological_controller", "y": 270 }
+  }
+}

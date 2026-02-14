@@ -32,6 +32,7 @@ public class UniverseGate implements ModInitializer {
 		UniverseGatePoiHelper.registerChargedLightningRodPoi();
 		RiftDeathRecoveryHandler.register();
 		EngineerExpeditionManager.register();
+		WeatherMachineCommand.register();
 		UpdateCheckManager.register();
 		ServerTickEvents.END_WORLD_TICK.register(RiftShadeSpawner::tickWorld);
 		ServerTickEvents.END_WORLD_TICK.register(RiftCubeGenerator::tickWorld);

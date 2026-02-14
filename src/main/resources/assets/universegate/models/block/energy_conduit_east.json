@@ -1,0 +1,21 @@
+{
+  "parent": "minecraft:block/block",
+  "textures": {
+    "pipe": "minecraft:block/iron_block",
+    "particle": "minecraft:block/iron_block"
+  },
+  "elements": [
+    {
+      "from": [10, 6, 6],
+      "to": [16, 10, 10],
+      "faces": {
+        "down": { "texture": "#pipe" },
+        "up": { "texture": "#pipe" },
+        "north": { "texture": "#pipe" },
+        "south": { "texture": "#pipe" },
+        "west": { "texture": "#pipe" },
+        "east": { "texture": "#pipe" }
+      }
+    }
+  ]
+}

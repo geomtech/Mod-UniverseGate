@@ -39,6 +39,16 @@
       "universegate:portal_entity_going_through"
     ]
   },
+  "meteo_machine": {
+    "sounds": [
+      "universegate:meteo_machine"
+    ]
+  },
+  "beam": {
+    "sounds": [
+      "universegate:beam"
+    ]
+  },
   "rift_shade_sound": {
     "sounds": [
       "universegate:rift_shade_sound"

@@ -1,0 +1,31 @@
+{
+  "multipart": [
+    {
+      "apply": { "model": "universegate:block/energy_conduit_center" }
+    },
+    {
+      "when": { "north": "true" },
+      "apply": { "model": "universegate:block/energy_conduit_north" }
+    },
+    {
+      "when": { "south": "true" },
+      "apply": { "model": "universegate:block/energy_conduit_south" }
+    },
+    {
+      "when": { "west": "true" },
+      "apply": { "model": "universegate:block/energy_conduit_west" }
+    },
+    {
+      "when": { "east": "true" },
+      "apply": { "model": "universegate:block/energy_conduit_east" }
+    },
+    {
+      "when": { "up": "true" },
+      "apply": { "model": "universegate:block/energy_conduit_up" }
+    },
+    {
+      "when": { "down": "true" },
+      "apply": { "model": "universegate:block/energy_conduit_down" }
+    }
+  ]
+}

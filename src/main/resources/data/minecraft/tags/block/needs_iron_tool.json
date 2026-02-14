@@ -5,6 +5,11 @@
     "universegate:light_block",
     "universegate:white_purpur_block",
     "universegate:white_purpur_pillar",
+    "universegate:energy_condenser",
+    "universegate:parabola_block",
+    "universegate:meteorological_catalyst",
+    "universegate:meteorological_controller",
+    "universegate:energy_conduit",
     "universegate:portal_core",
     "universegate:portal_frame",
     "universegate:portal_keyboard"

@@ -13,10 +13,13 @@ public class UniverseGateClient implements ClientModInitializer {
 	public void onInitializeClient() {
 		MenuScreens.register(ModMenuTypes.PORTAL_KEYBOARD, PortalKeyboardScreen::new);
 		MenuScreens.register(ModMenuTypes.PORTAL_CORE, PortalCoreScreen::new);
+		MenuScreens.register(ModMenuTypes.METEOROLOGICAL_CONTROLLER, MeteorologicalControllerScreen::new);
 		BlockRenderLayerMap.INSTANCE.putBlock(ModBlocks.PORTAL_FIELD, RenderType.translucent());
 		EntityModelLayerRegistry.registerModelLayer(RiftShadeModel.LAYER_LOCATION, RiftShadeModel::createBodyLayer);
 		EntityRendererRegistry.register(ModEntityTypes.RIFT_SHADE, RiftShadeRenderer::new);
 		BlockEntityRenderers.register(ModBlockEntities.PORTAL_FRAME, PortalFrameGlowRenderer::new);
+		BlockEntityRenderers.register(ModBlockEntities.METEOROLOGICAL_CATALYST, MeteorologicalCatalystCrystalGlowRenderer::new);
+		BlockEntityRenderers.register(ModBlockEntities.METEOROLOGICAL_CONTROLLER, MeteorologicalControllerBeamRenderer::new);
 		fr.geomtech.universegate.net.UniverseGateClientNetwork.registerClient();
 	}
 }

@@ -58,6 +58,46 @@ public final class ModBlocks {
                     .lightLevel(state -> 15))
     );
 
+    public static final Block ENERGY_CONDENSER = register(
+            "energy_condenser",
+            new Block(BlockBehaviour.Properties.ofFullCopy(Blocks.IRON_BLOCK)
+                    .strength(3.0f, 6.0f)
+                    .requiresCorrectToolForDrops()
+                    .noOcclusion())
+    );
+
+    public static final Block PARABOLA_BLOCK = register(
+            "parabola_block",
+            new ParabolaBlock(BlockBehaviour.Properties.ofFullCopy(Blocks.IRON_BLOCK)
+                    .strength(3.0f, 6.0f)
+                    .requiresCorrectToolForDrops()
+                    .noOcclusion())
+    );
+
+    public static final Block METEOROLOGICAL_CATALYST = register(
+            "meteorological_catalyst",
+            new CrystalCondenserBlock(BlockBehaviour.Properties.ofFullCopy(Blocks.IRON_BLOCK)
+                    .strength(3.0f, 6.0f)
+                    .requiresCorrectToolForDrops()
+                    .noOcclusion())
+    );
+
+    public static final Block METEOROLOGICAL_CONTROLLER = register(
+            "meteorological_controller",
+            new MeteorologicalControllerBlock(BlockBehaviour.Properties.ofFullCopy(Blocks.IRON_BLOCK)
+                    .strength(3.0f, 6.0f)
+                    .requiresCorrectToolForDrops()
+                    .noOcclusion())
+    );
+
+    public static final Block ENERGY_CONDUIT = register(
+            "energy_conduit",
+            new EnergyConduitBlock(BlockBehaviour.Properties.ofFullCopy(Blocks.IRON_BLOCK)
+                    .strength(2.5f, 6.0f)
+                    .requiresCorrectToolForDrops()
+                    .noOcclusion())
+    );
+
     public static final Block PORTAL_CORE = register(
             "portal_core",
             new PortalCoreBlock(BlockBehaviour.Properties.ofFullCopy(Blocks.OBSIDIAN)

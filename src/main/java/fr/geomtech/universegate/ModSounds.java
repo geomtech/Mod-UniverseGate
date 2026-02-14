@@ -20,6 +20,8 @@ public final class ModSounds {
     public static final SoundEvent PORTAL_ERROR = register("portal_error");
     public static final SoundEvent PORTAL_UNSTABLE = register("portal_unstable");
     public static final SoundEvent PORTAL_ENTITY_GOING_THROUGH = register("portal_entity_going_through");
+    public static final SoundEvent METEO_MACHINE = register("meteo_machine");
+    public static final SoundEvent BEAM = register("beam");
     public static final SoundEvent RIFT_SHADE_SOUND = register("rift_shade_sound");
     public static final SoundEvent RIFT_SHADE_HIT = register("rift_shade_hit");
     public static final SoundEvent RIFT_SHADE_DEATH = register("rift_shade_death");
@@ -47,6 +49,22 @@ public final class ModSounds {
     public static void playPortalDialingAt(ServerLevel level, BlockPos pos) {
         playAt(level, pos, PORTAL_DIAL, 1.0F, 1.0F);
         playAt(level, pos, PORTAL_OPENING, 1.0F, 1.0F);
+    }
+
+    public static void playMeteoMachineAt(ServerLevel level, BlockPos pos) {
+        playAt(level, pos, METEO_MACHINE, 1.0F, 1.0F);
+    }
+
+    public static void stopMeteoMachineNear(ServerLevel level, BlockPos pos) {
+        stopSoundNear(level, pos, METEO_MACHINE);
+    }
+
+    public static void playBeamAt(ServerLevel level, BlockPos pos) {
+        playAt(level, pos, BEAM, 1.0F, 1.0F);
+    }
+
+    public static void stopBeamNear(ServerLevel level, BlockPos pos) {
+        stopSoundNear(level, pos, BEAM);
     }
 
     public static void stopPortalOpeningNear(ServerLevel level, BlockPos pos) {
