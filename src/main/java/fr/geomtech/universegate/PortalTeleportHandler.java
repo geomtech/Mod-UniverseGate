@@ -13,6 +13,8 @@ import net.minecraft.world.effect.MobEffects;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.RelativeMovement;
+import net.minecraft.world.entity.projectile.AbstractArrow;
+import net.minecraft.world.phys.Vec3;
 
 import fr.geomtech.universegate.UniverseGateDimensions;
 import fr.geomtech.universegate.PortalRiftHelper;
@@ -31,6 +33,11 @@ public final class PortalTeleportHandler {
     private static final int KEYBOARD_RADIUS = 8;
     private static final int KEYBOARD_SEARCH_Y = 2;
 
+    private static final double PORTAL_INNER_HALF_WIDTH = PortalFrameDetector.INNER_WIDTH / 2.0D;
+    private static final double PORTAL_INNER_HEIGHT = PortalFrameDetector.INNER_HEIGHT;
+    private static final double PORTAL_POSITION_EPSILON = 0.01D;
+    private static final double PORTAL_MIN_EXIT_OFFSET = 0.35D;
+
     private static final float UNSTABLE_RIFT_CHANCE = 0.05F;
     private static final float UNSTABLE_DAMAGE_CHANCE = 0.40F;
     private static final float UNSTABLE_RANDOM_PORTAL_CHANCE = 0.10F;
@@ -48,6 +55,14 @@ public final class PortalTeleportHandler {
         if (entity.isPassenger()) return;
 
         long now = sourceLevel.getGameTime();
+        UUID entityId = entity.getUUID();
+        boolean preserveProjectileMomentum = shouldPreserveProjectileMomentum(entity);
+        Vec3 preservedVelocity = entity.getDeltaMovement();
+        float preservedYaw = entity.getYRot();
+        float preservedPitch = entity.getXRot();
+        Vec3 projectileVelocityAfterTeleport = preservedVelocity;
+        float projectileYawAfterTeleport = preservedYaw;
+        float projectilePitchAfterTeleport = preservedPitch;
 
         // 1) trouver le core associé au champ
         BlockPos corePos = findCoreNear(sourceLevel, fieldPos);
@@ -132,19 +147,52 @@ public final class PortalTeleportHandler {
         double x = targetEntry.pos().getX() + 0.5;
         double y = targetEntry.pos().getY() + 1.0;
         double z = targetEntry.pos().getZ() + 0.5;
-        float yaw = entity.getYRot();
+        float yaw = preserveProjectileMomentum ? preservedYaw : entity.getYRot();
+        float pitch = preserveProjectileMomentum ? preservedPitch : entity.getXRot();
 
         var sourceMatch = PortalFrameDetector.find(sourceLevel, corePos);
         var targetMatch = PortalFrameDetector.find(targetLevel, targetEntry.pos());
         if (sourceMatch.isPresent() && targetMatch.isPresent()) {
             int sideSign = sideSignFromEntry(sourceMatch.get(), corePos, entity);
+            Direction sourceNormal = normalFromMatch(sourceMatch.get(), sideSign);
+            Direction sourceSurfaceRight = sourceNormal.getCounterClockWise();
             PortalKeyboardBlockEntity targetKeyboard = findKeyboardNear(targetLevel, targetEntry.pos(), KEYBOARD_RADIUS);
             Direction exitNormal = targetKeyboard != null
                     ? normalFromKeyboard(targetMatch.get(), targetEntry.pos(), targetKeyboard.getBlockPos(), sideSign)
                     : normalFromMatch(targetMatch.get(), sideSign);
-            x += exitNormal.getStepX() * 1.2;
-            z += exitNormal.getStepZ() * 1.2;
-            yaw = exitNormal.toYRot();
+            Direction targetSurfaceRight = exitNormal.getCounterClockWise();
+
+            if (preserveProjectileMomentum) {
+                projectileVelocityAfterTeleport = transformVelocityThroughPortal(
+                        preservedVelocity,
+                        sourceSurfaceRight,
+                        sourceNormal,
+                        targetSurfaceRight,
+                        exitNormal
+                );
+                projectileYawAfterTeleport = yawFromVelocity(projectileVelocityAfterTeleport, preservedYaw);
+                projectilePitchAfterTeleport = pitchFromVelocity(projectileVelocityAfterTeleport, preservedPitch);
+            }
+
+            double lateralOffset = lateralOffsetFromCore(corePos, entity.position(), sourceSurfaceRight);
+            double verticalOffset = entity.getY() - (corePos.getY() + 1.0D);
+            double lateralLimit = Math.max(0.0D, PORTAL_INNER_HALF_WIDTH - (entity.getBbWidth() * 0.5D) - PORTAL_POSITION_EPSILON);
+            double verticalMax = Math.max(0.0D, PORTAL_INNER_HEIGHT - entity.getBbHeight() - PORTAL_POSITION_EPSILON);
+
+            double clampedLateral = clamp(lateralOffset, -lateralLimit, lateralLimit);
+            double mirroredLateral = -clampedLateral;
+            double clampedVertical = clamp(verticalOffset, 0.0D, verticalMax);
+            double exitOffset = Math.max(PORTAL_MIN_EXIT_OFFSET, (entity.getBbWidth() * 0.5D) + 0.05D);
+
+            x = targetEntry.pos().getX() + 0.5 + targetSurfaceRight.getStepX() * mirroredLateral;
+            y = targetEntry.pos().getY() + 1.0 + clampedVertical;
+            z = targetEntry.pos().getZ() + 0.5 + targetSurfaceRight.getStepZ() * mirroredLateral;
+
+            x += exitNormal.getStepX() * exitOffset;
+            z += exitNormal.getStepZ() * exitOffset;
+            if (!preserveProjectileMomentum) {
+                yaw = exitNormal.toYRot();
+            }
         }
 
         ModSounds.playAt(sourceLevel, corePos, ModSounds.PORTAL_ENTITY_GOING_THROUGH, 0.9F, 1.0F);
@@ -153,9 +201,21 @@ public final class PortalTeleportHandler {
             player.teleportTo(targetLevel, x, y, z, yaw, player.getXRot());
             teleported = true;
         } else {
-            teleported = entity.teleportTo(targetLevel, x, y, z, Set.<RelativeMovement>of(), yaw, entity.getXRot());
+            teleported = entity.teleportTo(targetLevel, x, y, z, Set.<RelativeMovement>of(), yaw, pitch);
         }
         if (!teleported) return;
+
+        if (preserveProjectileMomentum) {
+            Entity teleportedEntity = targetLevel.getEntity(entityId);
+            if (teleportedEntity == null && entity.level() == targetLevel) {
+                teleportedEntity = entity;
+            }
+            if (teleportedEntity != null) {
+                teleportedEntity.setDeltaMovement(projectileVelocityAfterTeleport);
+                teleportedEntity.setYRot(projectileYawAfterTeleport);
+                teleportedEntity.setXRot(projectilePitchAfterTeleport);
+            }
+        }
 
         ModSounds.playAt(targetLevel, targetEntry.pos(), ModSounds.PORTAL_ENTITY_GOING_THROUGH, 0.9F, 1.05F);
         core.onEntityPassed(now);
@@ -289,6 +349,46 @@ public final class PortalTeleportHandler {
     private static void applyUnstableDebuffs(LivingEntity living) {
         living.addEffect(new MobEffectInstance(MobEffects.CONFUSION, UNSTABLE_NAUSEA_DURATION_TICKS, 0));
         living.addEffect(new MobEffectInstance(MobEffects.MOVEMENT_SLOWDOWN, UNSTABLE_SLOWNESS_DURATION_TICKS, UNSTABLE_SLOWNESS_AMPLIFIER));
+    }
+
+    private static double lateralOffsetFromCore(BlockPos corePos, Vec3 entityPos, Direction lateralDirection) {
+        double dx = entityPos.x - (corePos.getX() + 0.5D);
+        double dz = entityPos.z - (corePos.getZ() + 0.5D);
+        return dx * lateralDirection.getStepX() + dz * lateralDirection.getStepZ();
+    }
+
+    private static double clamp(double value, double min, double max) {
+        return Math.max(min, Math.min(max, value));
+    }
+
+    private static Vec3 transformVelocityThroughPortal(Vec3 velocity,
+                                                       Direction sourceSurfaceRight,
+                                                       Direction sourceNormal,
+                                                       Direction targetSurfaceRight,
+                                                       Direction targetNormal) {
+        double sourceLateral = velocity.x * sourceSurfaceRight.getStepX() + velocity.z * sourceSurfaceRight.getStepZ();
+        double sourceForward = velocity.x * sourceNormal.getStepX() + velocity.z * sourceNormal.getStepZ();
+
+        double targetX = (-sourceLateral) * targetSurfaceRight.getStepX() + sourceForward * targetNormal.getStepX();
+        double targetY = velocity.y;
+        double targetZ = (-sourceLateral) * targetSurfaceRight.getStepZ() + sourceForward * targetNormal.getStepZ();
+        return new Vec3(targetX, targetY, targetZ);
+    }
+
+    private static float yawFromVelocity(Vec3 velocity, float fallbackYaw) {
+        double horizontalLengthSqr = velocity.x * velocity.x + velocity.z * velocity.z;
+        if (horizontalLengthSqr < 1.0E-7D) return fallbackYaw;
+        return (float) (Math.atan2(velocity.z, velocity.x) * (180.0D / Math.PI)) - 90.0F;
+    }
+
+    private static float pitchFromVelocity(Vec3 velocity, float fallbackPitch) {
+        double horizontalLength = Math.sqrt(velocity.x * velocity.x + velocity.z * velocity.z);
+        if (horizontalLength < 1.0E-7D && Math.abs(velocity.y) < 1.0E-7D) return fallbackPitch;
+        return (float) (-(Math.atan2(velocity.y, horizontalLength) * (180.0D / Math.PI)));
+    }
+
+    private static boolean shouldPreserveProjectileMomentum(Entity entity) {
+        return entity instanceof AbstractArrow;
     }
 
 }
