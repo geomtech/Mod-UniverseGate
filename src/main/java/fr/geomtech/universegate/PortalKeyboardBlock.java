@@ -13,6 +13,7 @@ import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.BaseEntityBlock;
+import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.Mirror;
 import net.minecraft.world.level.block.Rotation;
 import net.minecraft.world.level.block.entity.BlockEntity;
@@ -72,6 +73,10 @@ public class PortalKeyboardBlock extends BaseEntityBlock {
 
     @Override
     protected int getSignal(BlockState state, BlockGetter level, BlockPos pos, Direction direction) {
+        if (level.getBlockState(pos.relative(direction.getOpposite())).is(Blocks.HOPPER)) {
+            return 0;
+        }
+
         BlockEntity blockEntity = level.getBlockEntity(pos);
         if (blockEntity instanceof PortalKeyboardBlockEntity keyboard && keyboard.fuelCount() > 0) {
             return 15;
