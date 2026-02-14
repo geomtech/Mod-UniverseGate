@@ -99,7 +99,7 @@ public class EnergyConduitBlock extends Block {
     private boolean canConnectTo(BlockGetter level, BlockPos pos) {
         BlockState state = level.getBlockState(pos);
         return state.is(ModBlocks.ENERGY_CONDUIT)
-                || state.is(ModBlocks.ENERGY_CONDENSER)
+                || state.is(ModBlocks.METEOROLOGICAL_CONDENSER)
                 || state.is(ModBlocks.PORTAL_CORE)
                 || state.is(ModBlocks.PORTAL_FRAME)
                 || state.is(ModBlocks.PORTAL_FIELD)

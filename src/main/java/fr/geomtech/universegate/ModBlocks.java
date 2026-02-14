@@ -66,6 +66,14 @@ public final class ModBlocks {
                     .noOcclusion())
     );
 
+    public static final Block METEOROLOGICAL_CONDENSER = register(
+            "meteorological_condenser",
+            new Block(BlockBehaviour.Properties.ofFullCopy(Blocks.IRON_BLOCK)
+                    .strength(3.0f, 6.0f)
+                    .requiresCorrectToolForDrops()
+                    .noOcclusion())
+    );
+
     public static final Block PARABOLA_BLOCK = register(
             "parabola_block",
             new ParabolaBlock(BlockBehaviour.Properties.ofFullCopy(Blocks.IRON_BLOCK)

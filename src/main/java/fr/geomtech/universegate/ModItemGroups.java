@@ -26,6 +26,7 @@ public final class ModItemGroups {
                 output.accept(ModItems.CHARGED_LIGHTNING_ROD_ITEM);
                 output.accept(ModItems.LIGHT_BEAM_EMITTER_ITEM);
                 output.accept(ModItems.ENERGY_CONDENSER_ITEM);
+                output.accept(ModItems.METEOROLOGICAL_CONDENSER_ITEM);
                 output.accept(ModItems.PARABOLA_BLOCK_ITEM);
                 output.accept(ModItems.METEOROLOGICAL_CATALYST_ITEM);
                 output.accept(ModItems.METEOROLOGICAL_CONTROLLER_ITEM);

@@ -49,6 +49,11 @@ public final class ModItems {
             new BlockItem(ModBlocks.ENERGY_CONDENSER, new Item.Properties())
     );
 
+    public static final Item METEOROLOGICAL_CONDENSER_ITEM = register(
+            "meteorological_condenser",
+            new BlockItem(ModBlocks.METEOROLOGICAL_CONDENSER, new Item.Properties())
+    );
+
     public static final Item PARABOLA_BLOCK_ITEM = register(
             "parabola_block",
             new BlockItem(ModBlocks.PARABOLA_BLOCK, new Item.Properties())

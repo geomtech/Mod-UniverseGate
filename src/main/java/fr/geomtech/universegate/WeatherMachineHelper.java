@@ -95,8 +95,8 @@ public final class WeatherMachineHelper {
     }
 
     private static boolean isCondenserTower(ServerLevel level, BlockPos basePos) {
-        return level.getBlockState(basePos).is(ModBlocks.ENERGY_CONDENSER)
-                && level.getBlockState(basePos.above()).is(ModBlocks.ENERGY_CONDENSER);
+        return level.getBlockState(basePos).is(ModBlocks.METEOROLOGICAL_CONDENSER)
+                && level.getBlockState(basePos.above()).is(ModBlocks.METEOROLOGICAL_CONDENSER);
     }
 
     private static boolean hasParabolaOnNearbyPortal(ServerLevel level, BlockPos center) {
