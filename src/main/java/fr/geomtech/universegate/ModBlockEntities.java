@@ -63,6 +63,13 @@ public final class ModBlockEntities {
                     BlockEntityType.Builder.of(LightBeamEmitterBlockEntity::new, ModBlocks.LIGHT_BEAM_EMITTER).build(null)
             );
 
+    public static final BlockEntityType<ParabolaBlockEntity> PARABOLA =
+            Registry.register(
+                    BuiltInRegistries.BLOCK_ENTITY_TYPE,
+                    ResourceLocation.fromNamespaceAndPath(UniverseGate.MOD_ID, "parabola_block"),
+                    BlockEntityType.Builder.of(ParabolaBlockEntity::new, ModBlocks.PARABOLA_BLOCK).build(null)
+            );
+
     public static void register() {}
 
     private ModBlockEntities() {}

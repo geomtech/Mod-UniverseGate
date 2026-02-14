@@ -1,0 +1,59 @@
+{
+  "parent": "minecraft:block/block",
+  "textures": {
+    "dish": "universegate:block/white_purpur_block",
+    "support": "universegate:block/white_purpur_pillar",
+    "accent": "universegate:block/light_block",
+    "particle": "universegate:block/white_purpur_block"
+  },
+  "elements": [
+    {
+      "from": [6.5, 0.0, 6.5],
+      "to": [9.5, 1.0, 9.5],
+      "faces": {
+        "north": { "texture": "#support" },
+        "east": { "texture": "#support" },
+        "south": { "texture": "#support" },
+        "west": { "texture": "#support" },
+        "up": { "texture": "#support" },
+        "down": { "texture": "#support" }
+      }
+    },
+    {
+      "from": [7.25, 1.0, 7.25],
+      "to": [8.75, 10.8, 8.75],
+      "faces": {
+        "north": { "texture": "#support" },
+        "east": { "texture": "#support" },
+        "south": { "texture": "#support" },
+        "west": { "texture": "#support" },
+        "up": { "texture": "#support" },
+        "down": { "texture": "#support" }
+      }
+    },
+    {
+      "from": [6.4, 10.8, 6.4],
+      "to": [9.6, 11.5, 9.6],
+      "faces": {
+        "north": { "texture": "#support" },
+        "east": { "texture": "#support" },
+        "south": { "texture": "#support" },
+        "west": { "texture": "#support" },
+        "up": { "texture": "#support" },
+        "down": { "texture": "#support" }
+      }
+    },
+    {
+      "from": [7.3, 11.2, 7.3],
+      "to": [8.7, 12.0, 8.7],
+      "faces": {
+        "north": { "texture": "#accent" },
+        "east": { "texture": "#accent" },
+        "south": { "texture": "#accent" },
+        "west": { "texture": "#accent" },
+        "up": { "texture": "#accent" },
+        "down": { "texture": "#accent" }
+      }
+    }
+  ]
+}

@@ -20,6 +20,7 @@ public class UniverseGateClient implements ClientModInitializer {
 		BlockEntityRenderers.register(ModBlockEntities.PORTAL_FRAME, PortalFrameGlowRenderer::new);
 		BlockEntityRenderers.register(ModBlockEntities.METEOROLOGICAL_CATALYST, MeteorologicalCatalystCrystalGlowRenderer::new);
 		BlockEntityRenderers.register(ModBlockEntities.METEOROLOGICAL_CONTROLLER, MeteorologicalControllerBeamRenderer::new);
+		BlockEntityRenderers.register(ModBlockEntities.PARABOLA, ParabolaDishRenderer::new);
 		fr.geomtech.universegate.net.UniverseGateClientNetwork.registerClient();
 	}
 }

@@ -1,18 +1,33 @@
 {
   "variants": {
-    "facing=north": {
-      "model": "universegate:block/parabola_block"
+    "facing=north,part=base": {
+      "model": "universegate:block/parabola_block_base"
     },
-    "facing=east": {
-      "model": "universegate:block/parabola_block",
+    "facing=east,part=base": {
+      "model": "universegate:block/parabola_block_base",
       "y": 90
     },
-    "facing=south": {
-      "model": "universegate:block/parabola_block",
+    "facing=south,part=base": {
+      "model": "universegate:block/parabola_block_base",
       "y": 180
     },
-    "facing=west": {
-      "model": "universegate:block/parabola_block",
+    "facing=west,part=base": {
+      "model": "universegate:block/parabola_block_base",
+      "y": 270
+    },
+    "facing=north,part=rotor": {
+      "model": "universegate:block/parabola_block_rotor"
+    },
+    "facing=east,part=rotor": {
+      "model": "universegate:block/parabola_block_rotor",
+      "y": 90
+    },
+    "facing=south,part=rotor": {
+      "model": "universegate:block/parabola_block_rotor",
+      "y": 180
+    },
+    "facing=west,part=rotor": {
+      "model": "universegate:block/parabola_block_rotor",
       "y": 270
     }
   }
