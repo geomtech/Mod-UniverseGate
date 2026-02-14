@@ -25,6 +25,7 @@
   "gui.universegate.rename": "Renommer",
   "message.universegate.use_keyboard_destination": "Utilise le clavier pour composer une destination.",
   "message.universegate.blocked_direction": "Le vortex est à sens unique.",
+  "message.universegate.update_available": "Une nouvelle mise a jour UniverseGate est disponible (%s) :",
   "message.universegate.engineer_gift": "Un ingenieur du village te remercie d'avoir apporte la technologie des portails.",
   "dimension.universegate.rift": "La Faille",
   "biome.universegate.rift_void": "La Faille",

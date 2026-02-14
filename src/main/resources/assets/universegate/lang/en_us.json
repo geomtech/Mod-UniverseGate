@@ -25,6 +25,7 @@
   "gui.universegate.rename": "Rename",
   "message.universegate.use_keyboard_destination": "Use the Keyboard to set a destination.",
   "message.universegate.blocked_direction": "This vortex is one-way.",
+  "message.universegate.update_available": "A new UniverseGate update is available (%s):",
   "message.universegate.engineer_gift": "A village engineer thanks you for bringing portal tech to the village.",
   "dimension.universegate.rift": "The Rift",
   "biome.universegate.rift_void": "The Rift",
