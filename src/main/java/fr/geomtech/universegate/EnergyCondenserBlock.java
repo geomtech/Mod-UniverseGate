@@ -10,6 +10,13 @@ import net.minecraft.world.level.block.entity.BlockEntityTicker;
 import net.minecraft.world.level.block.entity.BlockEntityType;
 import net.minecraft.world.level.block.state.BlockState;
 import org.jetbrains.annotations.Nullable;
+import java.util.List;
+import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.level.storage.loot.LootParams;
+import net.minecraft.world.level.storage.loot.parameters.LootContextParams;
+import net.minecraft.core.component.DataComponents;
+import net.minecraft.world.item.component.CustomData;
+import net.minecraft.nbt.CompoundTag;
 
 public class EnergyCondenserBlock extends BaseEntityBlock {
 
@@ -41,5 +48,20 @@ public class EnergyCondenserBlock extends BaseEntityBlock {
         if (level.isClientSide) return null;
         return createTickerHelper(type, ModBlockEntities.ENERGY_CONDENSER,
                 (lvl, pos, blockState, be) -> be.serverTick());
+    @Override
+    public List<ItemStack> getDrops(BlockState state, LootParams.Builder builder) {
+        List<ItemStack> drops = super.getDrops(state, builder);
+        BlockEntity blockEntity = builder.getOptionalParameter(LootContextParams.BLOCK_ENTITY);
+        if (blockEntity instanceof EnergyCondenserBlockEntity condenser) {
+            CompoundTag tag = new CompoundTag();
+            condenser.saveAdditional(tag, builder.getLevel().registryAccess());
+            CustomData data = CustomData.of(tag);
+            for (ItemStack stack : drops) {
+                if (stack.getItem() == this.asItem()) {
+                    stack.set(DataComponents.BLOCK_ENTITY_DATA, data);
+                }
+            }
+        }
+        return drops;
     }
 }
