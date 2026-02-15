@@ -1,0 +1,6 @@
+{
+  "parent": "block/cube_all",
+  "textures": {
+    "all": "universegate:block/dark_energy_conduit"
+  }
+}
