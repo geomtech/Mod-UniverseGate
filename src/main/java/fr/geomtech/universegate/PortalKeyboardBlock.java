@@ -77,11 +77,7 @@ public class PortalKeyboardBlock extends BaseEntityBlock {
             return 0;
         }
 
-        BlockEntity blockEntity = level.getBlockEntity(pos);
-        if (blockEntity instanceof PortalKeyboardBlockEntity keyboard && keyboard.fuelCount() > 0) {
-            return 15;
-        }
-        return 0;
+        return state.getValue(LIT) ? 15 : 0;
     }
 
     @Override

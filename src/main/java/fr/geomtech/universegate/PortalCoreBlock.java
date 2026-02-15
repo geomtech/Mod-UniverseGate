@@ -1,10 +1,8 @@
 package fr.geomtech.universegate;
 
 import com.mojang.serialization.MapCodec;
-import net.minecraft.ChatFormatting;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
-import net.minecraft.network.chat.Component;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.ItemInteractionResult;
@@ -82,24 +80,12 @@ public class PortalCoreBlock extends BaseEntityBlock {
     @Override
     public ItemInteractionResult useItemOn(ItemStack stack, BlockState state, Level level, BlockPos pos,
                                            Player player, InteractionHand hand, BlockHitResult hit) {
-        if (!stack.is(ModItems.RIFT_ASH)) {
-            if (!level.isClientSide) {
-                BlockEntity be = level.getBlockEntity(pos);
-                if (be instanceof MenuProvider provider && player instanceof ServerPlayer sp) {
-                    sp.openMenu(provider);
-                    fr.geomtech.universegate.net.UniverseGateNetwork.sendPortalCoreNameToPlayer(sp, pos);
-                }
-            }
-            return ItemInteractionResult.sidedSuccess(level.isClientSide);
-        }
-
         if (!level.isClientSide) {
-            // Exemple : pour l’instant on ne fait rien ici.
-            // L’ouverture réelle se fera via le KEYBOARD + UI.
-            player.displayClientMessage(
-                    Component.translatable("message.universegate.use_keyboard_destination").withStyle(ChatFormatting.GRAY),
-                    true
-            );
+            BlockEntity be = level.getBlockEntity(pos);
+            if (be instanceof MenuProvider provider && player instanceof ServerPlayer sp) {
+                sp.openMenu(provider);
+                fr.geomtech.universegate.net.UniverseGateNetwork.sendPortalCoreNameToPlayer(sp, pos);
+            }
         }
         return ItemInteractionResult.sidedSuccess(level.isClientSide);
     }

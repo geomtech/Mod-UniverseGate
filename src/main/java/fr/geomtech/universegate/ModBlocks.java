@@ -60,7 +60,7 @@ public final class ModBlocks {
 
     public static final Block ENERGY_CONDENSER = register(
             "energy_condenser",
-            new Block(BlockBehaviour.Properties.ofFullCopy(Blocks.IRON_BLOCK)
+            new EnergyCondenserBlock(BlockBehaviour.Properties.ofFullCopy(Blocks.IRON_BLOCK)
                     .strength(3.0f, 6.0f)
                     .requiresCorrectToolForDrops()
                     .noOcclusion())
@@ -101,6 +101,22 @@ public final class ModBlocks {
     public static final Block ENERGY_CONDUIT = register(
             "energy_conduit",
             new EnergyConduitBlock(BlockBehaviour.Properties.ofFullCopy(Blocks.IRON_BLOCK)
+                    .strength(2.5f, 6.0f)
+                    .requiresCorrectToolForDrops()
+                    .noOcclusion())
+    );
+
+    public static final Block SOLAR_PANEL = register(
+            "solar_panel",
+            new SolarPanelBlock(BlockBehaviour.Properties.ofFullCopy(Blocks.IRON_BLOCK)
+                    .strength(3.0f, 6.0f)
+                    .requiresCorrectToolForDrops()
+                    .noOcclusion())
+    );
+
+    public static final Block ENERGY_MONITOR = register(
+            "energy_monitor",
+            new EnergyMonitorBlock(BlockBehaviour.Properties.ofFullCopy(Blocks.IRON_BLOCK)
                     .strength(2.5f, 6.0f)
                     .requiresCorrectToolForDrops()
                     .noOcclusion())

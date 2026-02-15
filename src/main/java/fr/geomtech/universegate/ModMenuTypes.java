@@ -38,6 +38,16 @@ public final class ModMenuTypes {
                     )
             );
 
+    public static final ExtendedScreenHandlerType<EnergyMonitorMenu, BlockPos> ENERGY_MONITOR =
+            Registry.register(
+                    BuiltInRegistries.MENU,
+                    ResourceLocation.fromNamespaceAndPath(UniverseGate.MOD_ID, "energy_monitor"),
+                    new ExtendedScreenHandlerType<>(
+                            EnergyMonitorMenu::new,
+                            BlockPos.STREAM_CODEC
+                    )
+            );
+
     public static void register() {}
 
     private ModMenuTypes() {}

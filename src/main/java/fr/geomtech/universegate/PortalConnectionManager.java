@@ -9,6 +9,8 @@ import net.minecraft.server.level.ServerLevel;
 import net.minecraft.tags.FluidTags;
 import net.minecraft.util.Mth;
 import net.minecraft.util.RandomSource;
+import net.minecraft.world.entity.EntityType;
+import net.minecraft.world.entity.LightningBolt;
 import net.minecraft.world.level.Level;
 
 import java.util.Optional;
@@ -186,11 +188,25 @@ public final class PortalConnectionManager {
 
         ModSounds.playPortalOpenedAt(sourceLevel, sourceCorePos, unstableA);
         ModSounds.playPortalOpenedAt(targetLevel, targetEntry.pos(), unstableB);
+        triggerRiftOpeningLightning(sourceLevel, sourceCorePos);
+        triggerRiftOpeningLightning(targetLevel, targetEntry.pos());
         sourceCore.onPortalAmbientStarted(sourceLevel.getGameTime());
         targetCore.onPortalAmbientStarted(targetLevel.getGameTime());
 
         sourceCore.setChanged();
         targetCore.setChanged();
+    }
+
+    private static void triggerRiftOpeningLightning(ServerLevel level, BlockPos corePos) {
+        if (!EnergyNetworkHelper.isRiftDimension(level)) return;
+
+        LightningBolt lightningBolt = EntityType.LIGHTNING_BOLT.create(level);
+        if (lightningBolt == null) return;
+
+        BlockPos strikePos = corePos.above();
+        lightningBolt.moveTo(strikePos.getX() + 0.5D, strikePos.getY(), strikePos.getZ() + 0.5D);
+        lightningBolt.setVisualOnly(true);
+        level.addFreshEntity(lightningBolt);
     }
 
     private static void spawnOpeningParticles(ServerLevel level,

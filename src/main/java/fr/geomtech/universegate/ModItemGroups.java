@@ -31,6 +31,8 @@ public final class ModItemGroups {
                 output.accept(ModItems.METEOROLOGICAL_CATALYST_ITEM);
                 output.accept(ModItems.METEOROLOGICAL_CONTROLLER_ITEM);
                 output.accept(ModItems.ENERGY_CONDUIT_ITEM);
+                output.accept(ModItems.SOLAR_PANEL_ITEM);
+                output.accept(ModItems.ENERGY_MONITOR_ITEM);
 
                 output.accept(ModItems.VOID_BLOCK_ITEM);
                 output.accept(ModItems.LIGHT_BLOCK_ITEM);
@@ -39,9 +41,11 @@ public final class ModItemGroups {
                 output.accept(ModItems.KELO_LOG_ITEM);
                 output.accept(ModItems.KELO_PLANKS_ITEM);
 
-                output.accept(ModItems.RIFT_ASH);
+                output.accept(ModItems.RIFT_MEAT);
+                output.accept(ModItems.COOKED_RIFT_MEAT);
                 output.accept(ModItems.ENERGY_CRYSTAL);
                 output.accept(ModItems.RIFT_SHADE_SPAWN_EGG);
+                output.accept(ModItems.RIFT_BEAST_SPAWN_EGG);
             })
             .build();
 

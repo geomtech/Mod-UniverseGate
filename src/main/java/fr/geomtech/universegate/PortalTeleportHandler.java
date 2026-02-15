@@ -21,9 +21,7 @@ import fr.geomtech.universegate.UniverseGateDimensions;
 import fr.geomtech.universegate.PortalRiftHelper;
 
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
 
@@ -43,9 +41,6 @@ public final class PortalTeleportHandler {
     private static final double PORTAL_FIELD_CLEARANCE = 0.55D;
     private static final double PORTAL_MINECART_EXTRA_OFFSET = 0.18D;
 
-    private static final long FUEL_CHARGE_COOLDOWN_TICKS = 10L;
-    private static final long FUEL_CHARGE_MAP_RETENTION_TICKS = 20L * 60L * 10L;
-
     private static final float UNSTABLE_RIFT_CHANCE = 0.05F;
     private static final float UNSTABLE_DAMAGE_CHANCE = 0.40F;
     private static final float UNSTABLE_RANDOM_PORTAL_CHANCE = 0.10F;
@@ -53,8 +48,6 @@ public final class PortalTeleportHandler {
     private static final int UNSTABLE_NAUSEA_DURATION_TICKS = 20 * 3;
     private static final int UNSTABLE_SLOWNESS_DURATION_TICKS = 20 * 5;
     private static final int UNSTABLE_SLOWNESS_AMPLIFIER = 2; // slowness III
-
-    private static final Map<UUID, Long> lastFuelChargeTick = new HashMap<>();
 
     private PortalTeleportHandler() {}
 
@@ -66,10 +59,6 @@ public final class PortalTeleportHandler {
 
         long now = sourceLevel.getGameTime();
         UUID entityId = entity.getUUID();
-
-        if ((now & 127L) == 0L) {
-            pruneFuelChargeMap(now);
-        }
 
         boolean preserveProjectileMomentum = shouldPreserveProjectileMomentum(entity);
         Vec3 preservedVelocity = entity.getDeltaMovement();
@@ -136,22 +125,6 @@ public final class PortalTeleportHandler {
         }
 
         boolean isRift = targetEntry.dim().equals(UniverseGateDimensions.RIFT);
-
-        boolean consumeFuel = !isRift;
-
-        if (consumeFuel) {
-            // 3) anti double facturation par entité
-            if (shouldChargeFuel(entityId, now)) {
-                // 4) consommer 1 rift ash dans le keyboard source
-                PortalKeyboardBlockEntity keyboard = findKeyboardNear(sourceLevel, corePos, KEYBOARD_RADIUS);
-                if (keyboard == null || !keyboard.consumeOneFuel()) {
-                    // plus de carburant => fermeture immédiate
-                    PortalConnectionManager.forceCloseOneSide(sourceLevel, corePos);
-                    return;
-                }
-                lastFuelChargeTick.put(entityId, now);
-            }
-        }
 
         ServerLevel targetLevel = sourceLevel.getServer().getLevel(targetEntry.dim());
         if (targetLevel == null) {
@@ -407,16 +380,6 @@ public final class PortalTeleportHandler {
         double horizontalLength = Math.sqrt(velocity.x * velocity.x + velocity.z * velocity.z);
         if (horizontalLength < 1.0E-7D && Math.abs(velocity.y) < 1.0E-7D) return fallbackPitch;
         return (float) (-(Math.atan2(velocity.y, horizontalLength) * (180.0D / Math.PI)));
-    }
-
-    private static boolean shouldChargeFuel(UUID entityId, long now) {
-        Long lastCharge = lastFuelChargeTick.get(entityId);
-        if (lastCharge == null) return true;
-        return now - lastCharge >= FUEL_CHARGE_COOLDOWN_TICKS;
-    }
-
-    private static void pruneFuelChargeMap(long now) {
-        lastFuelChargeTick.entrySet().removeIf(entry -> now - entry.getValue() > FUEL_CHARGE_MAP_RETENTION_TICKS);
     }
 
     private static boolean shouldPreserveProjectileMomentum(Entity entity) {

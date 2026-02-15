@@ -13,11 +13,26 @@ import net.minecraft.world.level.levelgen.Heightmap;
 
 public final class ModEntityTypes {
 
+    public static final EntityType<RiftBeastEntity> RIFT_BEAST = Registry.register(
+            BuiltInRegistries.ENTITY_TYPE,
+            ResourceLocation.fromNamespaceAndPath(UniverseGate.MOD_ID, "rift_beast"),
+            createRiftBeastType()
+    );
+
     public static final EntityType<RiftShadeEntity> RIFT_SHADE = Registry.register(
             BuiltInRegistries.ENTITY_TYPE,
             ResourceLocation.fromNamespaceAndPath(UniverseGate.MOD_ID, "rift_shade"),
             createRiftShadeType()
     );
+
+    private static EntityType<RiftBeastEntity> createRiftBeastType() {
+        EntityType.Builder<RiftBeastEntity> builder = EntityType.Builder.of(RiftBeastEntity::new, MobCategory.CREATURE)
+                .sized(1.0F, 4.0F)
+                .eyeHeight(3.45F)
+                .clientTrackingRange(10);
+
+        return ((FabricEntityType.Builder<RiftBeastEntity>) builder).build();
+    }
 
     private static EntityType<RiftShadeEntity> createRiftShadeType() {
         EntityType.Builder<RiftShadeEntity> builder = EntityType.Builder.of(RiftShadeEntity::new, MobCategory.MONSTER)
@@ -29,7 +44,14 @@ public final class ModEntityTypes {
     }
 
     public static void register() {
+        FabricDefaultAttributeRegistry.register(RIFT_BEAST, RiftBeastEntity.createAttributes());
         FabricDefaultAttributeRegistry.register(RIFT_SHADE, RiftShadeEntity.createAttributes());
+        SpawnPlacements.register(
+                RIFT_BEAST,
+                SpawnPlacementTypes.ON_GROUND,
+                Heightmap.Types.MOTION_BLOCKING_NO_LEAVES,
+                RiftBeastEntity::canSpawn
+        );
         SpawnPlacements.register(
                 RIFT_SHADE,
                 SpawnPlacementTypes.ON_GROUND,

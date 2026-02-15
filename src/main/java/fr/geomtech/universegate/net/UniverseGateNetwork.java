@@ -1,6 +1,7 @@
 package fr.geomtech.universegate.net;
 
 import fr.geomtech.universegate.ModBlocks;
+import fr.geomtech.universegate.EnergyNetworkHelper;
 import fr.geomtech.universegate.ModSounds;
 import fr.geomtech.universegate.PortalConnectionManager;
 import fr.geomtech.universegate.PortalCoreBlockEntity;
@@ -43,13 +44,29 @@ public final class UniverseGateNetwork {
                 if (corePos == null) return;
 
                 // Ouvrir Stargate A<->B
-                if (kb.fuelCount() <= 0) {
+                boolean riftAutoPowered = EnergyNetworkHelper.isRiftDimension(level);
+                boolean hasSufficientEnergy = riftAutoPowered
+                        || EnergyNetworkHelper.getAvailableEnergyForPortal(level, corePos)
+                        >= EnergyNetworkHelper.PORTAL_OPEN_ENERGY_COST;
+
+                if (!riftAutoPowered && !hasSufficientEnergy) {
                     ModSounds.playAt(level, payload.keyboardPos(), ModSounds.PORTAL_ERROR, 0.9F, 1.0F);
                     return;
                 }
+
                 boolean ok = PortalConnectionManager.openBothSides(level, corePos, payload.targetPortalId());
                 if (ok) {
-                    kb.consumeOneFuel();
+                    if (!riftAutoPowered) {
+                        boolean consumed = EnergyNetworkHelper.consumePortalEnergy(
+                                level,
+                                corePos,
+                                EnergyNetworkHelper.PORTAL_OPEN_ENERGY_COST
+                        );
+                        if (!consumed) {
+                            PortalConnectionManager.forceCloseOneSide(level, corePos);
+                            ModSounds.playAt(level, corePos, ModSounds.PORTAL_ERROR, 0.9F, 1.0F);
+                        }
+                    }
                 } else {
                     ModSounds.playAt(level, corePos, ModSounds.PORTAL_ERROR, 0.9F, 1.0F);
                 }

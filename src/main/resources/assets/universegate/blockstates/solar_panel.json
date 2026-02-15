@@ -1,0 +1,23 @@
+{
+  "variants": {
+    "facing=north,part=base": { "model": "universegate:block/solar_panel_base" },
+    "facing=east,part=base": { "model": "universegate:block/solar_panel_base", "y": 90 },
+    "facing=south,part=base": { "model": "universegate:block/solar_panel_base", "y": 180 },
+    "facing=west,part=base": { "model": "universegate:block/solar_panel_base", "y": 270 },
+
+    "facing=north,part=lower": { "model": "universegate:block/solar_panel_lower" },
+    "facing=east,part=lower": { "model": "universegate:block/solar_panel_lower", "y": 90 },
+    "facing=south,part=lower": { "model": "universegate:block/solar_panel_lower", "y": 180 },
+    "facing=west,part=lower": { "model": "universegate:block/solar_panel_lower", "y": 270 },
+
+    "facing=north,part=upper": { "model": "universegate:block/solar_panel_upper" },
+    "facing=east,part=upper": { "model": "universegate:block/solar_panel_upper", "y": 90 },
+    "facing=south,part=upper": { "model": "universegate:block/solar_panel_upper", "y": 180 },
+    "facing=west,part=upper": { "model": "universegate:block/solar_panel_upper", "y": 270 },
+
+    "facing=north,part=top": { "model": "universegate:block/solar_panel_top" },
+    "facing=east,part=top": { "model": "universegate:block/solar_panel_top", "y": 90 },
+    "facing=south,part=top": { "model": "universegate:block/solar_panel_top", "y": 180 },
+    "facing=west,part=top": { "model": "universegate:block/solar_panel_top", "y": 270 }
+  }
+}

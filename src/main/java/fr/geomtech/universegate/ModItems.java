@@ -2,6 +2,7 @@ package fr.geomtech.universegate;
 
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.world.item.BlockItem;
+import net.minecraft.world.food.FoodProperties;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.SpawnEggItem;
 import net.minecraft.resources.ResourceLocation;
@@ -74,9 +75,24 @@ public final class ModItems {
             new BlockItem(ModBlocks.ENERGY_CONDUIT, new Item.Properties())
     );
 
+    public static final Item SOLAR_PANEL_ITEM = register(
+            "solar_panel",
+            new BlockItem(ModBlocks.SOLAR_PANEL, new Item.Properties())
+    );
+
+    public static final Item ENERGY_MONITOR_ITEM = register(
+            "energy_monitor",
+            new BlockItem(ModBlocks.ENERGY_MONITOR, new Item.Properties())
+    );
+
     public static final Item RIFT_SHADE_SPAWN_EGG = register(
             "rift_shade_spawn_egg",
             new SpawnEggItem(ModEntityTypes.RIFT_SHADE, 0x08080A, 0xF3F3F3, new Item.Properties())
+    );
+
+    public static final Item RIFT_BEAST_SPAWN_EGG = register(
+            "rift_beast_spawn_egg",
+            new SpawnEggItem(ModEntityTypes.RIFT_BEAST, 0x08080A, 0xFFFFFF, new Item.Properties())
     );
 
     public static final Item PORTAL_CORE_ITEM = register(
@@ -99,9 +115,14 @@ public final class ModItems {
             new BlockItem(ModBlocks.CHARGED_LIGHTNING_ROD, new Item.Properties())
     );
 
-    public static final Item RIFT_ASH = register(
-            "rift_ash",
-            new Item(new Item.Properties().stacksTo(64))
+    public static final Item RIFT_MEAT = register(
+            "rift_meat",
+            new Item(new Item.Properties().food(new FoodProperties.Builder().nutrition(3).saturationModifier(0.3F).build()))
+    );
+
+    public static final Item COOKED_RIFT_MEAT = register(
+            "cooked_rift_meat",
+            new Item(new Item.Properties().food(new FoodProperties.Builder().nutrition(8).saturationModifier(0.8F).build()))
     );
 
     public static final Item ENERGY_CRYSTAL = register(

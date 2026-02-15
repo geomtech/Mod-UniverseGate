@@ -1,0 +1,48 @@
+{
+  "parent": "minecraft:block/block",
+  "ambientocclusion": false,
+  "textures": {
+    "particle": "universegate:block/solar_panel_cells_top",
+    "mast": "universegate:block/solar_panel_mast",
+    "cells": "universegate:block/solar_panel_cells_top",
+    "accent": "universegate:block/solar_panel_border"
+  },
+  "elements": [
+    {
+      "from": [7.1, 0.0, 7.1],
+      "to": [8.9, 16.0, 8.9],
+      "faces": {
+        "down": { "texture": "#mast" },
+        "up": { "texture": "#mast" },
+        "north": { "texture": "#mast" },
+        "south": { "texture": "#mast" },
+        "west": { "texture": "#mast" },
+        "east": { "texture": "#mast" }
+      }
+    },
+    {
+      "from": [7.35, 2.0, 7.0],
+      "to": [8.65, 14.0, 7.1],
+      "faces": {
+        "down": { "texture": "#cells" },
+        "up": { "texture": "#cells" },
+        "north": { "texture": "#cells" },
+        "south": { "texture": "#cells" },
+        "west": { "texture": "#cells" },
+        "east": { "texture": "#cells" }
+      }
+    },
+    {
+      "from": [7.0, 6.2, 8.9],
+      "to": [9.0, 9.8, 9.9],
+      "faces": {
+        "down": { "texture": "#accent" },
+        "up": { "texture": "#accent" },
+        "north": { "texture": "#accent" },
+        "south": { "texture": "#accent" },
+        "west": { "texture": "#accent" },
+        "east": { "texture": "#accent" }
+      }
+    }
+  ]
+}

@@ -1,0 +1,8 @@
+{
+  "variants": {
+    "facing=north": { "model": "universegate:block/energy_monitor" },
+    "facing=east": { "model": "universegate:block/energy_monitor", "y": 90 },
+    "facing=south": { "model": "universegate:block/energy_monitor", "y": 180 },
+    "facing=west": { "model": "universegate:block/energy_monitor", "y": 270 }
+  }
+}

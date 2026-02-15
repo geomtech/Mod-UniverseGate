@@ -105,6 +105,10 @@ public class PortalCoreBlockEntity extends BlockEntity implements ExtendedScreen
             return;
         }
 
+        if (!drainActivePortalEnergy(sl, now)) {
+            return;
+        }
+
         refreshInstabilityVisuals(sl, now);
         tickPortalAmbientLoop(sl, now);
     }
@@ -229,6 +233,27 @@ public class PortalCoreBlockEntity extends BlockEntity implements ExtendedScreen
 
     private boolean shouldUseUnstableVisuals(long now) {
         return riftLightningLink || isVortexUnstable(now);
+    }
+
+    private boolean drainActivePortalEnergy(ServerLevel level, long now) {
+        if (!outboundTravelEnabled || riftLightningLink) return true;
+        if (EnergyNetworkHelper.isRiftDimension(level)) return true;
+
+        long phase = Math.floorMod(worldPosition.asLong(), 20L);
+        if ((now + phase) % 20L != 0L) return true;
+
+        int energyCost = EnergyNetworkHelper.getPortalActiveEnergyCostPerSecond(isVortexUnstable(now));
+
+        boolean consumed = EnergyNetworkHelper.consumePortalEnergy(
+                level,
+                worldPosition,
+                energyCost
+        );
+        if (consumed) return true;
+
+        ModSounds.playAt(level, worldPosition, ModSounds.PORTAL_ERROR, 0.9F, 1.0F);
+        PortalConnectionManager.forceCloseOneSide(level, worldPosition);
+        return false;
     }
 
     private void refreshInstabilityVisuals(ServerLevel level, long now) {

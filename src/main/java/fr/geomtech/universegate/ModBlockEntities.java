@@ -35,6 +35,20 @@ public final class ModBlockEntities {
                     BlockEntityType.Builder.of(PortalFieldBlockEntity::new, ModBlocks.PORTAL_FIELD).build(null)
             );
 
+    public static final BlockEntityType<EnergyCondenserBlockEntity> ENERGY_CONDENSER =
+            Registry.register(
+                    BuiltInRegistries.BLOCK_ENTITY_TYPE,
+                    ResourceLocation.fromNamespaceAndPath(UniverseGate.MOD_ID, "energy_condenser"),
+                    BlockEntityType.Builder.of(EnergyCondenserBlockEntity::new, ModBlocks.ENERGY_CONDENSER).build(null)
+            );
+
+    public static final BlockEntityType<EnergyMonitorBlockEntity> ENERGY_MONITOR =
+            Registry.register(
+                    BuiltInRegistries.BLOCK_ENTITY_TYPE,
+                    ResourceLocation.fromNamespaceAndPath(UniverseGate.MOD_ID, "energy_monitor"),
+                    BlockEntityType.Builder.of(EnergyMonitorBlockEntity::new, ModBlocks.ENERGY_MONITOR).build(null)
+            );
+
     public static final BlockEntityType<ChargedLightningRodBlockEntity> CHARGED_LIGHTNING_ROD =
             Registry.register(
                     BuiltInRegistries.BLOCK_ENTITY_TYPE,

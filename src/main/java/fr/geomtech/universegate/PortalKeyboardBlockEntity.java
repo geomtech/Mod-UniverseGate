@@ -25,54 +25,18 @@ public class PortalKeyboardBlockEntity extends BlockEntity implements WorldlyCon
 
     private final net.minecraft.core.NonNullList<ItemStack> items =
             net.minecraft.core.NonNullList.withSize(SIZE, ItemStack.EMPTY);
-    private boolean suppressPortalCloseOnFuelConsumption = false;
-    private int lastKnownFuelCount = 0;
 
     public PortalKeyboardBlockEntity(BlockPos pos, BlockState state) {
         super(ModBlockEntities.PORTAL_KEYBOARD, pos, state);
     }
 
-    // --- fuel API ---
+    // --- Legacy API (kept for compatibility) ---
     public boolean consumeOneFuel() {
-        ItemStack s = items.get(SLOT_FUEL);
-        if (s.isEmpty() || !s.is(ModItems.RIFT_ASH)) return false;
-        suppressPortalCloseOnFuelConsumption = true;
-        try {
-            s.shrink(1);
-            setChanged();
-        } finally {
-            suppressPortalCloseOnFuelConsumption = false;
-        }
-        return true;
+        return false;
     }
 
     public int fuelCount() {
-        ItemStack s = items.get(SLOT_FUEL);
-        return s.is(ModItems.RIFT_ASH) ? s.getCount() : 0;
-    }
-
-    private void updateRedstoneSignal(boolean hadFuel, boolean hasFuel) {
-        if (hadFuel == hasFuel) return;
-        if (level == null || level.isClientSide) return;
-        level.updateNeighborsAt(worldPosition, getBlockState().getBlock());
-    }
-
-    @Override
-    public void setChanged() {
-        int previousFuelCount = lastKnownFuelCount;
-        int currentFuelCount = fuelCount();
-        boolean hadFuel = previousFuelCount > 0;
-        boolean hasFuel = currentFuelCount > 0;
-
-        super.setChanged();
-        lastKnownFuelCount = currentFuelCount;
-        updateRedstoneSignal(hadFuel, hasFuel);
-
-        if (suppressPortalCloseOnFuelConsumption) return;
-        if (currentFuelCount >= previousFuelCount) return;
-        if (!(level instanceof net.minecraft.server.level.ServerLevel sl)) return;
-
-        PortalConnectionManager.forceCloseFromKeyboard(sl, worldPosition);
+        return 0;
     }
 
     // --- ExtendedScreenHandlerFactory ---
@@ -93,7 +57,7 @@ public class PortalKeyboardBlockEntity extends BlockEntity implements WorldlyCon
 
     @Override
     public boolean canPlaceItem(int slot, ItemStack stack) {
-        return slot == SLOT_FUEL && stack.is(ModItems.RIFT_ASH);
+        return false;
     }
 
     @Override
@@ -103,12 +67,12 @@ public class PortalKeyboardBlockEntity extends BlockEntity implements WorldlyCon
 
     @Override
     public boolean canPlaceItemThroughFace(int slot, ItemStack stack, Direction direction) {
-        return canPlaceItem(slot, stack);
+        return false;
     }
 
     @Override
     public boolean canTakeItemThroughFace(int slot, ItemStack stack, Direction direction) {
-        return false;
+        return true;
     }
 
     @Override
@@ -125,25 +89,7 @@ public class PortalKeyboardBlockEntity extends BlockEntity implements WorldlyCon
 
     @Override
     public void setItem(int slot, ItemStack stack) {
-        if (!stack.isEmpty() && !canPlaceItem(slot, stack)) return;
-
-        if (!stack.isEmpty() && stack.getCount() == 1) {
-            ItemStack existing = items.get(slot);
-            if (!existing.isEmpty()
-                    && ItemStack.isSameItemSameComponents(existing, stack)) {
-                if (existing.getCount() < getMaxStackSize(existing)) {
-                    existing.grow(1);
-                    setChanged();
-                }
-                return;
-            }
-        }
-
-        ItemStack stackToStore = stack.isEmpty() ? ItemStack.EMPTY : stack.copy();
-        stackToStore.limitSize(getMaxStackSize(stackToStore));
-
-        items.set(slot, stackToStore);
-        setChanged();
+        items.set(slot, ItemStack.EMPTY);
     }
 
     @Override
@@ -169,7 +115,7 @@ public class PortalKeyboardBlockEntity extends BlockEntity implements WorldlyCon
     protected void loadAdditional(CompoundTag tag, HolderLookup.Provider registries) {
         super.loadAdditional(tag, registries);
         ContainerHelper.loadAllItems(tag, items, registries);
-        lastKnownFuelCount = fuelCount();
+        items.set(SLOT_FUEL, ItemStack.EMPTY);
     }
 
     @Override

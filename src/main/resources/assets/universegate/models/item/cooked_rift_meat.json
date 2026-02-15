@@ -1,6 +1,6 @@
 {
   "parent": "minecraft:item/generated",
   "textures": {
-    "layer0": "universegate:item/rift_ash"
+    "layer0": "universegate:item/cooked_rift_meat"
   }
 }

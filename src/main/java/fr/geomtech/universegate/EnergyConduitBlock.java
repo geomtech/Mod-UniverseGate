@@ -68,7 +68,7 @@ public class EnergyConduitBlock extends Block {
                                      BlockPos neighborPos) {
         BooleanProperty property = PROPERTY_BY_DIRECTION.get(direction);
         if (property == null) return state;
-        return state.setValue(property, canConnectTo(level, neighborPos));
+        return state.setValue(property, canConnectTo(level, neighborPos, direction));
     }
 
     @Override
@@ -88,17 +88,21 @@ public class EnergyConduitBlock extends Block {
 
     private BlockState updateConnections(BlockGetter level, BlockPos pos, BlockState state) {
         return state
-                .setValue(NORTH, canConnectTo(level, pos.north()))
-                .setValue(EAST, canConnectTo(level, pos.east()))
-                .setValue(SOUTH, canConnectTo(level, pos.south()))
-                .setValue(WEST, canConnectTo(level, pos.west()))
-                .setValue(UP, canConnectTo(level, pos.above()))
-                .setValue(DOWN, canConnectTo(level, pos.below()));
+                .setValue(NORTH, canConnectTo(level, pos.north(), Direction.NORTH))
+                .setValue(EAST, canConnectTo(level, pos.east(), Direction.EAST))
+                .setValue(SOUTH, canConnectTo(level, pos.south(), Direction.SOUTH))
+                .setValue(WEST, canConnectTo(level, pos.west(), Direction.WEST))
+                .setValue(UP, canConnectTo(level, pos.above(), Direction.UP))
+                .setValue(DOWN, canConnectTo(level, pos.below(), Direction.DOWN));
     }
 
-    private boolean canConnectTo(BlockGetter level, BlockPos pos) {
+    private boolean canConnectTo(BlockGetter level, BlockPos pos, Direction directionToNeighbor) {
         BlockState state = level.getBlockState(pos);
+        if (state.is(ModBlocks.SOLAR_PANEL) && state.hasProperty(SolarPanelBlock.FACING)) {
+            return SolarPanelBlock.canConnectConduit(state, directionToNeighbor);
+        }
         return state.is(ModBlocks.ENERGY_CONDUIT)
+                || state.is(ModBlocks.ENERGY_CONDENSER)
                 || state.is(ModBlocks.METEOROLOGICAL_CONDENSER)
                 || state.is(ModBlocks.PORTAL_CORE)
                 || state.is(ModBlocks.PORTAL_FRAME)
