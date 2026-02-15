@@ -84,6 +84,20 @@ public final class ModBlockEntities {
                     BlockEntityType.Builder.of(ParabolaBlockEntity::new, ModBlocks.PARABOLA_BLOCK).build(null)
             );
 
+    public static final BlockEntityType<RiftRefinerBlockEntity> RIFT_REFINER =
+            Registry.register(
+                    BuiltInRegistries.BLOCK_ENTITY_TYPE,
+                    ResourceLocation.fromNamespaceAndPath(UniverseGate.MOD_ID, "rift_refiner"),
+                    BlockEntityType.Builder.of(RiftRefinerBlockEntity::new, ModBlocks.RIFT_REFINER).build(null)
+            );
+
+    public static final BlockEntityType<DarkEnergyGeneratorBlockEntity> DARK_ENERGY_GENERATOR =
+            Registry.register(
+                    BuiltInRegistries.BLOCK_ENTITY_TYPE,
+                    ResourceLocation.fromNamespaceAndPath(UniverseGate.MOD_ID, "dark_energy_generator"),
+                    BlockEntityType.Builder.of(DarkEnergyGeneratorBlockEntity::new, ModBlocks.DARK_ENERGY_GENERATOR).build(null)
+            );
+
     public static void register() {}
 
     private ModBlockEntities() {}

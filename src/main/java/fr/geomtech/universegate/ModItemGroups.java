@@ -47,7 +47,11 @@ public final class ModItemGroups {
                 output.accept(ModItems.RIFT_CRYSTAL);
                 output.accept(ModItems.RIFT_SHADE_SPAWN_EGG);
                 output.accept(ModItems.RIFT_BEAST_SPAWN_EGG);
-                output.accept(ModItems.RIFT_CORE_FRAGMENT);
+                output.accept(ModItems.DARK_MATTER_BUCKET);
+                output.accept(ModItems.RIFT_REFINER_ITEM);
+                output.accept(ModItems.FLUID_PIPE_ITEM);
+                output.accept(ModItems.DARK_ENERGY_CONDUIT_ITEM);
+                output.accept(ModItems.DARK_ENERGY_GENERATOR_ITEM);
             })
             .build();
 

@@ -73,5 +73,12 @@
   "advancement.universegate.find_rift_cube.title": "Le cube était vrai",
   "advancement.universegate.find_rift_cube.description": "Tu as trouvé un cube de la Faille, ça me rappelle ma maison en dirt...",
   "advancement.universegate.return_from_rift_to_overworld.title": "Retour en zone civilisée",
-  "advancement.universegate.return_from_rift_to_overworld.description": "Tu as quitté la Faille pour l'Overworld. L'air est plus doux, les creepers aussi."
+  "advancement.universegate.return_from_rift_to_overworld.description": "Tu as quitté la Faille pour l'Overworld. L'air est plus doux, les creepers aussi.",
+  "block.universegate.dark_matter_block": "Matière noire",
+  "block.universegate.rift_refiner": "Raffineur de faille",
+  "block.universegate.fluid_pipe": "Tuyau de fluide",
+  "block.universegate.dark_energy_conduit": "Conduit d'énergie sombre",
+  "block.universegate.dark_energy_generator": "Générateur d'énergie sombre",
+  "item.universegate.dark_matter_bucket": "Seau de matière noire",
+  "container.universegate.rift_refiner": "Raffineur de faille"
 }

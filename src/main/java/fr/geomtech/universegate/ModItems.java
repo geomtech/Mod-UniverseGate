@@ -3,6 +3,7 @@ package fr.geomtech.universegate;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.world.item.BlockItem;
 import net.minecraft.world.food.FoodProperties;
+import net.minecraft.world.item.BucketItem;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.SpawnEggItem;
 import net.minecraft.resources.ResourceLocation;
@@ -135,9 +136,29 @@ public final class ModItems {
             new Item(new Item.Properties().stacksTo(64))
     );
 
-    public static final Item RIFT_CORE_FRAGMENT = register(
-            "rift_core_fragment",
-            new Item(new Item.Properties())
+    public static final Item RIFT_REFINER_ITEM = register(
+            "rift_refiner",
+            new BlockItem(ModBlocks.RIFT_REFINER, new Item.Properties())
+    );
+
+    public static final Item DARK_MATTER_BUCKET = register(
+            "dark_matter_bucket",
+            new BucketItem(ModFluids.STILL_DARK_MATTER, new Item.Properties().stacksTo(1).craftRemainder(net.minecraft.world.item.Items.BUCKET))
+    );
+
+    public static final Item FLUID_PIPE_ITEM = register(
+            "fluid_pipe",
+            new BlockItem(ModBlocks.FLUID_PIPE, new Item.Properties())
+    );
+
+    public static final Item DARK_ENERGY_CONDUIT_ITEM = register(
+            "dark_energy_conduit",
+            new BlockItem(ModBlocks.DARK_ENERGY_CONDUIT, new Item.Properties())
+    );
+
+    public static final Item DARK_ENERGY_GENERATOR_ITEM = register(
+            "dark_energy_generator",
+            new BlockItem(ModBlocks.DARK_ENERGY_GENERATOR, new Item.Properties())
     );
 
     private static Item register(String id, Item item) {

@@ -38,7 +38,7 @@ public class PortalKeyboardScreen extends AbstractContainerScreen<PortalKeyboard
     public PortalKeyboardScreen(PortalKeyboardMenu menu, Inventory inv, Component title) {
         super(menu, inv, title);
         this.imageWidth = 256;
-        this.imageHeight = 200;
+        this.imageHeight = 120;
         this.inventoryLabelY = this.imageHeight - 94;
     }
 
@@ -145,7 +145,10 @@ public class PortalKeyboardScreen extends AbstractContainerScreen<PortalKeyboard
 
     @Override
     protected void renderBg(GuiGraphics g, float partialTicks, int mouseX, int mouseY) {
-        g.blit(TEXTURE, leftPos, topPos, 0, 0, imageWidth, imageHeight, 256, 200);
+        // Draw top part
+        g.blit(TEXTURE, leftPos, topPos, 0, 0, imageWidth, 113, 256, 200);
+        // Draw bottom part
+        g.blit(TEXTURE, leftPos, topPos + 113, 0, 193, imageWidth, 7, 256, 200);
 
         if (filteredPortals.size() > VISIBLE_PORTALS) {
             int trackX = leftPos + imageWidth - 28;
@@ -161,7 +164,6 @@ public class PortalKeyboardScreen extends AbstractContainerScreen<PortalKeyboard
 
     @Override
     protected void renderLabels(GuiGraphics g, int mouseX, int mouseY) {
-        g.drawString(this.font, this.playerInventoryTitle, inventoryLabelX, inventoryLabelY, 0xA0A0A0, false);
     }
 
     @Override

@@ -11,20 +11,19 @@ public final class PortalFrameHelper {
 
     public static List<BlockPos> collectFrame(PortalFrameDetector.FrameMatch match, BlockPos corePos) {
         List<BlockPos> result = new ArrayList<>();
-        int halfWidth = PortalFrameDetector.INNER_WIDTH / 2 + 1; // outer half width
-        int topY = PortalFrameDetector.INNER_HEIGHT + 1; // outer height
+        int halfWidth = PortalFrameDetector.INNER_WIDTH / 2 + 1; // 2
+        int topY = PortalFrameDetector.INNER_HEIGHT + 1; // 5
 
         for (int dy = 0; dy <= topY; dy++) {
             for (int dx = -halfWidth; dx <= halfWidth; dx++) {
-                boolean isBorder = dy == 0 || dy == topY || dx == -halfWidth || dx == halfWidth;
+                boolean isBorder = (dy == 0 || dy == topY || dx == -halfWidth || dx == halfWidth);
                 if (!isBorder) continue;
-                if (dx == 0 && dy == 0) continue; // core position
+                if (dx == 0 && dy == 0) continue; 
 
                 BlockPos p = corePos.offset(match.right().getStepX() * dx, dy, match.right().getStepZ() * dx);
                 result.add(p);
             }
         }
-
         return result;
     }
 

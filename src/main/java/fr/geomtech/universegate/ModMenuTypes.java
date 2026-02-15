@@ -48,6 +48,16 @@ public final class ModMenuTypes {
                     )
             );
 
+    public static final ExtendedScreenHandlerType<RiftRefinerMenu, BlockPos> RIFT_REFINER =
+            Registry.register(
+                    BuiltInRegistries.MENU,
+                    ResourceLocation.fromNamespaceAndPath(UniverseGate.MOD_ID, "rift_refiner"),
+                    new ExtendedScreenHandlerType<>(
+                            RiftRefinerMenu::new,
+                            BlockPos.STREAM_CODEC
+                    )
+            );
+
     public static void register() {}
 
     private ModMenuTypes() {}

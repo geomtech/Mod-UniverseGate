@@ -21,6 +21,7 @@ public class UniverseGate implements ModInitializer {
 		// Proceed with mild caution.
 
 		ModBlocks.register();
+		ModFluids.register();
 		ModEntityTypes.register();
 		ModItems.register();
 		ModItemGroups.register();

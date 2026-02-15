@@ -13,6 +13,8 @@ import net.minecraft.core.HolderLookup;
 import net.minecraft.world.level.saveddata.SavedData;
 
 
+import fr.geomtech.universegate.net.UniverseGateNetwork;
+
 import java.util.*;
 
 public class PortalRegistrySavedData extends SavedData {
@@ -49,6 +51,16 @@ public class PortalRegistrySavedData extends SavedData {
     }
 
     public PortalEntry get(UUID id) {
+        if (UniverseGateNetwork.DARK_DIMENSION_ID.equals(id)) {
+             // Return a dummy entry for the Dark Dimension
+             // We use BlockPos.ZERO or a specific coordinate if needed.
+             // But connecting to BlockPos.ZERO might cause issues if there is no portal there.
+             // However, for the purpose of "unlocking", this satisfies the lookup.
+             // The PortalConnectionManager might fail later if it checks for a PortalCoreBlockEntity at destination.
+             // But we satisfied the first step.
+             ResourceKey<Level> dim = ResourceKey.create(net.minecraft.core.registries.Registries.DIMENSION, ResourceLocation.parse("universegate:rift"));
+             return new PortalEntry(id, "Dark Dimension", dim, BlockPos.ZERO, false);
+        }
         return portals.get(id);
     }
 

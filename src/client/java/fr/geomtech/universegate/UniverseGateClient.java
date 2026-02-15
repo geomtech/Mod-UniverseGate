@@ -15,6 +15,7 @@ public class UniverseGateClient implements ClientModInitializer {
 		MenuScreens.register(ModMenuTypes.PORTAL_CORE, PortalCoreScreen::new);
 		MenuScreens.register(ModMenuTypes.METEOROLOGICAL_CONTROLLER, MeteorologicalControllerScreen::new);
 		MenuScreens.register(ModMenuTypes.ENERGY_MONITOR, EnergyMonitorScreen::new);
+		MenuScreens.register(ModMenuTypes.RIFT_REFINER, RiftRefinerScreen::new);
 		BlockRenderLayerMap.INSTANCE.putBlock(ModBlocks.PORTAL_FIELD, RenderType.translucent());
 		EntityModelLayerRegistry.registerModelLayer(RiftShadeModel.LAYER_LOCATION, RiftShadeModel::createBodyLayer);
 		EntityRendererRegistry.register(ModEntityTypes.RIFT_BEAST, RiftBeastRenderer::new);

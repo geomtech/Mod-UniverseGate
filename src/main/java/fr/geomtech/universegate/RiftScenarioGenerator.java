@@ -65,7 +65,6 @@ public final class RiftScenarioGenerator {
         }
 
         addCompassToOutpostContainers(riftLevel, outpost.get(), workingPortalCore);
-        addRiftCoreFragmentToOutpostContainers(riftLevel, outpost.get(), workingPortalCore);
         data.setGenerated(outpost.get().center(), workingPortalCore, outpostBedPos);
 
         UniverseGate.LOGGER.info("Rift scenario generated: outpost at {}, outpost bed at {}, working portal at {}", outpost.get().center(), outpostBedPos, workingPortalCore);
@@ -320,31 +319,6 @@ public final class RiftScenarioGenerator {
     private record PlacedTemplate(BlockPos start, Vec3i size) {
         BlockPos center() {
             return start.offset(size.getX() / 2, 0, size.getZ() / 2);
-        }
-    }
-
-    private static void addRiftCoreFragmentToOutpostContainers(ServerLevel level, PlacedTemplate outpost, BlockPos targetCorePos) {
-        ItemStack fragment = new ItemStack(ModItems.RIFT_CORE_FRAGMENT);
-        BlockPos start = outpost.start();
-        Vec3i size = outpost.size();
-        BlockPos end = start.offset(size.getX() - 1, size.getY() - 1, size.getZ() - 1);
-
-        boolean inserted = false;
-        for (BlockPos pos : BlockPos.betweenClosed(start, end)) {
-            var be = level.getBlockEntity(pos);
-            if (!(be instanceof Container container)) continue;
-            for (int i = 0; i < container.getContainerSize(); i++) {
-                if (!container.getItem(i).isEmpty()) continue;
-                container.setItem(i, fragment);
-                inserted = true;
-                UniverseGate.LOGGER.info("Inserted Rift Core Fragment in outpost container at {} targeting core {} (tracked=false)", pos, targetCorePos);
-                break;
-            }
-            if (inserted) break;
-        }
-
-        if (!inserted) {
-            UniverseGate.LOGGER.warn("No container found in rift outpost for Rift Core Fragment at {}", outpost.start());
         }
     }
 }

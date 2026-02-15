@@ -4,6 +4,8 @@ import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.RotatedPillarBlock;
+import net.minecraft.world.level.block.LiquidBlock;
+import net.minecraft.world.level.block.Rotation;
 import net.minecraft.world.level.block.state.BlockBehaviour;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.core.Registry;
@@ -162,6 +164,31 @@ public final class ModBlocks {
     public static final Block CHARGED_LIGHTNING_ROD = register(
             "charged_lightning_rod",
             new ChargedLightningRodBlock(BlockBehaviour.Properties.ofFullCopy(Blocks.LIGHTNING_ROD))
+    );
+
+    public static final Block DARK_MATTER_BLOCK = register(
+            "dark_matter_block",
+            new LiquidBlock(ModFluids.STILL_DARK_MATTER, BlockBehaviour.Properties.ofFullCopy(Blocks.WATER).noLootTable())
+    );
+
+    public static final Block RIFT_REFINER = register(
+            "rift_refiner",
+            new RiftRefinerBlock(BlockBehaviour.Properties.ofFullCopy(Blocks.IRON_BLOCK).strength(3.5f).requiresCorrectToolForDrops())
+    );
+
+    public static final Block FLUID_PIPE = register(
+            "fluid_pipe",
+            new FluidPipeBlock(BlockBehaviour.Properties.ofFullCopy(Blocks.GLASS).noOcclusion())
+    );
+
+    public static final Block DARK_ENERGY_CONDUIT = register(
+            "dark_energy_conduit",
+            new DarkEnergyConduitBlock(BlockBehaviour.Properties.ofFullCopy(Blocks.OBSIDIAN).strength(2.0f).noOcclusion())
+    );
+
+    public static final Block DARK_ENERGY_GENERATOR = register(
+            "dark_energy_generator",
+            new DarkEnergyGeneratorBlock(BlockBehaviour.Properties.ofFullCopy(Blocks.IRON_BLOCK))
     );
 
     private static Block register(String id, Block block) {

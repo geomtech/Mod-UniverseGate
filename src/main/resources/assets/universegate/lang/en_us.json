@@ -73,5 +73,12 @@
   "advancement.universegate.find_rift_cube.title": "The Cube Was Real",
   "advancement.universegate.find_rift_cube.description": "You found a Rift cube. It reminds me of my house built with dirt.",
   "advancement.universegate.return_from_rift_to_overworld.title": "Back to Civilization",
-  "advancement.universegate.return_from_rift_to_overworld.description": "You made it from the Rift to the Overworld. Fresh air and creepers, just like home."
+  "advancement.universegate.return_from_rift_to_overworld.description": "You made it from the Rift to the Overworld. Fresh air and creepers, just like home.",
+  "block.universegate.dark_matter_block": "Dark Matter",
+  "block.universegate.rift_refiner": "Rift Refiner",
+  "block.universegate.fluid_pipe": "Fluid Pipe",
+  "block.universegate.dark_energy_conduit": "Dark Energy Conduit",
+  "block.universegate.dark_energy_generator": "Dark Energy Generator",
+  "item.universegate.dark_matter_bucket": "Dark Matter Bucket",
+  "container.universegate.rift_refiner": "Rift Refiner"
 }

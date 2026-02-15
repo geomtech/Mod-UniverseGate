@@ -1,5 +1,6 @@
 package fr.geomtech.universegate.net;
 
+import fr.geomtech.universegate.DarkEnergyNetworkHelper;
 import fr.geomtech.universegate.ModBlocks;
 import fr.geomtech.universegate.EnergyNetworkHelper;
 import fr.geomtech.universegate.ModSounds;
@@ -13,6 +14,8 @@ import net.fabricmc.fabric.api.networking.v1.ServerPlayNetworking;
 import net.minecraft.core.BlockPos;
 import net.minecraft.server.level.ServerLevel;
 
+import net.minecraft.network.chat.Component;
+
 import java.util.List;
 import java.util.UUID;
 import java.util.stream.Collectors;
@@ -20,6 +23,8 @@ import java.util.stream.Collectors;
 public final class UniverseGateNetwork {
 
     private UniverseGateNetwork() {}
+
+    public static final UUID DARK_DIMENSION_ID = UUID.fromString("66666666-6666-6666-6666-666666666666");
 
     public static void registerCommon() {
         // types
@@ -45,6 +50,18 @@ public final class UniverseGateNetwork {
 
                 // Ouvrir Stargate A<->B
                 boolean riftAutoPowered = EnergyNetworkHelper.isRiftDimension(level);
+
+                if (payload.targetPortalId().equals(DARK_DIMENSION_ID)) {
+                    if (!DarkEnergyNetworkHelper.isPortalPowered(level, corePos)) {
+                         ModSounds.playAt(level, payload.keyboardPos(), ModSounds.PORTAL_ERROR, 0.9F, 1.0F);
+                         // Feedback: Needs Dark Energy
+                         return;
+                    }
+                    // Powered: Send TODO message
+                    player.displayClientMessage(Component.literal("§cTODO: Dark Dimension coming soon..."), true);
+                    return;
+                }
+
                 boolean hasSufficientEnergy = riftAutoPowered
                         || EnergyNetworkHelper.getAvailableEnergyForPortal(level, corePos)
                         >= EnergyNetworkHelper.PORTAL_OPEN_ENERGY_COST;
@@ -120,6 +137,9 @@ public final class UniverseGateNetwork {
                 .filter(e -> excludedId == null || !excludedId.equals(e.id()))
                 .map(e -> new PortalInfo(e.id(), e.name().isEmpty() ? shortId(e.id()) : e.name(), e.dim().location(), e.pos()))
                 .collect(Collectors.toList());
+
+        // Inject Dark Dimension
+        list.add(new PortalInfo(DARK_DIMENSION_ID, "§cDark Dimension", net.minecraft.resources.ResourceLocation.parse("universegate:rift"), BlockPos.ZERO));
 
         ServerPlayNetworking.send(player, new PortalListPayload(keyboardPos, list));
     }
