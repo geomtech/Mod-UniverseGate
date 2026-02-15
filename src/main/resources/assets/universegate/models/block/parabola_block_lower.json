@@ -1,0 +1,21 @@
+{
+  "parent": "minecraft:block/block",
+  "textures": {
+    "support": "universegate:block/parabola_support",
+    "particle": "universegate:block/parabola_support"
+  },
+  "elements": [
+    {
+      "from": [6.0, 0.0, 6.0],
+      "to": [10.0, 16.0, 10.0],
+      "faces": {
+        "north": { "texture": "#support" },
+        "east": { "texture": "#support" },
+        "south": { "texture": "#support" },
+        "west": { "texture": "#support" },
+        "up": { "texture": "#support" },
+        "down": { "texture": "#support" }
+      }
+    }
+  ]
+}

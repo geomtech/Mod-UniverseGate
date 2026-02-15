@@ -3,9 +3,9 @@
 	"id": "universegate",
 	"version": "${version}",
 	"name": "UniverseGate",
-	"description": "This is an example description! Tell everyone what your mod is about!",
+	"description": "UniverseGate est un mod Fabric axé portails qui te permet de construire et relier des portes entre lieux et dimensions, puis d'explorer la Rift.",
 	"authors": [
-		"Me!"
+		"GeomTech"
 	],
 	"contact": {
 		"homepage": "https://geomtech.fr/",

@@ -22,6 +22,7 @@ public class MeteorologicalControllerMenu extends AbstractContainerMenu {
     public static final int FLAG_FULLY_CHARGED = 1 << 6;
     public static final int FLAG_SEQUENCE_ACTIVE = 1 << 7;
     public static final int FLAG_WEATHER_UNLOCKED = 1 << 8;
+    public static final int FLAG_PARABOLA_POWERED = 1 << 9;
 
     private static final int DATA_CHARGE_TICKS = 0;
     private static final int DATA_MAX_CHARGE_TICKS = 1;

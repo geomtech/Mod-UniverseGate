@@ -30,13 +30,14 @@ public final class EnergyNetworkHelper {
 
     private EnergyNetworkHelper() {}
 
-    public record CondenserNetwork(Set<BlockPos> condensers, Set<BlockPos> solarPanels) {}
+    public record CondenserNetwork(Set<BlockPos> condensers, Set<BlockPos> solarPanels, Set<BlockPos> parabolas) {}
     public record EnergyNetworkSnapshot(int storedEnergy,
                                         int capacity,
                                         int condenserCount,
                                         int panelCount,
-                                        int activePanelCount) {
-        public static final EnergyNetworkSnapshot EMPTY = new EnergyNetworkSnapshot(0, 0, 0, 0, 0);
+                                        int activePanelCount,
+                                        int parabolaCount) {
+        public static final EnergyNetworkSnapshot EMPTY = new EnergyNetworkSnapshot(0, 0, 0, 0, 0, 0);
 
         public int chargePercent() {
             if (capacity <= 0) return 0;
@@ -54,12 +55,12 @@ public final class EnergyNetworkHelper {
         }
 
         if (startConduits.isEmpty()) {
-            return new CondenserNetwork(condensers, Set.of());
+            return new CondenserNetwork(condensers, Set.of(), Set.of());
         }
 
         ConduitScanResult scan = scanConduits(level, startConduits);
         condensers.addAll(scan.condensers());
-        return new CondenserNetwork(condensers, scan.solarPanels());
+        return new CondenserNetwork(condensers, scan.solarPanels(), scan.parabolas());
     }
 
     public static BlockPos findNetworkLeader(Set<BlockPos> condensers) {
@@ -110,8 +111,73 @@ public final class EnergyNetworkHelper {
                 capacity,
                 condensers.size(),
                 network.solarPanels().size(),
-                activePanels
+                activePanels,
+                network.parabolas().size()
         );
+    }
+
+    public static boolean isParabolaOnNetwork(ServerLevel level, BlockPos startNode) {
+        Set<BlockPos> startConduits = new HashSet<>();
+        collectAdjacentConduits(level, startNode, startConduits);
+        if (startConduits.isEmpty()) return false;
+        
+        ConduitScanResult scan = scanConduits(level, startConduits);
+        return !scan.parabolas().isEmpty();
+    }
+
+    public static boolean isPoweredParabolaOnNetwork(ServerLevel level, BlockPos startNode) {
+        Set<BlockPos> startConduits = new HashSet<>();
+        collectAdjacentConduits(level, startNode, startConduits);
+        if (startConduits.isEmpty()) return false;
+        
+        ConduitScanResult scan = scanConduits(level, startConduits);
+        for (BlockPos pos : scan.parabolas()) {
+            BlockEntity be = level.getBlockEntity(pos);
+            if (be instanceof ParabolaBlockEntity parabola && parabola.isPowered()) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    public static boolean consumeEnergyFromNetwork(ServerLevel level, BlockPos startNode, int amount) {
+        Set<BlockPos> startConduits = new HashSet<>();
+        collectAdjacentConduits(level, startNode, startConduits);
+        
+        // Also check if startNode itself is a condenser (though usually we call this from a machine)
+        if (level.getBlockState(startNode).is(ModBlocks.ENERGY_CONDENSER)) {
+             // Logic if starting from a condenser, but usually machines connect TO conduits.
+        }
+
+        if (startConduits.isEmpty()) return false;
+
+        ConduitScanResult scan = scanConduits(level, startConduits);
+        return consumeFromCondensers(level, scan.condensers(), amount);
+    }
+
+    private static boolean consumeFromCondensers(ServerLevel level, Set<BlockPos> condenserPositions, int amount) {
+        if (condenserPositions.isEmpty()) return false;
+        int totalStored = 0;
+        List<EnergyCondenserBlockEntity> condensers = getCondensers(level, condenserPositions);
+        
+        for (EnergyCondenserBlockEntity condenser : condensers) {
+            totalStored += condenser.getStoredEnergy();
+        }
+        
+        if (totalStored < amount) return false;
+        
+        condensers.sort(Comparator
+                .comparingInt(EnergyCondenserBlockEntity::getStoredEnergy)
+                .reversed()
+                .thenComparing(be -> be.getBlockPos(), POS_COMPARATOR));
+                
+        int remaining = amount;
+        for (EnergyCondenserBlockEntity condenser : condensers) {
+            if (remaining <= 0) break;
+            remaining -= condenser.extractEnergy(remaining);
+        }
+        
+        return remaining <= 0;
     }
 
     public static int distributeEnergy(ServerLevel level, Set<BlockPos> condenserPositions, int amount) {
@@ -210,13 +276,14 @@ public final class EnergyNetworkHelper {
         return condensers;
     }
 
-    private record ConduitScanResult(Set<BlockPos> condensers, Set<BlockPos> solarPanels) {}
+    private record ConduitScanResult(Set<BlockPos> condensers, Set<BlockPos> solarPanels, Set<BlockPos> parabolas) {}
 
     private static ConduitScanResult scanConduits(ServerLevel level, Set<BlockPos> startConduits) {
         Set<BlockPos> visited = new HashSet<>();
         ArrayDeque<BlockPos> queue = new ArrayDeque<>();
         Set<BlockPos> condensers = new HashSet<>();
         Set<BlockPos> solarPanels = new HashSet<>();
+        Set<BlockPos> parabolas = new HashSet<>();
 
         for (BlockPos start : startConduits) {
             if (level.getBlockState(start).is(ModBlocks.ENERGY_CONDUIT) && visited.add(start.immutable())) {
@@ -245,6 +312,11 @@ public final class EnergyNetworkHelper {
                     condensers.add(neighborPos.immutable());
                     continue;
                 }
+                
+                if (neighborState.is(ModBlocks.PARABOLA_BLOCK)) {
+                    parabolas.add(neighborPos.immutable());
+                    continue;
+                }
 
                 if (isSolarPanelSocketConnection(neighborState, direction)) {
                     solarPanels.add(neighborPos.immutable());
@@ -252,7 +324,7 @@ public final class EnergyNetworkHelper {
             }
         }
 
-        return new ConduitScanResult(condensers, solarPanels);
+        return new ConduitScanResult(condensers, solarPanels, parabolas);
     }
 
     private static boolean isSolarPanelSocketConnection(BlockState panelState, Direction directionFromConduitToPanel) {

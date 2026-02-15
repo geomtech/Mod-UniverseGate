@@ -135,6 +135,11 @@ public final class ModItems {
             new Item(new Item.Properties().stacksTo(64))
     );
 
+    public static final Item RIFT_CORE_FRAGMENT = register(
+            "rift_core_fragment",
+            new Item(new Item.Properties())
+    );
+
     private static Item register(String id, Item item) {
         return Registry.register(
                 BuiltInRegistries.ITEM,

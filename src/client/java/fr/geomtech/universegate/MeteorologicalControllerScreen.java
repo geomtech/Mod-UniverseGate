@@ -120,6 +120,8 @@ public class MeteorologicalControllerScreen extends AbstractContainerScreen<Mete
             infoText = Component.translatable("gui.universegate.weather_structure_missing");
         } else if (!menu.hasFlag(MeteorologicalControllerMenu.FLAG_CATALYST_HAS_CRYSTAL)) {
             infoText = Component.translatable("gui.universegate.weather_missing_crystal");
+        } else if (!menu.hasFlag(MeteorologicalControllerMenu.FLAG_PARABOLA_POWERED)) {
+            infoText = Component.translatable("gui.universegate.weather_parabola_unpowered");
         } else if (!menu.hasFlag(MeteorologicalControllerMenu.FLAG_FULLY_CHARGED)) {
             infoText = Component.translatable("gui.universegate.weather_waiting_energy");
         } else {

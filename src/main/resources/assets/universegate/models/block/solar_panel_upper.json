@@ -67,18 +67,6 @@
         "west": { "texture": "#accent" },
         "east": { "texture": "#accent" }
       }
-    },
-    {
-      "from": [7.2, 8.0, 7.0],
-      "to": [8.8, 11.0, 7.1],
-      "faces": {
-        "down": { "texture": "#cells" },
-        "up": { "texture": "#cells" },
-        "north": { "texture": "#cells" },
-        "south": { "texture": "#cells" },
-        "west": { "texture": "#cells" },
-        "east": { "texture": "#cells" }
-      }
     }
   ]
 }

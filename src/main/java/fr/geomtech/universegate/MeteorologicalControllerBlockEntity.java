@@ -108,11 +108,16 @@ public class MeteorologicalControllerBlockEntity extends BlockEntity implements 
 
         if (sequenceActive) return false;
         if (!machineStatus.structureReady()) return false;
+        if (!machineStatus.parabolaPowered()) return false;
         if (!machineStatus.catalystHasCrystal()) return false;
         if (chargeTicks < CHARGE_FULL_TICKS) return false;
 
         BlockPos catalystPos = machineStatus.catalystPos();
         if (catalystPos == null) return false;
+
+        if (!EnergyNetworkHelper.consumeEnergyFromNetwork(serverLevel, machineStatus.condenserBasePos(), 2500)) {
+            return false;
+        }
 
         pendingWeather = weatherSelection;
         activeCatalystPos = catalystPos.immutable();
@@ -217,6 +222,7 @@ public class MeteorologicalControllerBlockEntity extends BlockEntity implements 
         if (machineStatus.catalystHasCrystal()) flags |= MeteorologicalControllerMenu.FLAG_CATALYST_HAS_CRYSTAL;
         if (machineStatus.structureReady()) flags |= MeteorologicalControllerMenu.FLAG_STRUCTURE_READY;
         if (machineStatus.energyLinked()) flags |= MeteorologicalControllerMenu.FLAG_ENERGY_LINKED;
+        if (machineStatus.parabolaPowered()) flags |= MeteorologicalControllerMenu.FLAG_PARABOLA_POWERED;
         if (chargeTicks >= CHARGE_FULL_TICKS) flags |= MeteorologicalControllerMenu.FLAG_FULLY_CHARGED;
         if (sequenceActive) flags |= MeteorologicalControllerMenu.FLAG_SEQUENCE_ACTIVE;
         if (canTriggerWeatherChange()) flags |= MeteorologicalControllerMenu.FLAG_WEATHER_UNLOCKED;

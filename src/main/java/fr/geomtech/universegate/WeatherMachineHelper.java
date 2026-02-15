@@ -14,14 +14,13 @@ public final class WeatherMachineHelper {
 
     private static final int STRUCTURE_RADIUS = 1;
     private static final int STRUCTURE_Y_RADIUS = 1;
-    private static final int PORTAL_SEARCH_RADIUS_XZ = 24;
-    private static final int PORTAL_SEARCH_RADIUS_Y = 8;
     private static final int MAX_CONDUIT_SEARCH = 4096;
 
     private WeatherMachineHelper() {}
 
     public record MachineStatus(boolean towerPresent,
                                 boolean parabolaPresent,
+                                boolean parabolaPowered,
                                 boolean catalystPresent,
                                 boolean catalystHasCrystal,
                                 boolean energyLinked,
@@ -30,7 +29,7 @@ public final class WeatherMachineHelper {
                                 @Nullable BlockPos catalystPos) {
 
         public static MachineStatus empty() {
-            return new MachineStatus(false, false, false, false, false, null, null, null);
+            return new MachineStatus(false, false, false, false, false, false, null, null, null);
         }
 
         public boolean structureReady() {
@@ -38,7 +37,7 @@ public final class WeatherMachineHelper {
         }
 
         public boolean canCharge() {
-            return structureReady() && energyLinked;
+            return structureReady() && energyLinked && parabolaPowered;
         }
     }
 
@@ -49,7 +48,8 @@ public final class WeatherMachineHelper {
         }
 
         BlockPos condenserTopPos = condenserBasePos.above();
-        boolean parabolaPresent = hasParabolaOnNearbyPortal(level, condenserBasePos);
+        boolean parabolaPresent = EnergyNetworkHelper.isParabolaOnNetwork(level, condenserBasePos);
+        boolean parabolaPowered = EnergyNetworkHelper.isPoweredParabolaOnNetwork(level, condenserBasePos);
 
         BlockPos expectedCatalystPos = condenserTopPos.above();
         BlockState catalystState = level.getBlockState(expectedCatalystPos);
@@ -62,6 +62,7 @@ public final class WeatherMachineHelper {
         return new MachineStatus(
                 true,
                 parabolaPresent,
+                parabolaPowered,
                 catalystPresent,
                 catalystHasCrystal,
                 energyLinked,
@@ -99,42 +100,6 @@ public final class WeatherMachineHelper {
                 && level.getBlockState(basePos.above()).is(ModBlocks.METEOROLOGICAL_CONDENSER);
     }
 
-    private static boolean hasParabolaOnNearbyPortal(ServerLevel level, BlockPos center) {
-        Set<BlockPos> checkedCores = new HashSet<>();
-        for (int dy = -PORTAL_SEARCH_RADIUS_Y; dy <= PORTAL_SEARCH_RADIUS_Y; dy++) {
-            for (int dx = -PORTAL_SEARCH_RADIUS_XZ; dx <= PORTAL_SEARCH_RADIUS_XZ; dx++) {
-                for (int dz = -PORTAL_SEARCH_RADIUS_XZ; dz <= PORTAL_SEARCH_RADIUS_XZ; dz++) {
-                    BlockPos candidate = center.offset(dx, dy, dz);
-                    if (!level.getBlockState(candidate).is(ModBlocks.PORTAL_CORE)) continue;
-                    if (!checkedCores.add(candidate.immutable())) continue;
-                    if (hasParabolaAbovePortalTop(level, candidate)) {
-                        return true;
-                    }
-                }
-            }
-        }
-        return false;
-    }
-
-    private static boolean hasParabolaAbovePortalTop(ServerLevel level, BlockPos corePos) {
-        var match = PortalFrameDetector.find(level, corePos);
-        if (match.isEmpty()) return false;
-
-        int topDy = PortalFrameDetector.INNER_HEIGHT + 1;
-        int halfWidth = PortalFrameDetector.INNER_WIDTH / 2 + 1;
-        Direction right = match.get().right();
-
-        for (int dx = -halfWidth; dx <= halfWidth; dx++) {
-            BlockPos topFramePos = corePos.offset(right.getStepX() * dx, topDy, right.getStepZ() * dx);
-            if (!level.getBlockState(topFramePos).is(ModBlocks.PORTAL_FRAME)) continue;
-            if (level.getBlockState(topFramePos.above()).is(ModBlocks.PARABOLA_BLOCK)) {
-                return true;
-            }
-        }
-
-        return false;
-    }
-
     private static boolean hasEnergyLink(ServerLevel level, BlockPos condenserBasePos, BlockPos condenserTopPos) {
         Set<BlockPos> conduitStarts = new HashSet<>();
         collectAdjacentConduits(level, condenserBasePos, conduitStarts);
@@ -150,8 +115,6 @@ public final class WeatherMachineHelper {
 
             boolean touchesBaseCondenser = false;
             boolean touchesTopCondenser = false;
-            Set<BlockPos> touchedPortalBlocks = new HashSet<>();
-            Set<BlockPos> touchedRods = new HashSet<>();
             int searched = 0;
 
             while (!queue.isEmpty()) {
@@ -171,12 +134,6 @@ public final class WeatherMachineHelper {
                     if (neighborPos.equals(condenserTopPos)) {
                         touchesTopCondenser = true;
                     }
-                    if (isPortalNetworkBlock(neighborState)) {
-                        touchedPortalBlocks.add(neighborPos.immutable());
-                    }
-                    if (neighborState.is(ModBlocks.CHARGED_LIGHTNING_ROD)) {
-                        touchedRods.add(neighborPos.immutable());
-                    }
 
                     if (neighborState.is(ModBlocks.ENERGY_CONDUIT) && visited.add(neighborPos)) {
                         queue.addLast(neighborPos);
@@ -184,68 +141,11 @@ public final class WeatherMachineHelper {
                 }
             }
 
-            if (touchesBaseCondenser
-                    && touchesTopCondenser
-                    && hasChargedRodConnectedToPortal(level, touchedPortalBlocks, touchedRods)) {
+            if (touchesBaseCondenser && touchesTopCondenser) {
                 return true;
             }
         }
 
-        return false;
-    }
-
-    private static boolean hasChargedRodConnectedToPortal(ServerLevel level,
-                                                          Set<BlockPos> touchedPortalBlocks,
-                                                          Set<BlockPos> touchedRods) {
-        if (!touchedPortalBlocks.isEmpty() && portalComponentHasRod(level, touchedPortalBlocks)) {
-            return true;
-        }
-        if (!touchedRods.isEmpty() && rodsTouchPortal(level, touchedRods)) {
-            return true;
-        }
-        return false;
-    }
-
-    private static boolean portalComponentHasRod(ServerLevel level, Set<BlockPos> startPortalBlocks) {
-        Set<BlockPos> visited = new HashSet<>();
-        ArrayDeque<BlockPos> queue = new ArrayDeque<>();
-        for (BlockPos pos : startPortalBlocks) {
-            visited.add(pos.immutable());
-            queue.addLast(pos.immutable());
-        }
-
-        int searched = 0;
-        while (!queue.isEmpty()) {
-            BlockPos portalPos = queue.removeFirst();
-            searched++;
-            if (searched > MAX_CONDUIT_SEARCH) {
-                return false;
-            }
-
-            for (Direction direction : Direction.values()) {
-                BlockPos neighborPos = portalPos.relative(direction);
-                BlockState neighborState = level.getBlockState(neighborPos);
-                if (neighborState.is(ModBlocks.CHARGED_LIGHTNING_ROD)) {
-                    return true;
-                }
-                if (isPortalNetworkBlock(neighborState) && visited.add(neighborPos.immutable())) {
-                    queue.addLast(neighborPos.immutable());
-                }
-            }
-        }
-
-        return false;
-    }
-
-    private static boolean rodsTouchPortal(ServerLevel level, Set<BlockPos> rods) {
-        for (BlockPos rodPos : rods) {
-            for (Direction direction : Direction.values()) {
-                BlockPos neighborPos = rodPos.relative(direction);
-                if (isPortalNetworkBlock(level.getBlockState(neighborPos))) {
-                    return true;
-                }
-            }
-        }
         return false;
     }
 
@@ -256,12 +156,5 @@ public final class WeatherMachineHelper {
                 output.add(neighborPos.immutable());
             }
         }
-    }
-
-    private static boolean isPortalNetworkBlock(BlockState state) {
-        return state.is(ModBlocks.PORTAL_CORE)
-                || state.is(ModBlocks.PORTAL_FRAME)
-                || state.is(ModBlocks.PORTAL_FIELD)
-                || state.is(ModBlocks.PORTAL_KEYBOARD);
     }
 }

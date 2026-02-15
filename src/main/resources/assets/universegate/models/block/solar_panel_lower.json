@@ -21,18 +21,6 @@
       }
     },
     {
-      "from": [7.35, 2.0, 7.0],
-      "to": [8.65, 14.0, 7.1],
-      "faces": {
-        "down": { "texture": "#cells" },
-        "up": { "texture": "#cells" },
-        "north": { "texture": "#cells" },
-        "south": { "texture": "#cells" },
-        "west": { "texture": "#cells" },
-        "east": { "texture": "#cells" }
-      }
-    },
-    {
       "from": [7.0, 6.2, 8.9],
       "to": [9.0, 9.8, 9.9],
       "faces": {

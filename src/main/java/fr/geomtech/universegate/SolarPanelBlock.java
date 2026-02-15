@@ -41,10 +41,23 @@ public class SolarPanelBlock extends Block {
     private static final VoxelShape BASE_SHAPE_WEST = rotate90Y(BASE_SHAPE_SOUTH);
 
     private static final VoxelShape COLUMN_SHAPE = Block.box(6.9D, 0.0D, 6.9D, 9.1D, 16.0D, 9.1D);
-    private static final VoxelShape TOP_SHAPE = Shapes.or(
+    private static final VoxelShape TOP_COLLISION_SHAPE = Shapes.or(
             Block.box(6.3D, 0.0D, 6.3D, 9.7D, 8.0D, 9.7D),
             Block.box(7.0D, 8.0D, 7.0D, 9.0D, 12.0D, 9.0D)
     );
+
+    // Approximate bounding box of the tilted panels after -22.5° X rotation around [8,9,8].
+    // Pre-rotation panels: X [-14,30], Y [10,11.2], Z [-8,24].
+    // Post-rotation bounds: X [-14,30], Y [~3.8,~17.2], Z [~-7.6,~22.4].
+    // We clamp to reasonable bounds and split front/back to approximate the tilt.
+    private static final VoxelShape TOP_SHAPE_NORTH = Shapes.or(
+            Block.box(6.3D, 0.0D, 6.3D, 9.7D, 8.6D, 9.7D),
+            Block.box(-14.0D, 3.0D, -8.0D, 30.0D, 10.0D, 8.0D),
+            Block.box(-14.0D, 8.0D, 2.0D, 30.0D, 16.0D, 23.0D)
+    );
+    private static final VoxelShape TOP_SHAPE_EAST = rotate90Y(TOP_SHAPE_NORTH);
+    private static final VoxelShape TOP_SHAPE_SOUTH = rotate90Y(TOP_SHAPE_EAST);
+    private static final VoxelShape TOP_SHAPE_WEST = rotate90Y(TOP_SHAPE_SOUTH);
 
     public SolarPanelBlock(Properties properties) {
         super(properties);
@@ -177,7 +190,13 @@ public class SolarPanelBlock extends Block {
             return COLUMN_SHAPE;
         }
         if (part == PanelPart.TOP) {
-            return TOP_SHAPE;
+            Direction facing = state.getValue(FACING);
+            return switch (facing) {
+                case NORTH -> TOP_SHAPE_NORTH;
+                case EAST -> TOP_SHAPE_EAST;
+                case WEST -> TOP_SHAPE_WEST;
+                default -> TOP_SHAPE_SOUTH;
+            };
         }
 
         Direction facing = state.getValue(FACING);
@@ -187,6 +206,15 @@ public class SolarPanelBlock extends Block {
             case WEST -> BASE_SHAPE_WEST;
             default -> BASE_SHAPE_SOUTH;
         };
+    }
+
+    @Override
+    protected VoxelShape getCollisionShape(BlockState state, BlockGetter level, BlockPos pos, CollisionContext context) {
+        PanelPart part = state.getValue(PART);
+        if (part == PanelPart.TOP) {
+            return TOP_COLLISION_SHAPE;
+        }
+        return getShape(state, level, pos, context);
     }
 
     private static boolean isPartWithFacing(BlockState state, PanelPart part, Direction facing) {

@@ -1,15 +1,14 @@
 {
   "parent": "minecraft:block/block",
   "textures": {
-    "dish": "universegate:block/parabola_dish",
     "support": "universegate:block/parabola_support",
     "accent": "universegate:block/parabola_accent",
     "particle": "universegate:block/parabola_support"
   },
   "elements": [
     {
-      "from": [2.0, 0.0, 2.0],
-      "to": [14.0, 2.0, 14.0],
+      "from": [6.0, 0.0, 6.0],
+      "to": [10.0, 10.0, 10.0],
       "faces": {
         "north": { "texture": "#support" },
         "east": { "texture": "#support" },
@@ -20,8 +19,8 @@
       }
     },
     {
-      "from": [4.0, 2.0, 4.0],
-      "to": [12.0, 4.0, 12.0],
+      "from": [5.0, 10.0, 5.0],
+      "to": [11.0, 14.0, 11.0],
       "faces": {
         "north": { "texture": "#support" },
         "east": { "texture": "#support" },
@@ -32,20 +31,8 @@
       }
     },
     {
-      "from": [6.0, 4.0, 6.0],
-      "to": [10.0, 16.0, 10.0],
-      "faces": {
-        "north": { "texture": "#support" },
-        "east": { "texture": "#support" },
-        "south": { "texture": "#support" },
-        "west": { "texture": "#support" },
-        "up": { "texture": "#support" },
-        "down": { "texture": "#support" }
-      }
-    },
-    {
-      "from": [5.5, 4.5, 5.5],
-      "to": [10.5, 5.5, 10.5],
+      "from": [4.0, 11.0, 7.5],
+      "to": [12.0, 13.0, 8.5],
       "faces": {
         "north": { "texture": "#accent" },
         "east": { "texture": "#accent" },

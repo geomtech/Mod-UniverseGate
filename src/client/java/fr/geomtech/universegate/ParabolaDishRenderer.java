@@ -35,27 +35,29 @@ public class ParabolaDishRenderer implements BlockEntityRenderer<ParabolaBlockEn
             return;
         }
 
-        BlockState rotorState = state.setValue(ParabolaBlock.PART, ParabolaBlock.Part.ROTOR);
+        BlockState topState = state.setValue(ParabolaBlock.PART, ParabolaBlock.Part.DISH);
         float spinDegrees = 0.0F;
 
-        if (isPortalNetworkBlock(blockEntity.getLevel().getBlockState(blockEntity.getBlockPos().below()))) {
+        if (blockEntity.isPowered()) {
             float time = blockEntity.getLevel().getGameTime() + partialTick;
             float phase = (blockEntity.getBlockPos().asLong() & 31L) * PHASE_DEGREES;
             spinDegrees = time * SPIN_DEGREES_PER_TICK + phase;
         }
 
         poseStack.pushPose();
-        poseStack.translate(0.5D, 0.0D, 0.5D);
+        poseStack.translate(0.5D, 3.0D, 0.5D); // Translate to the TOP block (3 blocks above BASE)
         poseStack.mulPose(new Quaternionf().rotationY(spinDegrees * DEG_TO_RAD));
         poseStack.translate(-0.5D, 0.0D, -0.5D);
-        blockRenderer.renderSingleBlock(rotorState, poseStack, buffer, packedLight, packedOverlay);
+        blockRenderer.renderSingleBlock(topState, poseStack, buffer, packedLight, packedOverlay);
         poseStack.popPose();
     }
 
+    /*
     private static boolean isPortalNetworkBlock(BlockState state) {
         return state.is(ModBlocks.PORTAL_CORE)
                 || state.is(ModBlocks.PORTAL_FRAME)
                 || state.is(ModBlocks.PORTAL_FIELD)
                 || state.is(ModBlocks.PORTAL_KEYBOARD);
     }
+    */
 }

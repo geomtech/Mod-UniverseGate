@@ -44,8 +44,10 @@ public final class ModItemGroups {
                 output.accept(ModItems.RIFT_MEAT);
                 output.accept(ModItems.COOKED_RIFT_MEAT);
                 output.accept(ModItems.ENERGY_CRYSTAL);
+                output.accept(ModItems.RIFT_CRYSTAL);
                 output.accept(ModItems.RIFT_SHADE_SPAWN_EGG);
                 output.accept(ModItems.RIFT_BEAST_SPAWN_EGG);
+                output.accept(ModItems.RIFT_CORE_FRAGMENT);
             })
             .build();
 

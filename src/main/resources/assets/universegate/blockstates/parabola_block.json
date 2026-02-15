@@ -1,34 +1,100 @@
 {
-  "variants": {
-    "facing=north,part=base": {
-      "model": "universegate:block/parabola_block_base"
+  "multipart": [
+    {
+      "when": { "facing": "north", "part": "base" },
+      "apply": { "model": "universegate:block/parabola_block_base" }
     },
-    "facing=east,part=base": {
-      "model": "universegate:block/parabola_block_base",
-      "y": 90
+    {
+      "when": { "facing": "east", "part": "base" },
+      "apply": { "model": "universegate:block/parabola_block_base", "y": 90 }
     },
-    "facing=south,part=base": {
-      "model": "universegate:block/parabola_block_base",
-      "y": 180
+    {
+      "when": { "facing": "south", "part": "base" },
+      "apply": { "model": "universegate:block/parabola_block_base", "y": 180 }
     },
-    "facing=west,part=base": {
-      "model": "universegate:block/parabola_block_base",
-      "y": 270
+    {
+      "when": { "facing": "west", "part": "base" },
+      "apply": { "model": "universegate:block/parabola_block_base", "y": 270 }
     },
-    "facing=north,part=rotor": {
-      "model": "universegate:block/parabola_block_rotor"
+    {
+      "when": { "part": "base", "north": "true" },
+      "apply": { "model": "universegate:block/energy_conduit_north" }
     },
-    "facing=east,part=rotor": {
-      "model": "universegate:block/parabola_block_rotor",
-      "y": 90
+    {
+      "when": { "part": "base", "east": "true" },
+      "apply": { "model": "universegate:block/energy_conduit_east" }
     },
-    "facing=south,part=rotor": {
-      "model": "universegate:block/parabola_block_rotor",
-      "y": 180
+    {
+      "when": { "part": "base", "south": "true" },
+      "apply": { "model": "universegate:block/energy_conduit_south" }
     },
-    "facing=west,part=rotor": {
-      "model": "universegate:block/parabola_block_rotor",
-      "y": 270
+    {
+      "when": { "part": "base", "west": "true" },
+      "apply": { "model": "universegate:block/energy_conduit_west" }
+    },
+    {
+      "when": { "facing": "north", "part": "lower" },
+      "apply": { "model": "universegate:block/parabola_block_lower" }
+    },
+    {
+      "when": { "facing": "east", "part": "lower" },
+      "apply": { "model": "universegate:block/parabola_block_lower", "y": 90 }
+    },
+    {
+      "when": { "facing": "south", "part": "lower" },
+      "apply": { "model": "universegate:block/parabola_block_lower", "y": 180 }
+    },
+    {
+      "when": { "facing": "west", "part": "lower" },
+      "apply": { "model": "universegate:block/parabola_block_lower", "y": 270 }
+    },
+    {
+      "when": { "facing": "north", "part": "upper" },
+      "apply": { "model": "universegate:block/parabola_block_upper" }
+    },
+    {
+      "when": { "facing": "east", "part": "upper" },
+      "apply": { "model": "universegate:block/parabola_block_upper", "y": 90 }
+    },
+    {
+      "when": { "facing": "south", "part": "upper" },
+      "apply": { "model": "universegate:block/parabola_block_upper", "y": 180 }
+    },
+    {
+      "when": { "facing": "west", "part": "upper" },
+      "apply": { "model": "universegate:block/parabola_block_upper", "y": 270 }
+    },
+    {
+      "when": { "facing": "north", "part": "top" },
+      "apply": { "model": "universegate:block/parabola_block_empty" }
+    },
+    {
+      "when": { "facing": "east", "part": "top" },
+      "apply": { "model": "universegate:block/parabola_block_empty", "y": 90 }
+    },
+    {
+      "when": { "facing": "south", "part": "top" },
+      "apply": { "model": "universegate:block/parabola_block_empty", "y": 180 }
+    },
+    {
+      "when": { "facing": "west", "part": "top" },
+      "apply": { "model": "universegate:block/parabola_block_empty", "y": 270 }
+    },
+    {
+      "when": { "facing": "north", "part": "dish" },
+      "apply": { "model": "universegate:block/parabola_block_top" }
+    },
+    {
+      "when": { "facing": "east", "part": "dish" },
+      "apply": { "model": "universegate:block/parabola_block_top", "y": 90 }
+    },
+    {
+      "when": { "facing": "south", "part": "dish" },
+      "apply": { "model": "universegate:block/parabola_block_top", "y": 180 }
+    },
+    {
+      "when": { "facing": "west", "part": "dish" },
+      "apply": { "model": "universegate:block/parabola_block_top", "y": 270 }
     }
-  }
+  ]
 }
