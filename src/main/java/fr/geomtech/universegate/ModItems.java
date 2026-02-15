@@ -130,6 +130,11 @@ public final class ModItems {
             new Item(new Item.Properties().stacksTo(64))
     );
 
+    public static final Item RIFT_CRYSTAL = register(
+            "rift_crystal",
+            new Item(new Item.Properties().stacksTo(64))
+    );
+
     private static Item register(String id, Item item) {
         return Registry.register(
                 BuiltInRegistries.ITEM,
