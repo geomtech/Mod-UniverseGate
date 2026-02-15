@@ -117,7 +117,13 @@ public class PortalKeyboardScreen extends AbstractContainerScreen<PortalKeyboard
             PortalInfo p = filteredPortals.get(i + scrollOffset);
 
             String dimShort = shortDim(p.dimId());
-            Component label = Component.literal(dimShort + " - " + p.name());
+            Component label;
+            if (p.dimId().getPath().contains("dark")) {
+                label = Component.literal(dimShort + " - " + p.name())
+                        .withStyle(style -> style.withFont(ResourceLocation.fromNamespaceAndPath("minecraft", "alt")));
+            } else {
+                label = Component.literal(dimShort + " - " + p.name());
+            }
 
             int btnY = y + i * (buttonHeight + 6);
 

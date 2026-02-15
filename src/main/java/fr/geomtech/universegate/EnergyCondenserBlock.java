@@ -48,13 +48,14 @@ public class EnergyCondenserBlock extends BaseEntityBlock {
         if (level.isClientSide) return null;
         return createTickerHelper(type, ModBlockEntities.ENERGY_CONDENSER,
                 (lvl, pos, blockState, be) -> be.serverTick());
+    }
+
     @Override
     public List<ItemStack> getDrops(BlockState state, LootParams.Builder builder) {
         List<ItemStack> drops = super.getDrops(state, builder);
         BlockEntity blockEntity = builder.getOptionalParameter(LootContextParams.BLOCK_ENTITY);
         if (blockEntity instanceof EnergyCondenserBlockEntity condenser) {
-            CompoundTag tag = new CompoundTag();
-            condenser.saveAdditional(tag, builder.getLevel().registryAccess());
+            CompoundTag tag = condenser.saveWithId(builder.getLevel().registryAccess());
             CustomData data = CustomData.of(tag);
             for (ItemStack stack : drops) {
                 if (stack.getItem() == this.asItem()) {
