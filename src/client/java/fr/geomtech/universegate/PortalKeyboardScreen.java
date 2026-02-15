@@ -33,13 +33,13 @@ public class PortalKeyboardScreen extends AbstractContainerScreen<PortalKeyboard
     private Button disconnectButton;
     private boolean activationRequested = false;
     private int scrollOffset = 0;
-    private static final int VISIBLE_PORTALS = 3;
+    private static final int VISIBLE_PORTALS = 5;
 
     public PortalKeyboardScreen(PortalKeyboardMenu menu, Inventory inv, Component title) {
         super(menu, inv, title);
         this.imageWidth = 256;
-        this.imageHeight = 120;
-        this.inventoryLabelY = this.imageHeight - 94;
+        this.imageHeight = 172;
+        this.inventoryLabelY = 10000;
     }
 
     public net.minecraft.core.BlockPos getKeyboardPos() {
@@ -147,13 +147,19 @@ public class PortalKeyboardScreen extends AbstractContainerScreen<PortalKeyboard
     protected void renderBg(GuiGraphics g, float partialTicks, int mouseX, int mouseY) {
         // Draw top part
         g.blit(TEXTURE, leftPos, topPos, 0, 0, imageWidth, 113, 256, 200);
+
+        // Draw extended middle part (52px height total, using slice from y=100)
+        for (int i = 0; i < 4; i++) {
+            g.blit(TEXTURE, leftPos, topPos + 113 + (i * 13), 0, 100, imageWidth, 13, 256, 200);
+        }
+
         // Draw bottom part
-        g.blit(TEXTURE, leftPos, topPos + 113, 0, 193, imageWidth, 7, 256, 200);
+        g.blit(TEXTURE, leftPos, topPos + 165, 0, 193, imageWidth, 7, 256, 200);
 
         if (filteredPortals.size() > VISIBLE_PORTALS) {
             int trackX = leftPos + imageWidth - 28;
             int trackY = topPos + 40;
-            int trackH = 60;
+            int trackH = 112;
             int handleH = Math.max(10, trackH * VISIBLE_PORTALS / filteredPortals.size());
             int maxOffset = Math.max(1, filteredPortals.size() - VISIBLE_PORTALS);
             int handleY = trackY + (trackH - handleH) * scrollOffset / maxOffset;
@@ -194,8 +200,9 @@ public class PortalKeyboardScreen extends AbstractContainerScreen<PortalKeyboard
     @Override
     public boolean keyPressed(int keyCode, int scanCode, int modifiers) {
         if (searchBox != null && searchBox.isFocused() && this.minecraft != null) {
-            if (this.minecraft.options.keyInventory.matches(keyCode, scanCode)) return true;
             if (searchBox.keyPressed(keyCode, scanCode, modifiers)) return true;
+            if (searchBox.canConsumeInput()) return true;
+            if (this.minecraft.options.keyInventory.matches(keyCode, scanCode)) return true;
         }
         return super.keyPressed(keyCode, scanCode, modifiers);
     }

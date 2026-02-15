@@ -62,8 +62,9 @@ public class PortalCoreScreen extends AbstractContainerScreen<PortalCoreMenu> {
     @Override
     public boolean keyPressed(int keyCode, int scanCode, int modifiers) {
         if (nameBox != null && nameBox.isFocused() && this.minecraft != null) {
-            if (this.minecraft.options.keyInventory.matches(keyCode, scanCode)) return true;
             if (nameBox.keyPressed(keyCode, scanCode, modifiers)) return true;
+            if (nameBox.canConsumeInput()) return true;
+            if (this.minecraft.options.keyInventory.matches(keyCode, scanCode)) return true;
         }
         if (keyCode == 257 || keyCode == 335) {
             submitRename();
