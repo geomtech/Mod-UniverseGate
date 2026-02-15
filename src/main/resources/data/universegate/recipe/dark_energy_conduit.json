@@ -1,13 +1,13 @@
 {
   "type": "minecraft:crafting_shaped",
   "pattern": [
-    "OOO",
+    "VVV",
     "RDR",
-    "OOO"
+    "VVV"
   ],
   "key": {
-    "O": {
-      "item": "minecraft:obsidian"
+    "V": {
+      "item": "universegate:void_block"
     },
     "R": {
       "item": "minecraft:redstone"

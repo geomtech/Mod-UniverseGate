@@ -1,13 +1,13 @@
 {
   "type": "minecraft:crafting_shaped",
   "pattern": [
-    "O O",
+    "WWW",
     "PFP",
-    "O O"
+    "WWW"
   ],
   "key": {
-    "O": {
-      "item": "minecraft:obsidian"
+    "W": {
+      "item": "universegate:white_purpur_block"
     },
     "P": {
       "item": "minecraft:piston"

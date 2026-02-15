@@ -1,13 +1,13 @@
 {
   "type": "minecraft:crafting_shaped",
   "pattern": [
-    "ODO",
-    "ORO",
-    "ODO"
+    "VDV",
+    "VRV",
+    "VDV"
   ],
   "key": {
-    "O": {
-      "item": "minecraft:obsidian"
+    "V": {
+      "item": "universegate:void_block"
     },
     "D": {
       "item": "minecraft:diamond"
