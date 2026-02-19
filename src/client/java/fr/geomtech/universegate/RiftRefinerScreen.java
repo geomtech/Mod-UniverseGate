@@ -40,5 +40,33 @@ public class RiftRefinerScreen extends AbstractContainerScreen<RiftRefinerMenu> 
         if (menu.isCrafting()) {
             guiGraphics.blit(TEXTURE, x + 79, y + 34, 176, 14, menu.getScaledProgress(), 16);
         }
+        
+        // Fluid Tank Render
+        // Assuming tank is at x+120, y+20, size 16x50 (adjust based on texture)
+        // I'll draw a colored box for now as I don't have a specific tank texture slot yet
+        int fluidHeight = 0;
+        int maxFluid = menu.getMaxFluid();
+        if (maxFluid > 0) {
+            fluidHeight = (int) ((float) menu.getFluidAmount() / maxFluid * 50); // 50 pixels high tank
+        }
+        
+        if (fluidHeight > 0) {
+            // Dark Matter Color (Purple/Black)
+            // ARGB: 0xFF320050
+            guiGraphics.fill(x + 120, y + 20 + (50 - fluidHeight), x + 136, y + 70, 0xFF320050);
+        }
+    }
+
+    @Override
+    protected void renderTooltip(GuiGraphics guiGraphics, int mouseX, int mouseY) {
+        super.renderTooltip(guiGraphics, mouseX, mouseY);
+        
+        int x = (this.width - this.imageWidth) / 2;
+        int y = (this.height - this.imageHeight) / 2;
+        
+        // Check if hovering over fluid tank area (x+120, y+20 to x+136, y+70)
+        if (mouseX >= x + 120 && mouseX <= x + 136 && mouseY >= y + 20 && mouseY <= y + 70) {
+            guiGraphics.renderTooltip(this.font, Component.literal(menu.getFluidAmount() + " / " + menu.getMaxFluid() + " mB"), mouseX, mouseY);
+        }
     }
 }

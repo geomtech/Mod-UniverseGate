@@ -2,7 +2,6 @@ package fr.geomtech.universegate;
 
 import net.fabricmc.fabric.api.screenhandler.v1.ExtendedScreenHandlerFactory;
 import net.minecraft.core.BlockPos;
-import net.minecraft.core.HolderLookup;
 import net.minecraft.core.NonNullList;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.chat.Component;
@@ -16,7 +15,6 @@ import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.inventory.AbstractContainerMenu;
 import net.minecraft.world.inventory.ContainerData;
 import net.minecraft.world.item.ItemStack;
-import net.minecraft.world.item.Items;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.block.state.BlockState;
@@ -24,15 +22,17 @@ import org.jetbrains.annotations.Nullable;
 
 public class RiftRefinerBlockEntity extends BlockEntity implements ExtendedScreenHandlerFactory<BlockPos>, WorldlyContainer {
 
-    private final NonNullList<ItemStack> inventory = NonNullList.withSize(3, ItemStack.EMPTY);
+    private final NonNullList<ItemStack> inventory = NonNullList.withSize(1, ItemStack.EMPTY);
     // Slot 0: Crystal Input
-    // Slot 1: Bucket Input
-    // Slot 2: Output
+    // Output is now Fluid, stored internally
 
     private static final int CRYSTAL_SLOT = 0;
-    private static final int BUCKET_SLOT = 1;
-    private static final int OUTPUT_SLOT = 2;
-    private static final int PROCESS_TIME = 100;
+    private static final int PROCESS_TIME = 40; // Faster refining (2 seconds)
+    
+    // Fluid Storage
+    private int fluidAmount = 0;
+    public static final int MAX_FLUID = 10000; // 10 Buckets
+    public static final int FLUID_PER_CRYSTAL = 156; // 64 crystals = ~10000 mB
 
     private int progress = 0;
     private int maxProgress = PROCESS_TIME;
@@ -47,6 +47,8 @@ public class RiftRefinerBlockEntity extends BlockEntity implements ExtendedScree
                 return switch (index) {
                     case 0 -> RiftRefinerBlockEntity.this.progress;
                     case 1 -> RiftRefinerBlockEntity.this.maxProgress;
+                    case 2 -> RiftRefinerBlockEntity.this.fluidAmount; // Sync fluid amount
+                    case 3 -> RiftRefinerBlockEntity.this.MAX_FLUID;
                     default -> 0;
                 };
             }
@@ -56,12 +58,13 @@ public class RiftRefinerBlockEntity extends BlockEntity implements ExtendedScree
                 switch (index) {
                     case 0 -> RiftRefinerBlockEntity.this.progress = value;
                     case 1 -> RiftRefinerBlockEntity.this.maxProgress = value;
+                    case 2 -> RiftRefinerBlockEntity.this.fluidAmount = value;
                 }
             }
 
             @Override
             public int getCount() {
-                return 2;
+                return 4;
             }
         };
     }
@@ -85,47 +88,72 @@ public class RiftRefinerBlockEntity extends BlockEntity implements ExtendedScree
     public static void tick(Level level, BlockPos pos, BlockState state, RiftRefinerBlockEntity entity) {
         if (level.isClientSide) return;
 
+        boolean dirty = false;
+
+        // Crafting Logic
         if (entity.hasRecipe()) {
             entity.progress++;
             if (entity.progress >= entity.maxProgress) {
                 entity.craftItem();
                 entity.progress = 0;
+                dirty = true;
             }
-            entity.setChanged();
         } else {
             entity.progress = 0;
+        }
+
+        // Fluid Distribution Logic (Push to connected pipes/consumers)
+        if (entity.fluidAmount > 0 && entity.distributeFluid(level, pos)) {
+            dirty = true;
+        }
+
+        if (dirty) {
             entity.setChanged();
         }
     }
 
     private boolean hasRecipe() {
         ItemStack crystalStack = inventory.get(CRYSTAL_SLOT);
-        ItemStack bucketStack = inventory.get(BUCKET_SLOT);
-        ItemStack resultStack = new ItemStack(ModItems.DARK_MATTER_BUCKET);
+        boolean hasInput = crystalStack.getItem() == ModItems.RIFT_CRYSTAL;
+        boolean hasSpace = fluidAmount + FLUID_PER_CRYSTAL <= MAX_FLUID;
 
-        boolean hasInput = crystalStack.getItem() == ModItems.RIFT_CRYSTAL && bucketStack.getItem() == Items.BUCKET;
-
-        return hasInput && canInsertAmountIntoOutputSlot(resultStack) && canInsertItemIntoOutputSlot(resultStack);
+        return hasInput && hasSpace;
     }
 
-    private boolean canInsertItemIntoOutputSlot(ItemStack result) {
-        return inventory.get(OUTPUT_SLOT).getItem() == result.getItem() || inventory.get(OUTPUT_SLOT).isEmpty();
-    }
-
-    private boolean canInsertAmountIntoOutputSlot(ItemStack result) {
-        return inventory.get(OUTPUT_SLOT).getCount() + result.getCount() <= inventory.get(OUTPUT_SLOT).getMaxStackSize();
-    }
+    // Removed canInsertItemIntoOutputSlot and canInsertAmountIntoOutputSlot as they are for items
 
     private void craftItem() {
-        ItemStack result = new ItemStack(ModItems.DARK_MATTER_BUCKET);
         inventory.get(CRYSTAL_SLOT).shrink(1);
-        inventory.get(BUCKET_SLOT).shrink(1);
+        fluidAmount += FLUID_PER_CRYSTAL;
+    }
 
-        if (inventory.get(OUTPUT_SLOT).isEmpty()) {
-            inventory.set(OUTPUT_SLOT, result);
-        } else {
-            inventory.get(OUTPUT_SLOT).grow(result.getCount());
+    private boolean distributeFluid(Level level, BlockPos pos) {
+        int before = fluidAmount;
+
+        // Push to adjacent pipes or consumers directly
+        int transferRate = 100; // mB per tick
+
+        for (net.minecraft.core.Direction dir : net.minecraft.core.Direction.values()) {
+            if (fluidAmount <= 0) break;
+
+            BlockPos neighborPos = pos.relative(dir);
+            BlockEntity neighborBe = level.getBlockEntity(neighborPos);
+
+            if (neighborBe instanceof FluidPipeBlockEntity pipe) {
+                // Push to pipe
+                int toPush = Math.min(fluidAmount, transferRate);
+                if (toPush > 0) {
+                    int pushed = pipe.fill(toPush);
+                    fluidAmount -= pushed;
+                }
+            } else if (neighborBe instanceof DarkEnergyGeneratorBlockEntity generator) {
+                // Direct connection to generator
+                int accepted = generator.fillDarkMatter(Math.min(fluidAmount, transferRate));
+                fluidAmount -= accepted;
+            }
         }
+
+        return fluidAmount != before;
     }
 
     @Override
@@ -133,6 +161,7 @@ public class RiftRefinerBlockEntity extends BlockEntity implements ExtendedScree
         super.saveAdditional(tag, registries);
         ContainerHelper.saveAllItems(tag, inventory, registries);
         tag.putInt("rift_refiner.progress", progress);
+        tag.putInt("rift_refiner.fluid", fluidAmount);
     }
 
     @Override
@@ -140,26 +169,29 @@ public class RiftRefinerBlockEntity extends BlockEntity implements ExtendedScree
         super.loadAdditional(tag, registries);
         ContainerHelper.loadAllItems(tag, inventory, registries);
         progress = tag.getInt("rift_refiner.progress");
+        fluidAmount = Math.max(0, Math.min(tag.getInt("rift_refiner.fluid"), MAX_FLUID));
     }
 
     // WorldlyContainer Implementation
     @Override
     public int[] getSlotsForFace(net.minecraft.core.Direction side) {
-        if (side == net.minecraft.core.Direction.DOWN) return new int[]{OUTPUT_SLOT};
-        if (side == net.minecraft.core.Direction.UP) return new int[]{CRYSTAL_SLOT};
-        return new int[]{BUCKET_SLOT};
+        return new int[]{CRYSTAL_SLOT};
     }
 
     @Override
     public boolean canPlaceItemThroughFace(int slot, ItemStack stack, @Nullable net.minecraft.core.Direction dir) {
         if (slot == CRYSTAL_SLOT) return stack.getItem() == ModItems.RIFT_CRYSTAL;
-        if (slot == BUCKET_SLOT) return stack.getItem() == Items.BUCKET;
         return false;
     }
 
     @Override
+    public boolean canPlaceItem(int slot, ItemStack stack) {
+        return slot == CRYSTAL_SLOT && stack.is(ModItems.RIFT_CRYSTAL);
+    }
+
+    @Override
     public boolean canTakeItemThroughFace(int slot, ItemStack stack, net.minecraft.core.Direction dir) {
-        return slot == OUTPUT_SLOT;
+        return false;
     }
 
     @Override
@@ -194,10 +226,20 @@ public class RiftRefinerBlockEntity extends BlockEntity implements ExtendedScree
 
     @Override
     public void setItem(int slot, ItemStack stack) {
+        if (slot != CRYSTAL_SLOT) {
+            return;
+        }
+
+        if (!stack.isEmpty() && !stack.is(ModItems.RIFT_CRYSTAL)) {
+            return;
+        }
+
         inventory.set(slot, stack);
         if (stack.getCount() > getMaxStackSize()) {
             stack.setCount(getMaxStackSize());
         }
+
+        progress = 0;
         setChanged();
     }
 

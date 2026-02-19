@@ -110,7 +110,8 @@ public class EnergyConduitBlock extends Block {
                 || state.is(ModBlocks.PORTAL_KEYBOARD)
                 || state.is(ModBlocks.CHARGED_LIGHTNING_ROD)
                 || state.is(ModBlocks.METEOROLOGICAL_CONTROLLER)
-                || state.is(ModBlocks.PARABOLA_BLOCK);
+                || state.is(ModBlocks.PARABOLA_BLOCK)
+                || state.is(ModBlocks.COMBUSTION_GENERATOR);
     }
 
     private static VoxelShape[] buildShapeCache() {

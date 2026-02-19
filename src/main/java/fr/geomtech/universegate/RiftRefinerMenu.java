@@ -11,26 +11,36 @@ import net.minecraft.world.level.Level;
 
 public class RiftRefinerMenu extends AbstractContainerMenu {
 
+    private static final int CRYSTAL_SLOT = 0;
+    private static final int PLAYER_INV_START = 1;
+    private static final int PLAYER_INV_END = 28;
+    private static final int HOTBAR_START = 28;
+    private static final int HOTBAR_END = 37;
+
     private final Container inventory;
     private final ContainerData data;
     protected final Level level;
 
     // Client Constructor
     public RiftRefinerMenu(int syncId, Inventory playerInventory, BlockPos pos) {
-        this(syncId, playerInventory, new SimpleContainer(3), new SimpleContainerData(2));
+        this(syncId, playerInventory, new SimpleContainer(1), new SimpleContainerData(4));
     }
 
     // Server Constructor
     public RiftRefinerMenu(int syncId, Inventory playerInventory, Container inventory, ContainerData data) {
         super(ModMenuTypes.RIFT_REFINER, syncId);
-        checkContainerSize(inventory, 3);
+        checkContainerSize(inventory, 1); // Reduced to 1
         this.inventory = inventory;
         this.data = data;
         this.level = playerInventory.player.level();
 
-        addSlot(new Slot(inventory, 0, 56, 17)); // Crystal
-        addSlot(new Slot(inventory, 1, 56, 53)); // Bucket
-        addSlot(new Slot(inventory, 2, 116, 35)); // Output
+        // Only one slot now: Crystal Input
+        addSlot(new Slot(inventory, CRYSTAL_SLOT, 56, 35) {
+            @Override
+            public boolean mayPlace(ItemStack stack) {
+                return stack.is(ModItems.RIFT_CRYSTAL);
+            }
+        });
 
         addDataSlots(data);
 
@@ -44,24 +54,56 @@ public class RiftRefinerMenu extends AbstractContainerMenu {
 
     public int getScaledProgress() {
         int progress = this.data.get(0);
-        int maxProgress = this.data.get(1);  // Max Progress
-        int progressArrowSize = 26; // This is the width in pixels of your arrow
+        int maxProgress = this.data.get(1);
+        int progressArrowSize = 26;
 
         return maxProgress != 0 && progress != 0 ? progress * progressArrowSize / maxProgress : 0;
+    }
+
+    public int getFluidAmount() {
+        return this.data.get(2);
+    }
+
+    public int getMaxFluid() {
+        return this.data.get(3);
     }
 
     @Override
     public ItemStack quickMoveStack(Player player, int invSlot) {
         ItemStack newStack = ItemStack.EMPTY;
         Slot slot = this.slots.get(invSlot);
+
         if (slot != null && slot.hasItem()) {
             ItemStack originalStack = slot.getItem();
             newStack = originalStack.copy();
-            if (invSlot < this.inventory.getContainerSize()) {
-                if (!this.moveItemStackTo(originalStack, this.inventory.getContainerSize(), this.slots.size(), true)) {
+
+            if (invSlot == CRYSTAL_SLOT) {
+                if (!this.moveItemStackTo(originalStack, PLAYER_INV_START, HOTBAR_END, true)) {
                     return ItemStack.EMPTY;
                 }
-            } else if (!this.moveItemStackTo(originalStack, 0, this.inventory.getContainerSize(), false)) {
+            } else if (originalStack.is(ModItems.RIFT_CRYSTAL)) {
+                if (!this.moveItemStackTo(originalStack, CRYSTAL_SLOT, CRYSTAL_SLOT + 1, false)) {
+                    if (invSlot >= PLAYER_INV_START && invSlot < PLAYER_INV_END) {
+                        if (!this.moveItemStackTo(originalStack, HOTBAR_START, HOTBAR_END, false)) {
+                            return ItemStack.EMPTY;
+                        }
+                    } else if (invSlot >= HOTBAR_START && invSlot < HOTBAR_END) {
+                        if (!this.moveItemStackTo(originalStack, PLAYER_INV_START, PLAYER_INV_END, false)) {
+                            return ItemStack.EMPTY;
+                        }
+                    } else {
+                        return ItemStack.EMPTY;
+                    }
+                }
+            } else if (invSlot >= PLAYER_INV_START && invSlot < PLAYER_INV_END) {
+                if (!this.moveItemStackTo(originalStack, HOTBAR_START, HOTBAR_END, false)) {
+                    return ItemStack.EMPTY;
+                }
+            } else if (invSlot >= HOTBAR_START && invSlot < HOTBAR_END) {
+                if (!this.moveItemStackTo(originalStack, PLAYER_INV_START, PLAYER_INV_END, false)) {
+                    return ItemStack.EMPTY;
+                }
+            } else {
                 return ItemStack.EMPTY;
             }
 
@@ -70,7 +112,10 @@ public class RiftRefinerMenu extends AbstractContainerMenu {
             } else {
                 slot.setChanged();
             }
+
+            slot.onTake(player, originalStack);
         }
+
         return newStack;
     }
 

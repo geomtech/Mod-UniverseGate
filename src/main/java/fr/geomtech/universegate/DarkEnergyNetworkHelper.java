@@ -33,11 +33,18 @@ public final class DarkEnergyNetworkHelper {
         Set<BlockPos> visited = new HashSet<>();
         ArrayDeque<BlockPos> queue = new ArrayDeque<>();
         
-        // Add initial adjacent conduits from ANY portal part
+        // Add initial adjacent conduits/generators from ANY portal part
         for (BlockPos partPos : framePositions) {
             for (Direction dir : Direction.values()) {
                 BlockPos neighbor = partPos.relative(dir);
-                if (isValidConduit(level, neighbor)) {
+                BlockState neighborState = level.getBlockState(neighbor);
+
+                if (neighborState.is(ModBlocks.DARK_ENERGY_GENERATOR)) {
+                    BlockEntity be = level.getBlockEntity(neighbor);
+                    if (be instanceof DarkEnergyGeneratorBlockEntity generator && (generator.isGenerating() || generator.hasFuel())) {
+                        return true;
+                    }
+                } else if (isValidConduit(level, neighbor)) {
                     queue.add(neighbor);
                     visited.add(neighbor);
                 }
@@ -58,7 +65,7 @@ public final class DarkEnergyNetworkHelper {
                 
                 if (state.is(ModBlocks.DARK_ENERGY_GENERATOR)) {
                     BlockEntity be = level.getBlockEntity(neighbor);
-                    if (be instanceof DarkEnergyGeneratorBlockEntity generator && generator.isGenerating()) {
+                    if (be instanceof DarkEnergyGeneratorBlockEntity generator && (generator.isGenerating() || generator.hasFuel())) {
                         return true;
                     }
                 } else if (isValidConduit(level, neighbor)) {

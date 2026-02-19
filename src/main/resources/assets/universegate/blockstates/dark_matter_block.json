@@ -1,0 +1,52 @@
+{
+  "variants": {
+    "level=0": {
+      "model": "universegate:block/dark_matter_block"
+    },
+    "level=1": {
+      "model": "universegate:block/dark_matter_block"
+    },
+    "level=2": {
+      "model": "universegate:block/dark_matter_block"
+    },
+    "level=3": {
+      "model": "universegate:block/dark_matter_block"
+    },
+    "level=4": {
+      "model": "universegate:block/dark_matter_block"
+    },
+    "level=5": {
+      "model": "universegate:block/dark_matter_block"
+    },
+    "level=6": {
+      "model": "universegate:block/dark_matter_block"
+    },
+    "level=7": {
+      "model": "universegate:block/dark_matter_block"
+    },
+    "level=8": {
+      "model": "universegate:block/dark_matter_block"
+    },
+    "level=9": {
+      "model": "universegate:block/dark_matter_block"
+    },
+    "level=10": {
+      "model": "universegate:block/dark_matter_block"
+    },
+    "level=11": {
+      "model": "universegate:block/dark_matter_block"
+    },
+    "level=12": {
+      "model": "universegate:block/dark_matter_block"
+    },
+    "level=13": {
+      "model": "universegate:block/dark_matter_block"
+    },
+    "level=14": {
+      "model": "universegate:block/dark_matter_block"
+    },
+    "level=15": {
+      "model": "universegate:block/dark_matter_block"
+    }
+  }
+}
