@@ -12,6 +12,8 @@ import net.minecraft.util.RandomSource;
 import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.LightningBolt;
 import net.minecraft.world.level.Level;
+import net.minecraft.world.level.block.state.BlockState;
+import net.minecraft.world.level.block.state.properties.BlockStateProperties;
 
 import java.util.Optional;
 import java.util.UUID;
@@ -23,7 +25,6 @@ public final class PortalConnectionManager {
     private static final long OPENING_BLACKOUT_TICKS = 20L * 2L;
     private static final double OPENING_PARTICLE_EXPONENT = 4.0D;
     private static final int OPENING_MAX_PARTICLES_PER_CELL = 7;
-    private static final int PORTAL_PRELOAD_RADIUS_CHUNKS = 1;
     private static final int KEYBOARD_RADIUS_XZ = 8;
     private static final int KEYBOARD_RADIUS_Y = 4;
 
@@ -35,16 +36,27 @@ public final class PortalConnectionManager {
      * targetId = portail B (destination) choisi via UI
      */
     public static boolean openBothSides(ServerLevel sourceLevel, BlockPos sourceCorePos, UUID targetId) {
-        return openBothSides(sourceLevel, sourceCorePos, targetId, false);
+        return openBothSides(sourceLevel, sourceCorePos, targetId, false, false);
     }
 
     public static boolean openBothSides(ServerLevel sourceLevel, BlockPos sourceCorePos, UUID targetId, boolean riftLightningLink) {
+        return openBothSides(sourceLevel, sourceCorePos, targetId, riftLightningLink, false);
+    }
+
+    public static boolean openBothSides(ServerLevel sourceLevel,
+                                        BlockPos sourceCorePos,
+                                        UUID targetId,
+                                        boolean riftLightningLink,
+                                        boolean sourceMaintenanceEnergyBypass) {
         MinecraftServer server = sourceLevel.getServer();
         PortalRegistrySavedData reg = PortalRegistrySavedData.get(server);
 
         // Récup source A
         if (!(sourceLevel.getBlockEntity(sourceCorePos) instanceof PortalCoreBlockEntity a)) return false;
-        if (a.getPortalId() == null) return false;
+        if (a.getPortalId() == null) {
+            a.renamePortal(a.getPortalName());
+            if (a.getPortalId() == null) return false;
+        }
 
         // Récup B via registre
         PortalRegistrySavedData.PortalEntry bEntry = reg.get(targetId);
@@ -58,17 +70,35 @@ public final class PortalConnectionManager {
 
         // Charger la dimension B
         ServerLevel targetLevel = server.getLevel(bEntry.dim());
-        if (targetLevel == null) return false;
+        if (targetLevel == null) {
+            reg.removePortal(targetId);
+            return false;
+        }
 
         // Charger chunk du core B
         targetLevel.getChunk(bEntry.pos());
 
-        if (!(targetLevel.getBlockEntity(bEntry.pos()) instanceof PortalCoreBlockEntity b)) return false;
-        if (b.getPortalId() == null) return false;
+        if (!(targetLevel.getBlockEntity(bEntry.pos()) instanceof PortalCoreBlockEntity b)) {
+            reg.removePortal(targetId);
+            return false;
+        }
+        UUID resolvedTargetId = targetId;
+        if (b.getPortalId() == null) {
+            b.renamePortal(b.getPortalName());
+            if (b.getPortalId() == null) {
+                reg.removePortal(targetId);
+                return false;
+            }
+        }
+        if (!targetId.equals(b.getPortalId())) {
+            reg.removePortal(targetId);
+            reg.upsertPortal(targetLevel, b.getPortalId(), b.getPortalName(), bEntry.pos(), bEntry.hidden());
+            resolvedTargetId = b.getPortalId();
+        }
+        if (a.getPortalId().equals(resolvedTargetId)) {
+            return false;
+        }
         if (b.isActiveOrOpening()) return false;
-
-        preloadPortalChunks(sourceLevel, sourceCorePos);
-        preloadPortalChunks(targetLevel, bEntry.pos());
 
         // Vérifier cadres (A et B)
         Optional<PortalFrameDetector.FrameMatch> frameA = PortalFrameDetector.find(sourceLevel, sourceCorePos);
@@ -81,8 +111,8 @@ public final class PortalConnectionManager {
         long openingCompleteA = nowA + OPENING_DURATION_TICKS;
         long openingCompleteB = nowB + OPENING_DURATION_TICKS;
 
-        a.setOpeningState(connectionId, b.getPortalId(), nowA, openingCompleteA, riftLightningLink, true);
-        b.setOpeningState(connectionId, a.getPortalId(), nowB, openingCompleteB, riftLightningLink, false);
+        a.setOpeningState(connectionId, b.getPortalId(), nowA, openingCompleteA, riftLightningLink, true, sourceMaintenanceEnergyBypass);
+        b.setOpeningState(connectionId, a.getPortalId(), nowB, openingCompleteB, riftLightningLink, false, false);
 
         setFrameActive(sourceLevel, frameA.get(), sourceCorePos, true, riftLightningLink);
         setFrameActive(targetLevel, frameB.get(), bEntry.pos(), true, riftLightningLink);
@@ -348,7 +378,7 @@ public final class PortalConnectionManager {
                 for (int dz = -KEYBOARD_RADIUS_XZ; dz <= KEYBOARD_RADIUS_XZ; dz++) {
                     BlockPos p = corePos.offset(dx, dy, dz);
                     var state = level.getBlockState(p);
-                    if (!state.is(ModBlocks.PORTAL_KEYBOARD)) continue;
+                    if (!isKeyboardBlock(state)) continue;
                     if (lit) {
                         setKeyboardLit(level, p, true);
                     } else {
@@ -364,17 +394,22 @@ public final class PortalConnectionManager {
         if (corePos == null) return;
 
         if (!(level.getBlockEntity(corePos) instanceof PortalCoreBlockEntity core)) return;
-        if (core.isRiftLightningLink() || !core.isOutboundTravelEnabled()) return;
+        if (core.isRiftLightningLink()) return;
+        if (!core.isOutboundTravelEnabled()) return;
 
         forceCloseOneSide(level, corePos);
     }
 
     private static void setKeyboardLit(ServerLevel level, BlockPos keyboardPos, boolean lit) {
         var state = level.getBlockState(keyboardPos);
-        if (!state.is(ModBlocks.PORTAL_KEYBOARD) || !state.hasProperty(PortalKeyboardBlock.LIT)) return;
-        if (state.getValue(PortalKeyboardBlock.LIT) == lit) return;
+        if (!isKeyboardBlock(state) || !state.hasProperty(BlockStateProperties.LIT)) return;
+        if (state.getValue(BlockStateProperties.LIT) == lit) return;
 
-        level.setBlock(keyboardPos, state.setValue(PortalKeyboardBlock.LIT, lit), 3);
+        level.setBlock(keyboardPos, state.setValue(BlockStateProperties.LIT, lit), 3);
+    }
+
+    private static boolean isKeyboardBlock(BlockState state) {
+        return state.is(ModBlocks.PORTAL_KEYBOARD) || state.is(ModBlocks.PORTAL_NATURAL_KEYBOARD);
     }
 
     private static boolean hasActiveCoreNear(ServerLevel level, BlockPos center, int rXZ, int rY) {
@@ -578,16 +613,6 @@ public final class PortalConnectionManager {
         if (state.equals(updated)) return;
 
         level.setBlock(pos, updated, 3);
-    }
-
-    private static void preloadPortalChunks(ServerLevel level, BlockPos corePos) {
-        int centerChunkX = corePos.getX() >> 4;
-        int centerChunkZ = corePos.getZ() >> 4;
-        for (int dx = -PORTAL_PRELOAD_RADIUS_CHUNKS; dx <= PORTAL_PRELOAD_RADIUS_CHUNKS; dx++) {
-            for (int dz = -PORTAL_PRELOAD_RADIUS_CHUNKS; dz <= PORTAL_PRELOAD_RADIUS_CHUNKS; dz++) {
-                level.getChunk(centerChunkX + dx, centerChunkZ + dz);
-            }
-        }
     }
 
 }

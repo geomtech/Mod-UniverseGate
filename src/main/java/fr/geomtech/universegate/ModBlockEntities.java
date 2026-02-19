@@ -21,6 +21,13 @@ public final class ModBlockEntities {
                     BlockEntityType.Builder.of(PortalKeyboardBlockEntity::new, ModBlocks.PORTAL_KEYBOARD).build(null)
             );
 
+    public static final BlockEntityType<PortalNaturalKeyboardBlockEntity> PORTAL_NATURAL_KEYBOARD =
+            Registry.register(
+                    BuiltInRegistries.BLOCK_ENTITY_TYPE,
+                    ResourceLocation.fromNamespaceAndPath(UniverseGate.MOD_ID, "portal_natural_keyboard"),
+                    BlockEntityType.Builder.of(PortalNaturalKeyboardBlockEntity::new, ModBlocks.PORTAL_NATURAL_KEYBOARD).build(null)
+            );
+
     public static final BlockEntityType<PortalFrameBlockEntity> PORTAL_FRAME =
             Registry.register(
                     BuiltInRegistries.BLOCK_ENTITY_TYPE,
@@ -47,6 +54,13 @@ public final class ModBlockEntities {
                     BuiltInRegistries.BLOCK_ENTITY_TYPE,
                     ResourceLocation.fromNamespaceAndPath(UniverseGate.MOD_ID, "energy_monitor"),
                     BlockEntityType.Builder.of(EnergyMonitorBlockEntity::new, ModBlocks.ENERGY_MONITOR).build(null)
+            );
+
+    public static final BlockEntityType<CombustionGeneratorBlockEntity> COMBUSTION_GENERATOR =
+            Registry.register(
+                    BuiltInRegistries.BLOCK_ENTITY_TYPE,
+                    ResourceLocation.fromNamespaceAndPath(UniverseGate.MOD_ID, "combustion_generator"),
+                    BlockEntityType.Builder.of(CombustionGeneratorBlockEntity::new, ModBlocks.COMBUSTION_GENERATOR).build(null)
             );
 
     public static final BlockEntityType<ChargedLightningRodBlockEntity> CHARGED_LIGHTNING_ROD =
@@ -96,6 +110,13 @@ public final class ModBlockEntities {
                     BuiltInRegistries.BLOCK_ENTITY_TYPE,
                     ResourceLocation.fromNamespaceAndPath(UniverseGate.MOD_ID, "dark_energy_generator"),
                     BlockEntityType.Builder.of(DarkEnergyGeneratorBlockEntity::new, ModBlocks.DARK_ENERGY_GENERATOR).build(null)
+            );
+
+    public static final BlockEntityType<FluidPipeBlockEntity> FLUID_PIPE =
+            Registry.register(
+                    BuiltInRegistries.BLOCK_ENTITY_TYPE,
+                    ResourceLocation.fromNamespaceAndPath(UniverseGate.MOD_ID, "fluid_pipe"),
+                    BlockEntityType.Builder.of(FluidPipeBlockEntity::new, ModBlocks.FLUID_PIPE).build(null)
             );
 
     public static void register() {}

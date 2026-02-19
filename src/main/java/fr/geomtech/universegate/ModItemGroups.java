@@ -23,6 +23,7 @@ public final class ModItemGroups {
                 output.accept(ModItems.PORTAL_CORE_ITEM);
                 output.accept(ModItems.PORTAL_FRAME_ITEM);
                 output.accept(ModItems.PORTAL_KEYBOARD_ITEM);
+                output.accept(ModItems.PORTAL_NATURAL_KEYBOARD_ITEM);
                 output.accept(ModItems.CHARGED_LIGHTNING_ROD_ITEM);
                 output.accept(ModItems.LIGHT_BEAM_EMITTER_ITEM);
                 output.accept(ModItems.ENERGY_CONDENSER_ITEM);
@@ -32,6 +33,7 @@ public final class ModItemGroups {
                 output.accept(ModItems.METEOROLOGICAL_CONTROLLER_ITEM);
                 output.accept(ModItems.ENERGY_CONDUIT_ITEM);
                 output.accept(ModItems.SOLAR_PANEL_ITEM);
+                output.accept(ModItems.COMBUSTION_GENERATOR_ITEM);
                 output.accept(ModItems.ENERGY_MONITOR_ITEM);
 
                 output.accept(ModItems.VOID_BLOCK_ITEM);

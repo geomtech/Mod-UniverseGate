@@ -1,0 +1,9 @@
+{
+  "parent": "minecraft:block/orientable_with_bottom",
+  "textures": {
+    "top": "universegate:block/combustion_generator_top",
+    "bottom": "universegate:block/combustion_generator_bottom",
+    "side": "universegate:block/combustion_generator_side",
+    "front": "universegate:block/combustion_generator_front"
+  }
+}

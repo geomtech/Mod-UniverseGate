@@ -116,6 +116,14 @@ public final class ModBlocks {
                     .noOcclusion())
     );
 
+    public static final Block COMBUSTION_GENERATOR = register(
+            "combustion_generator",
+            new CombustionGeneratorBlock(BlockBehaviour.Properties.ofFullCopy(Blocks.BLAST_FURNACE)
+                    .strength(3.5f, 6.0f)
+                    .requiresCorrectToolForDrops()
+                    .lightLevel(CombustionGeneratorBlock::lightLevel))
+    );
+
     public static final Block ENERGY_MONITOR = register(
             "energy_monitor",
             new EnergyMonitorBlock(BlockBehaviour.Properties.ofFullCopy(Blocks.IRON_BLOCK)
@@ -145,6 +153,15 @@ public final class ModBlocks {
                     .strength(60.0f, 1200.0f)
                     .requiresCorrectToolForDrops()
                     .lightLevel(PortalKeyboardBlock::lightLevel))
+    );
+
+    public static final Block PORTAL_NATURAL_KEYBOARD = register(
+            "portal_natural_keyboard",
+            new PortalNaturalKeyboardBlock(BlockBehaviour.Properties.ofFullCopy(Blocks.OBSIDIAN)
+                    .strength(60.0f, 1200.0f)
+                    .requiresCorrectToolForDrops()
+                    .lightLevel(PortalNaturalKeyboardBlock::lightLevel)
+                    .noLootTable())
     );
 
     public static final Block PORTAL_FIELD = register(

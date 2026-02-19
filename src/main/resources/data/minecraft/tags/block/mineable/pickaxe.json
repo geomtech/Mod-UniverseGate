@@ -13,6 +13,7 @@
     "universegate:meteorological_controller",
     "universegate:energy_conduit",
     "universegate:solar_panel",
+    "universegate:combustion_generator",
     "universegate:energy_monitor",
     "universegate:portal_core",
     "universegate:portal_frame",

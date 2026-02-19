@@ -38,6 +38,7 @@ public final class ModVillagers {
         if (PORTAL_KEYBOARD_POI != null && ENGINEER != null) return;
 
         Set<BlockState> keyboardStates = new HashSet<>(ModBlocks.PORTAL_KEYBOARD.getStateDefinition().getPossibleStates());
+        keyboardStates.addAll(ModBlocks.PORTAL_NATURAL_KEYBOARD.getStateDefinition().getPossibleStates());
 
         PORTAL_KEYBOARD_POI = Registry.register(
                 BuiltInRegistries.POINT_OF_INTEREST_TYPE,

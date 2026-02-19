@@ -30,6 +30,10 @@ public class PortalKeyboardBlockEntity extends BlockEntity implements WorldlyCon
         super(ModBlockEntities.PORTAL_KEYBOARD, pos, state);
     }
 
+    protected PortalKeyboardBlockEntity(net.minecraft.world.level.block.entity.BlockEntityType<?> type, BlockPos pos, BlockState state) {
+        super(type, pos, state);
+    }
+
     // --- Legacy API (kept for compatibility) ---
     public boolean consumeOneFuel() {
         return false;

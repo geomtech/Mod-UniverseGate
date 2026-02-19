@@ -36,17 +36,40 @@ public class PortalCoreBlockEntity extends BlockEntity implements ExtendedScreen
     private boolean visualUnstable = false;
     private boolean riftLightningLink = false;
     private boolean outboundTravelEnabled = false;
+    private boolean maintenanceEnergyBypass = false;
     private boolean opening = false;
     private long openingStartedGameTime = 0L;
     private long openingCompleteGameTime = 0L;
     private long nextAmbientLoopGameTime = 0L;
     private boolean restorePending = false;
+    private int darkEnergyAmount = 0;
+    public static final int DARK_ENERGY_THRESHOLD = 4000;
 
     public PortalCoreBlockEntity(BlockPos pos, BlockState state) {
+
         super(ModBlockEntities.PORTAL_CORE, pos, state);
     }
 
+    public int addDarkEnergy(int amount) {
+        if (amount <= 0) return 0;
+
+        int space = Math.max(0, DARK_ENERGY_THRESHOLD - darkEnergyAmount);
+        int accepted = Math.min(amount, space);
+        darkEnergyAmount += accepted;
+        if (accepted > 0) setChanged();
+        return accepted;
+    }
+
+    public boolean isDarkEnergyComplete() {
+        return darkEnergyAmount >= DARK_ENERGY_THRESHOLD;
+    }
+
+    public int getDarkEnergyAmount() {
+        return darkEnergyAmount;
+    }
+
     // ---------- Lifecycle ----------
+
     public void onPlaced() {
         if (!(level instanceof ServerLevel sl)) return;
 
@@ -236,7 +259,7 @@ public class PortalCoreBlockEntity extends BlockEntity implements ExtendedScreen
     }
 
     private boolean drainActivePortalEnergy(ServerLevel level, long now) {
-        if (!outboundTravelEnabled || riftLightningLink) return true;
+        if (!outboundTravelEnabled || riftLightningLink || maintenanceEnergyBypass) return true;
         if (EnergyNetworkHelper.isRiftDimension(level)) return true;
 
         long phase = Math.floorMod(worldPosition.asLong(), 20L);
@@ -298,7 +321,8 @@ public class PortalCoreBlockEntity extends BlockEntity implements ExtendedScreen
                          long openingStartedGameTime,
                          long openingCompleteGameTime,
                          boolean riftLightningLink,
-                         boolean outboundTravelEnabled) {
+                         boolean outboundTravelEnabled,
+                         boolean maintenanceEnergyBypass) {
         boolean previouslyEmitting = emitsRedstoneSignal();
         this.active = false;
         this.opening = true;
@@ -309,6 +333,7 @@ public class PortalCoreBlockEntity extends BlockEntity implements ExtendedScreen
         this.visualUnstable = false;
         this.riftLightningLink = riftLightningLink;
         this.outboundTravelEnabled = outboundTravelEnabled;
+        this.maintenanceEnergyBypass = maintenanceEnergyBypass;
         this.openingStartedGameTime = openingStartedGameTime;
         this.openingCompleteGameTime = openingCompleteGameTime;
         this.nextAmbientLoopGameTime = 0L;
@@ -335,7 +360,8 @@ public class PortalCoreBlockEntity extends BlockEntity implements ExtendedScreen
                         UUID targetPortalId,
                         long activeUntilGameTime,
                         boolean riftLightningLink,
-                        boolean outboundTravelEnabled) {
+                        boolean outboundTravelEnabled,
+                        boolean maintenanceEnergyBypass) {
         boolean previouslyEmitting = emitsRedstoneSignal();
         this.active = true;
         this.opening = false;
@@ -346,6 +372,7 @@ public class PortalCoreBlockEntity extends BlockEntity implements ExtendedScreen
         this.visualUnstable = riftLightningLink;
         this.riftLightningLink = riftLightningLink;
         this.outboundTravelEnabled = outboundTravelEnabled;
+        this.maintenanceEnergyBypass = maintenanceEnergyBypass;
         this.openingStartedGameTime = 0L;
         this.openingCompleteGameTime = 0L;
         this.nextAmbientLoopGameTime = 0L;
@@ -364,6 +391,7 @@ public class PortalCoreBlockEntity extends BlockEntity implements ExtendedScreen
         this.visualUnstable = false;
         this.riftLightningLink = false;
         this.outboundTravelEnabled = false;
+        this.maintenanceEnergyBypass = false;
         this.openingStartedGameTime = 0L;
         this.openingCompleteGameTime = 0L;
         this.nextAmbientLoopGameTime = 0L;
@@ -387,8 +415,10 @@ public class PortalCoreBlockEntity extends BlockEntity implements ExtendedScreen
         tag.putLong("ActiveStarted", activeStartedGameTime);
         tag.putBoolean("RiftLightning", riftLightningLink);
         tag.putBoolean("OutboundTravel", outboundTravelEnabled);
+        tag.putBoolean("MaintenanceEnergyBypass", maintenanceEnergyBypass);
         tag.putLong("OpeningStart", openingStartedGameTime);
         tag.putLong("OpeningComplete", openingCompleteGameTime);
+        tag.putInt("DarkEnergyAmount", darkEnergyAmount);
     }
 
     @Override
@@ -407,8 +437,11 @@ public class PortalCoreBlockEntity extends BlockEntity implements ExtendedScreen
         visualUnstable = false;
         riftLightningLink = tag.getBoolean("RiftLightning");
         outboundTravelEnabled = tag.contains("OutboundTravel") ? tag.getBoolean("OutboundTravel") : (active || opening);
+        maintenanceEnergyBypass = tag.getBoolean("MaintenanceEnergyBypass");
         openingStartedGameTime = tag.contains("OpeningStart") ? tag.getLong("OpeningStart") : 0L;
         openingCompleteGameTime = tag.contains("OpeningComplete") ? tag.getLong("OpeningComplete") : 0L;
+        darkEnergyAmount = Math.max(0, Math.min(tag.getInt("DarkEnergyAmount"), DARK_ENERGY_THRESHOLD));
+
         if (!active) {
             activeStartedGameTime = 0L;
             visualUnstable = false;
@@ -419,6 +452,10 @@ public class PortalCoreBlockEntity extends BlockEntity implements ExtendedScreen
             openingCompleteGameTime = 0L;
         }
         restorePending = active || opening;
+
+        if (level instanceof ServerLevel sl && portalId != null) {
+            PortalRegistrySavedData.get(sl.getServer()).upsertPortal(sl, portalId, portalName, worldPosition);
+        }
     }
 
     @Override

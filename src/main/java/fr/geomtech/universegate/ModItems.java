@@ -81,6 +81,11 @@ public final class ModItems {
             new BlockItem(ModBlocks.SOLAR_PANEL, new Item.Properties())
     );
 
+    public static final Item COMBUSTION_GENERATOR_ITEM = register(
+            "combustion_generator",
+            new BlockItem(ModBlocks.COMBUSTION_GENERATOR, new Item.Properties())
+    );
+
     public static final Item ENERGY_MONITOR_ITEM = register(
             "energy_monitor",
             new BlockItem(ModBlocks.ENERGY_MONITOR, new Item.Properties())
@@ -109,6 +114,11 @@ public final class ModItems {
     public static final Item PORTAL_KEYBOARD_ITEM = register(
             "portal_keyboard",
             new BlockItem(ModBlocks.PORTAL_KEYBOARD, new Item.Properties())
+    );
+
+    public static final Item PORTAL_NATURAL_KEYBOARD_ITEM = register(
+            "portal_natural_keyboard",
+            new BlockItem(ModBlocks.PORTAL_NATURAL_KEYBOARD, new Item.Properties())
     );
 
     public static final Item CHARGED_LIGHTNING_ROD_ITEM = register(

@@ -18,6 +18,16 @@ public final class ModMenuTypes {
                     )
             );
 
+    public static final ExtendedScreenHandlerType<PortalNaturalKeyboardMenu, BlockPos> PORTAL_NATURAL_KEYBOARD =
+            Registry.register(
+                    BuiltInRegistries.MENU,
+                    ResourceLocation.fromNamespaceAndPath(UniverseGate.MOD_ID, "portal_natural_keyboard"),
+                    new ExtendedScreenHandlerType<>(
+                            PortalNaturalKeyboardMenu::new,
+                            BlockPos.STREAM_CODEC
+                    )
+            );
+
     public static final ExtendedScreenHandlerType<PortalCoreMenu, BlockPos> PORTAL_CORE =
             Registry.register(
                     BuiltInRegistries.MENU,
@@ -54,6 +64,16 @@ public final class ModMenuTypes {
                     ResourceLocation.fromNamespaceAndPath(UniverseGate.MOD_ID, "rift_refiner"),
                     new ExtendedScreenHandlerType<>(
                             RiftRefinerMenu::new,
+                            BlockPos.STREAM_CODEC
+                    )
+            );
+
+    public static final ExtendedScreenHandlerType<CombustionGeneratorMenu, BlockPos> COMBUSTION_GENERATOR =
+            Registry.register(
+                    BuiltInRegistries.MENU,
+                    ResourceLocation.fromNamespaceAndPath(UniverseGate.MOD_ID, "combustion_generator"),
+                    new ExtendedScreenHandlerType<>(
+                            CombustionGeneratorMenu::new,
                             BlockPos.STREAM_CODEC
                     )
             );
