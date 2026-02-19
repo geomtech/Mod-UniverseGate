@@ -94,6 +94,7 @@ public class PortalCoreBlockEntity extends BlockEntity implements ExtendedScreen
     // ---------- Ticking ----------
     public void serverTick() {
         if (!(level instanceof ServerLevel sl)) return;
+        long now = sl.getGameTime();
         if (restorePending) {
             restorePending = false;
             if (active && !restoreActiveState(sl)) return;
@@ -103,14 +104,14 @@ public class PortalCoreBlockEntity extends BlockEntity implements ExtendedScreen
                     return;
                 }
                 if (openingCompleteGameTime <= 0L) {
-                    openingStartedGameTime = sl.getGameTime();
+                    openingStartedGameTime = now;
                     openingCompleteGameTime = openingStartedGameTime + OPENING_DURATION_FALLBACK_TICKS;
                     setChanged();
                 }
                 PortalConnectionManager.setNearbyKeyboardsLit(sl, worldPosition, true);
             }
         }
-        if (sl.getGameTime() % 10L == 0L) {
+        if (now % 10L == 0L) {
             PortalRiftHelper.findNearestChargedRod(sl, worldPosition, ChargedLightningRodBlock.PORTAL_RADIUS)
                     .ifPresent((rod) -> spawnRiftParticles(sl));
         }
@@ -120,7 +121,6 @@ public class PortalCoreBlockEntity extends BlockEntity implements ExtendedScreen
         }
         if (!active) return;
 
-        long now = sl.getGameTime();
         if (activeStartedGameTime <= 0L || activeStartedGameTime > now) {
             activeStartedGameTime = now;
             setChanged();

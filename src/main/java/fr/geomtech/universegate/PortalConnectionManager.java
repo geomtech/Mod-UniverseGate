@@ -451,9 +451,7 @@ public final class PortalConnectionManager {
     // Champ portal (à brancher ensuite)
     // ----------------------------
     private static boolean placeField(ServerLevel level, PortalFrameDetector.FrameMatch match, boolean unstable) {
-        var axis = match.right() == net.minecraft.core.Direction.EAST
-                ? net.minecraft.core.Direction.Axis.X
-                : net.minecraft.core.Direction.Axis.Z;
+        var axis = axisFromMatch(match);
         var baseFieldState = ModBlocks.PORTAL_FIELD.defaultBlockState()
                 .setValue(PortalFieldBlock.AXIS, axis)
                 .setValue(PortalFieldBlock.UNSTABLE, unstable);
@@ -470,9 +468,7 @@ public final class PortalConnectionManager {
             if (state.is(ModBlocks.PORTAL_FIELD)) {
                 var axis = state.hasProperty(PortalFieldBlock.AXIS)
                         ? state.getValue(PortalFieldBlock.AXIS)
-                        : (match.right() == net.minecraft.core.Direction.EAST
-                        ? net.minecraft.core.Direction.Axis.X
-                        : net.minecraft.core.Direction.Axis.Z);
+                        : axisFromMatch(match);
                 boolean unstable = state.hasProperty(PortalFieldBlock.UNSTABLE)
                         && state.getValue(PortalFieldBlock.UNSTABLE);
                 spawnFieldCollapseParticles(level, p, axis, unstable);
@@ -486,6 +482,10 @@ public final class PortalConnectionManager {
                 );
             }
         }
+    }
+
+    private static Direction.Axis axisFromMatch(PortalFrameDetector.FrameMatch match) {
+        return match.right() == Direction.EAST ? Direction.Axis.X : Direction.Axis.Z;
     }
 
     private static void setFieldInstability(ServerLevel level, PortalFrameDetector.FrameMatch match, boolean unstable) {

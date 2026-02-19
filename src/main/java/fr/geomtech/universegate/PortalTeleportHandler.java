@@ -14,6 +14,7 @@ import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.RelativeMovement;
 import net.minecraft.world.entity.projectile.AbstractArrow;
+import net.minecraft.world.entity.projectile.ThrownEnderpearl;
 import net.minecraft.world.entity.vehicle.AbstractMinecart;
 import net.minecraft.world.phys.Vec3;
 
@@ -297,7 +298,8 @@ public final class PortalTeleportHandler {
             for (int dx = -r; dx <= r; dx++) {
                 for (int dz = -r; dz <= r; dz++) {
                     BlockPos p = corePos.offset(dx, dy, dz);
-                    if (!level.getBlockState(p).is(ModBlocks.PORTAL_KEYBOARD)) continue;
+                    var state = level.getBlockState(p);
+                    if (!state.is(ModBlocks.PORTAL_KEYBOARD) && !state.is(ModBlocks.PORTAL_NATURAL_KEYBOARD)) continue;
                     if (level.getBlockEntity(p) instanceof PortalKeyboardBlockEntity kb) return kb;
                 }
             }
@@ -383,7 +385,9 @@ public final class PortalTeleportHandler {
     }
 
     private static boolean shouldPreserveProjectileMomentum(Entity entity) {
-        return entity instanceof AbstractArrow || entity instanceof AbstractMinecart;
+        return entity instanceof AbstractArrow
+                || entity instanceof AbstractMinecart
+                || entity instanceof ThrownEnderpearl;
     }
 
 }
