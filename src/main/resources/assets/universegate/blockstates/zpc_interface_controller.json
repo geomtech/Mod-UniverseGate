@@ -1,0 +1,20 @@
+{
+  "multipart": [
+    {
+      "when": { "facing": "north" },
+      "apply": { "model": "universegate:block/zpc_interface_controller_base" }
+    },
+    {
+      "when": { "facing": "east" },
+      "apply": { "model": "universegate:block/zpc_interface_controller_base", "y": 90 }
+    },
+    {
+      "when": { "facing": "south" },
+      "apply": { "model": "universegate:block/zpc_interface_controller_base", "y": 180 }
+    },
+    {
+      "when": { "facing": "west" },
+      "apply": { "model": "universegate:block/zpc_interface_controller_base", "y": 270 }
+    }
+  ]
+}

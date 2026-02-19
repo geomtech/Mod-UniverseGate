@@ -162,6 +162,7 @@ public final class RiftCubeGenerator {
         // Rare valuables
         inserted |= addItem(container, random, 0.16F, new ItemStack(Items.DIAMOND, randBetween(random, 1, 3)));
         inserted |= addItem(container, random, 0.28F, new ItemStack(Items.ENDER_PEARL, randBetween(random, 1, 2)));
+        inserted |= addItem(container, random, 0.003F, ZpcItem.createChargedStack(randBetween(random, 1, 30)));
 
         // Useless / filler loot
         inserted |= addItem(container, random, 0.55F, new ItemStack(Items.STICK, randBetween(random, 3, 14)));

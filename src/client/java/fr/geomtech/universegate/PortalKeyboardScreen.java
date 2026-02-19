@@ -71,6 +71,10 @@ public class PortalKeyboardScreen extends AbstractContainerScreen<AbstractContai
         this((AbstractContainerMenu) menu, inv, title);
     }
 
+    public PortalKeyboardScreen(PortalMobileKeyboardMenu menu, Inventory inv, Component title) {
+        this((AbstractContainerMenu) menu, inv, title);
+    }
+
     private PortalKeyboardScreen(AbstractContainerMenu menu,
                                  Inventory inv,
                                  Component title,
@@ -93,6 +97,9 @@ public class PortalKeyboardScreen extends AbstractContainerScreen<AbstractContai
         if (menu instanceof PortalNaturalKeyboardMenu naturalKeyboardMenu) {
             return naturalKeyboardMenu.getKeyboardPos();
         }
+        if (menu instanceof PortalMobileKeyboardMenu mobileKeyboardMenu) {
+            return mobileKeyboardMenu.getKeyboardPos();
+        }
         throw new IllegalArgumentException("Unsupported keyboard menu type: " + menu.getClass().getName());
     }
 
@@ -103,12 +110,16 @@ public class PortalKeyboardScreen extends AbstractContainerScreen<AbstractContai
         if (menu instanceof PortalNaturalKeyboardMenu naturalKeyboardMenu) {
             return naturalKeyboardMenu::isDarkPowered;
         }
+        if (menu instanceof PortalMobileKeyboardMenu mobileKeyboardMenu) {
+            return mobileKeyboardMenu::isDarkPowered;
+        }
         throw new IllegalArgumentException("Unsupported keyboard menu type: " + menu.getClass().getName());
     }
 
     private static boolean resolveNaturalKeyboard(AbstractContainerMenu menu) {
         if (menu instanceof PortalKeyboardMenu) return false;
         if (menu instanceof PortalNaturalKeyboardMenu) return true;
+        if (menu instanceof PortalMobileKeyboardMenu) return false;
         throw new IllegalArgumentException("Unsupported keyboard menu type: " + menu.getClass().getName());
     }
 

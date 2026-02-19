@@ -91,6 +91,11 @@ public final class ModItems {
             new BlockItem(ModBlocks.ENERGY_MONITOR, new Item.Properties())
     );
 
+    public static final Item ZPC_INTERFACE_CONTROLLER_ITEM = register(
+            "zpc_interface_controller",
+            new BlockItem(ModBlocks.ZPC_INTERFACE_CONTROLLER, new Item.Properties())
+    );
+
     public static final Item RIFT_SHADE_SPAWN_EGG = register(
             "rift_shade_spawn_egg",
             new SpawnEggItem(ModEntityTypes.RIFT_SHADE, 0x08080A, 0xF3F3F3, new Item.Properties())
@@ -121,6 +126,11 @@ public final class ModItems {
             new BlockItem(ModBlocks.PORTAL_NATURAL_KEYBOARD, new Item.Properties())
     );
 
+    public static final Item PORTAL_MOBILE_KEYBOARD = register(
+            "portal_mobile_keyboard",
+            new PortalMobileKeyboardItem(new Item.Properties())
+    );
+
     public static final Item CHARGED_LIGHTNING_ROD_ITEM = register(
             "charged_lightning_rod",
             new BlockItem(ModBlocks.CHARGED_LIGHTNING_ROD, new Item.Properties())
@@ -144,6 +154,11 @@ public final class ModItems {
     public static final Item RIFT_CRYSTAL = register(
             "rift_crystal",
             new Item(new Item.Properties().stacksTo(64))
+    );
+
+    public static final Item ZPC = register(
+            "zpc",
+            new ZpcItem(new Item.Properties())
     );
 
     public static final Item RIFT_REFINER_ITEM = register(

@@ -1,16 +1,19 @@
 package fr.geomtech.universegate.net;
 
 import fr.geomtech.universegate.DarkEnergyNetworkHelper;
-import fr.geomtech.universegate.ModBlocks;
 import fr.geomtech.universegate.EnergyNetworkHelper;
+import fr.geomtech.universegate.ModBlocks;
 import fr.geomtech.universegate.ModSounds;
 import fr.geomtech.universegate.PortalConnectionManager;
 import fr.geomtech.universegate.PortalCoreBlockEntity;
+import fr.geomtech.universegate.PortalInfo;
 import fr.geomtech.universegate.PortalKeyboardBlockEntity;
+import fr.geomtech.universegate.PortalKeyboardMenu;
+import fr.geomtech.universegate.PortalMobileKeyboardMenu;
 import fr.geomtech.universegate.PortalNaturalKeyboardBlockEntity;
+import fr.geomtech.universegate.PortalNaturalKeyboardMenu;
 import fr.geomtech.universegate.PortalRiftHelper;
 import fr.geomtech.universegate.PortalRegistrySavedData;
-import fr.geomtech.universegate.PortalInfo;
 import net.fabricmc.fabric.api.networking.v1.PayloadTypeRegistry;
 import net.fabricmc.fabric.api.networking.v1.ServerPlayNetworking;
 import net.minecraft.core.BlockPos;
@@ -25,6 +28,8 @@ public final class UniverseGateNetwork {
     private UniverseGateNetwork() {}
 
     public static final UUID DARK_DIMENSION_ID = UUID.fromString("66666666-6666-6666-6666-666666666666");
+    private static final int CORE_SEARCH_RADIUS_XZ = 8;
+    private static final int CORE_SEARCH_RADIUS_Y = 4;
 
     public static void registerCommon() {
         // types
@@ -42,24 +47,17 @@ public final class UniverseGateNetwork {
                 var player = context.player();
                 ServerLevel level = player.serverLevel();
 
-                // Keyboard à la position indiquée
-                if (!(level.getBlockEntity(payload.keyboardPos()) instanceof PortalKeyboardBlockEntity kb)) return;
+                PortalControllerAccess access = resolveControllerAccess(player, payload.keyboardPos());
+                if (access == null) return;
 
-                // Check if it's a natural keyboard (no energy required)
-                boolean isNaturalKeyboard = kb instanceof PortalNaturalKeyboardBlockEntity;
-
-                // Trouver un core proche du keyboard (rayon 8)
-                BlockPos corePos = findCoreNear(level, payload.keyboardPos(), 8);
+                boolean isNaturalKeyboard = access.naturalKeyboard();
+                BlockPos corePos = access.corePos();
                 if (corePos == null) {
                     sendPortalConnectionError(player, "Aucun cœur de portail à proximité du clavier.");
                     return;
                 }
-                
-                PortalCoreBlockEntity coreBe = null;
-                if (level.getBlockEntity(corePos) instanceof PortalCoreBlockEntity be) {
-                    coreBe = be;
-                }
-                if (coreBe == null) return;
+
+                if (!(level.getBlockEntity(corePos) instanceof PortalCoreBlockEntity coreBe)) return;
 
                 // Ouvrir Stargate A<->B
                 boolean isFromRift = EnergyNetworkHelper.isRiftDimension(level);
@@ -114,7 +112,7 @@ public final class UniverseGateNetwork {
                     ModSounds.playAt(level, corePos, ModSounds.PORTAL_ERROR, 0.9F, 1.0F);
                     sendPortalConnectionError(player, "Le portail cible est introuvable ou déjà actif.");
                 }
-                sendPortalKeyboardStatusToPlayer(player, payload.keyboardPos());
+                sendPortalKeyboardStatusToPlayer(player, access.controllerPos());
             });
         });
 
@@ -134,30 +132,32 @@ public final class UniverseGateNetwork {
                 var player = context.player();
                 ServerLevel level = player.serverLevel();
 
-                if (!(level.getBlockEntity(payload.keyboardPos()) instanceof PortalKeyboardBlockEntity)) return;
+                PortalControllerAccess access = resolveControllerAccess(player, payload.keyboardPos());
+                if (access == null || access.corePos() == null) return;
 
-                BlockPos corePos = findCoreNear(level, payload.keyboardPos(), 8);
-                if (corePos == null) return;
+                BlockPos corePos = access.corePos();
 
                 if (level.getBlockEntity(corePos) instanceof PortalCoreBlockEntity core
                         && canDisconnectFromKeyboard(core)) {
                     PortalConnectionManager.forceCloseOneSide(level, corePos);
                 }
 
-                sendPortalKeyboardStatusToPlayer(player, payload.keyboardPos());
+                sendPortalKeyboardStatusToPlayer(player, access.controllerPos());
             });
         });
     }
 
     public static void sendPortalListToPlayer(net.minecraft.server.level.ServerPlayer player, BlockPos keyboardPos) {
+        PortalControllerAccess access = resolveControllerAccess(player, keyboardPos);
+        if (access == null) return;
+
         var reg = PortalRegistrySavedData.get(player.server);
         reg.pruneMissingPortals(player.server);
         ServerLevel level = player.serverLevel();
-        boolean freeOpening = EnergyNetworkHelper.isRiftDimension(level)
-                || level.getBlockEntity(keyboardPos) instanceof PortalNaturalKeyboardBlockEntity;
+        boolean freeOpening = EnergyNetworkHelper.isRiftDimension(level) || access.naturalKeyboard();
 
         UUID selfPortalId = null;
-        BlockPos corePos = findCoreNear(level, keyboardPos, 8);
+        BlockPos corePos = access.corePos();
         if (corePos != null && level.getBlockEntity(corePos) instanceof PortalCoreBlockEntity core) {
             selfPortalId = core.getPortalId();
         }
@@ -185,7 +185,7 @@ public final class UniverseGateNetwork {
                 darkOpenCost
         ));
 
-        ServerPlayNetworking.send(player, new PortalListPayload(keyboardPos, list));
+        ServerPlayNetworking.send(player, new PortalListPayload(access.controllerPos(), list));
     }
 
     private static int computePortalOpenCostForUi(ServerLevel sourceLevel,
@@ -203,7 +203,8 @@ public final class UniverseGateNetwork {
         boolean active = false;
         boolean disconnectAllowed = false;
 
-        BlockPos corePos = findCoreNear(player.serverLevel(), keyboardPos, 8);
+        PortalControllerAccess access = resolveControllerAccess(player, keyboardPos);
+        BlockPos corePos = access == null ? null : access.corePos();
         if (corePos != null && player.serverLevel().getBlockEntity(corePos) instanceof PortalCoreBlockEntity core) {
             active = core.isActiveOrOpening();
             disconnectAllowed = canDisconnectFromKeyboard(core);
@@ -226,13 +227,70 @@ public final class UniverseGateNetwork {
         ServerPlayNetworking.send(player, new PortalConnectionErrorPayload(errorMessage));
     }
 
+    private record PortalControllerAccess(BlockPos controllerPos, BlockPos corePos, boolean naturalKeyboard) { }
+
+    private static PortalControllerAccess resolveControllerAccess(net.minecraft.server.level.ServerPlayer player,
+                                                                  BlockPos controllerPos) {
+        ServerLevel level = player.serverLevel();
+
+        if (player.containerMenu instanceof PortalNaturalKeyboardMenu naturalMenu
+                && naturalMenu.getKeyboardPos().equals(controllerPos)) {
+            BlockPos corePos = findCoreNear(level, controllerPos, CORE_SEARCH_RADIUS_XZ);
+            return new PortalControllerAccess(controllerPos, corePos, true);
+        }
+
+        if (player.containerMenu instanceof PortalKeyboardMenu keyboardMenu
+                && keyboardMenu.getKeyboardPos().equals(controllerPos)) {
+            BlockPos corePos = findCoreNear(level, controllerPos, CORE_SEARCH_RADIUS_XZ);
+            return new PortalControllerAccess(controllerPos, corePos, false);
+        }
+
+        if (player.containerMenu instanceof PortalMobileKeyboardMenu mobileMenu
+                && mobileMenu.getKeyboardPos().equals(controllerPos)) {
+            BlockPos corePos = findCoreNear(level, controllerPos, CORE_SEARCH_RADIUS_XZ);
+            return new PortalControllerAccess(controllerPos, corePos, isNaturalKeyboardContext(level, corePos));
+        }
+
+        if (level.getBlockEntity(controllerPos) instanceof PortalNaturalKeyboardBlockEntity) {
+            BlockPos corePos = findCoreNear(level, controllerPos, CORE_SEARCH_RADIUS_XZ);
+            return new PortalControllerAccess(controllerPos, corePos, true);
+        }
+
+        if (level.getBlockEntity(controllerPos) instanceof PortalKeyboardBlockEntity) {
+            BlockPos corePos = findCoreNear(level, controllerPos, CORE_SEARCH_RADIUS_XZ);
+            return new PortalControllerAccess(controllerPos, corePos, false);
+        }
+
+        return null;
+    }
+
+    private static boolean isNaturalKeyboardContext(ServerLevel level, BlockPos corePos) {
+        if (corePos == null) return false;
+        return hasNaturalKeyboardNear(level, corePos, CORE_SEARCH_RADIUS_XZ, CORE_SEARCH_RADIUS_Y);
+    }
+
+    private static boolean hasNaturalKeyboardNear(ServerLevel level, BlockPos center, int radiusXZ, int radiusY) {
+        for (int y = -radiusY; y <= radiusY; y++) {
+            for (int x = -radiusXZ; x <= radiusXZ; x++) {
+                for (int z = -radiusXZ; z <= radiusXZ; z++) {
+                    BlockPos p = center.offset(x, y, z);
+                    if (!level.hasChunkAt(p)) continue;
+                    if (level.getBlockState(p).is(ModBlocks.PORTAL_NATURAL_KEYBOARD)) {
+                        return true;
+                    }
+                }
+            }
+        }
+        return false;
+    }
+
     private static String shortId(java.util.UUID id) {
         String s = id.toString();
         return "Portal " + s.substring(0, 8);
     }
 
     private static BlockPos findCoreNear(ServerLevel level, BlockPos center, int r) {
-        for (int y = -4; y <= 4; y++) {
+        for (int y = -CORE_SEARCH_RADIUS_Y; y <= CORE_SEARCH_RADIUS_Y; y++) {
             for (int x = -r; x <= r; x++) {
                 for (int z = -r; z <= r; z++) {
                     BlockPos p = center.offset(x, y, z);

@@ -14,6 +14,7 @@
     "universegate:solar_panel",
     "universegate:combustion_generator",
     "universegate:energy_monitor",
+    "universegate:zpc_interface_controller",
     "universegate:portal_core",
     "universegate:portal_frame",
     "universegate:portal_keyboard"

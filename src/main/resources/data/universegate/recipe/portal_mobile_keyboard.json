@@ -1,0 +1,26 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "pattern": [
+    " R ",
+    "PKP",
+    " E "
+  ],
+  "key": {
+    "R": {
+      "item": "universegate:rift_crystal"
+    },
+    "P": {
+      "item": "universegate:portal_keyboard"
+    },
+    "K": {
+      "item": "minecraft:ender_pearl"
+    },
+    "E": {
+      "item": "universegate:energy_crystal"
+    }
+  },
+  "result": {
+    "id": "universegate:portal_mobile_keyboard",
+    "count": 1
+  }
+}

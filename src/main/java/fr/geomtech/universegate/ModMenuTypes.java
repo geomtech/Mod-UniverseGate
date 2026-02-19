@@ -28,6 +28,16 @@ public final class ModMenuTypes {
                     )
             );
 
+    public static final ExtendedScreenHandlerType<PortalMobileKeyboardMenu, BlockPos> PORTAL_MOBILE_KEYBOARD =
+            Registry.register(
+                    BuiltInRegistries.MENU,
+                    ResourceLocation.fromNamespaceAndPath(UniverseGate.MOD_ID, "portal_mobile_keyboard"),
+                    new ExtendedScreenHandlerType<>(
+                            PortalMobileKeyboardMenu::new,
+                            BlockPos.STREAM_CODEC
+                    )
+            );
+
     public static final ExtendedScreenHandlerType<PortalCoreMenu, BlockPos> PORTAL_CORE =
             Registry.register(
                     BuiltInRegistries.MENU,
@@ -54,6 +64,16 @@ public final class ModMenuTypes {
                     ResourceLocation.fromNamespaceAndPath(UniverseGate.MOD_ID, "energy_monitor"),
                     new ExtendedScreenHandlerType<>(
                             EnergyMonitorMenu::new,
+                            BlockPos.STREAM_CODEC
+                    )
+            );
+
+    public static final ExtendedScreenHandlerType<ZpcInterfaceControllerMenu, BlockPos> ZPC_INTERFACE_CONTROLLER =
+            Registry.register(
+                    BuiltInRegistries.MENU,
+                    ResourceLocation.fromNamespaceAndPath(UniverseGate.MOD_ID, "zpc_interface_controller"),
+                    new ExtendedScreenHandlerType<>(
+                            ZpcInterfaceControllerMenu::new,
                             BlockPos.STREAM_CODEC
                     )
             );

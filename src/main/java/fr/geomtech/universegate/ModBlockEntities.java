@@ -56,6 +56,13 @@ public final class ModBlockEntities {
                     BlockEntityType.Builder.of(EnergyMonitorBlockEntity::new, ModBlocks.ENERGY_MONITOR).build(null)
             );
 
+    public static final BlockEntityType<ZpcInterfaceControllerBlockEntity> ZPC_INTERFACE_CONTROLLER =
+            Registry.register(
+                    BuiltInRegistries.BLOCK_ENTITY_TYPE,
+                    ResourceLocation.fromNamespaceAndPath(UniverseGate.MOD_ID, "zpc_interface_controller"),
+                    BlockEntityType.Builder.of(ZpcInterfaceControllerBlockEntity::new, ModBlocks.ZPC_INTERFACE_CONTROLLER).build(null)
+            );
+
     public static final BlockEntityType<CombustionGeneratorBlockEntity> COMBUSTION_GENERATOR =
             Registry.register(
                     BuiltInRegistries.BLOCK_ENTITY_TYPE,

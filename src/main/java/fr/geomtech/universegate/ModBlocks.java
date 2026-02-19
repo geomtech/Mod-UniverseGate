@@ -132,6 +132,15 @@ public final class ModBlocks {
                     .noOcclusion())
     );
 
+    public static final Block ZPC_INTERFACE_CONTROLLER = register(
+            "zpc_interface_controller",
+            new ZpcInterfaceControllerBlock(BlockBehaviour.Properties.ofFullCopy(Blocks.IRON_BLOCK)
+                    .strength(3.5f, 6.0f)
+                    .requiresCorrectToolForDrops()
+                    .lightLevel(ZpcInterfaceControllerBlock::lightLevel)
+                    .noOcclusion())
+    );
+
     public static final Block PORTAL_CORE = register(
             "portal_core",
             new PortalCoreBlock(BlockBehaviour.Properties.ofFullCopy(Blocks.OBSIDIAN)

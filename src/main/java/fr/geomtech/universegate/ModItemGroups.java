@@ -24,6 +24,7 @@ public final class ModItemGroups {
                 output.accept(ModItems.PORTAL_FRAME_ITEM);
                 output.accept(ModItems.PORTAL_KEYBOARD_ITEM);
                 output.accept(ModItems.PORTAL_NATURAL_KEYBOARD_ITEM);
+                output.accept(ModItems.PORTAL_MOBILE_KEYBOARD);
                 output.accept(ModItems.CHARGED_LIGHTNING_ROD_ITEM);
                 output.accept(ModItems.LIGHT_BEAM_EMITTER_ITEM);
                 output.accept(ModItems.ENERGY_CONDENSER_ITEM);
@@ -35,6 +36,7 @@ public final class ModItemGroups {
                 output.accept(ModItems.SOLAR_PANEL_ITEM);
                 output.accept(ModItems.COMBUSTION_GENERATOR_ITEM);
                 output.accept(ModItems.ENERGY_MONITOR_ITEM);
+                output.accept(ModItems.ZPC_INTERFACE_CONTROLLER_ITEM);
 
                 output.accept(ModItems.VOID_BLOCK_ITEM);
                 output.accept(ModItems.LIGHT_BLOCK_ITEM);
@@ -47,6 +49,7 @@ public final class ModItemGroups {
                 output.accept(ModItems.COOKED_RIFT_MEAT);
                 output.accept(ModItems.ENERGY_CRYSTAL);
                 output.accept(ModItems.RIFT_CRYSTAL);
+                output.accept(ModItems.ZPC);
                 output.accept(ModItems.RIFT_SHADE_SPAWN_EGG);
                 output.accept(ModItems.RIFT_BEAST_SPAWN_EGG);
                 output.accept(ModItems.DARK_MATTER_BUCKET);
