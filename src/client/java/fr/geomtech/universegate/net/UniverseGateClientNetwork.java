@@ -3,7 +3,6 @@ package fr.geomtech.universegate.net;
 import fr.geomtech.universegate.PortalCoreScreen;
 import fr.geomtech.universegate.PortalKeyboardScreen;
 import net.fabricmc.fabric.api.client.networking.v1.ClientPlayNetworking;
-import net.fabricmc.fabric.api.networking.v1.PayloadTypeRegistry;
 
 public final class UniverseGateClientNetwork {
 
@@ -13,7 +12,6 @@ public final class UniverseGateClientNetwork {
         ClientPlayNetworking.registerGlobalReceiver(PortalListPayload.TYPE, (payload, context) -> {
             context.client().execute(() -> {
                 if (context.client().screen instanceof PortalKeyboardScreen screen) {
-                    // met à jour l’écran (liste + boutons)
                     screen.setPortals(payload.portals());
                 }
             });
@@ -35,6 +33,14 @@ public final class UniverseGateClientNetwork {
                     if (screen.getCorePos().equals(payload.corePos())) {
                         screen.setPortalName(payload.name());
                     }
+                }
+            });
+        });
+
+        ClientPlayNetworking.registerGlobalReceiver(PortalConnectionErrorPayload.TYPE, (payload, context) -> {
+            context.client().execute(() -> {
+                if (context.client().screen instanceof PortalKeyboardScreen screen) {
+                    screen.showError(payload.errorMessage());
                 }
             });
         });

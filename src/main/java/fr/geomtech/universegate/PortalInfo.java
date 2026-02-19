@@ -5,4 +5,4 @@ import net.minecraft.resources.ResourceLocation;
 
 import java.util.UUID;
 
-public record PortalInfo(UUID id, String name, ResourceLocation dimId, BlockPos corePos) { }
+public record PortalInfo(UUID id, String name, ResourceLocation dimId, BlockPos corePos, int openEnergyCost) { }

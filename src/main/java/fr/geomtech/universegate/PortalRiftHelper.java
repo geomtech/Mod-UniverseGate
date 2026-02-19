@@ -116,6 +116,16 @@ public final class PortalRiftHelper {
         return PortalConnectionManager.openBothSides(sourceLevel, sourceCorePos, riftEntry.id(), true);
     }
 
+    public static PortalRegistrySavedData.PortalEntry ensureDarkDimensionTarget(ServerLevel sourceLevel) {
+        ServerLevel rift = UniverseGateDimensions.getRiftLevel(sourceLevel.getServer());
+        if (rift == null) {
+            return null;
+        }
+
+        PortalRegistrySavedData reg = PortalRegistrySavedData.get(sourceLevel.getServer());
+        return ensureRiftPortal(rift, reg);
+    }
+
     public static void handleRiftArrival(ServerLevel riftLevel, BlockPos corePos) {
         if (!(riftLevel.getBlockEntity(corePos) instanceof PortalCoreBlockEntity core)) return;
         if (!core.isActive()) return;

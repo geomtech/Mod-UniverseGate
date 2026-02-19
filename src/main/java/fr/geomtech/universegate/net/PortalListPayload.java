@@ -26,12 +26,21 @@ public record PortalListPayload(BlockPos keyboardPos, List<PortalInfo> portals) 
             new CustomPacketPayload.Type<>(ResourceLocation.fromNamespaceAndPath("universegate", "portal_list"));
 
     public static final StreamCodec<RegistryFriendlyByteBuf, PortalInfo> PORTAL_INFO_CODEC =
-            StreamCodec.composite(
-                    UUID_STREAM_CODEC, PortalInfo::id,
-                    ByteBufCodecs.STRING_UTF8, PortalInfo::name,
-                    ResourceLocation.STREAM_CODEC, PortalInfo::dimId,
-                    BlockPos.STREAM_CODEC, PortalInfo::corePos,
-                    PortalInfo::new
+            StreamCodec.of(
+                    (buf, info) -> {
+                        UUID_STREAM_CODEC.encode(buf, info.id());
+                        ByteBufCodecs.STRING_UTF8.encode(buf, info.name());
+                        ResourceLocation.STREAM_CODEC.encode(buf, info.dimId());
+                        BlockPos.STREAM_CODEC.encode(buf, info.corePos());
+                        ByteBufCodecs.VAR_INT.encode(buf, info.openEnergyCost());
+                    },
+                    (buf) -> new PortalInfo(
+                            UUID_STREAM_CODEC.decode(buf),
+                            ByteBufCodecs.STRING_UTF8.decode(buf),
+                            ResourceLocation.STREAM_CODEC.decode(buf),
+                            BlockPos.STREAM_CODEC.decode(buf),
+                            ByteBufCodecs.VAR_INT.decode(buf)
+                    )
             );
 
     public static final StreamCodec<RegistryFriendlyByteBuf, PortalListPayload> STREAM_CODEC =

@@ -50,18 +50,67 @@ public class PortalRegistrySavedData extends SavedData {
         return Collections.unmodifiableCollection(visible);
     }
 
+    public boolean pruneMissingPortals(MinecraftServer server) {
+        boolean changed = false;
+
+        Iterator<Map.Entry<UUID, PortalEntry>> it = portals.entrySet().iterator();
+        while (it.hasNext()) {
+            PortalEntry entry = it.next().getValue();
+            ServerLevel level = server.getLevel(entry.dim());
+            if (level == null) {
+                it.remove();
+                changed = true;
+                continue;
+            }
+
+            if (!level.hasChunkAt(entry.pos())) {
+                continue;
+            }
+
+            if (!(level.getBlockEntity(entry.pos()) instanceof PortalCoreBlockEntity core)) {
+                it.remove();
+                changed = true;
+                continue;
+            }
+
+            if (core.getPortalId() != null && !entry.id().equals(core.getPortalId())) {
+                it.remove();
+                changed = true;
+            }
+        }
+
+        if (changed) {
+            setDirty();
+        }
+        return changed;
+    }
+
     public PortalEntry get(UUID id) {
         if (UniverseGateNetwork.DARK_DIMENSION_ID.equals(id)) {
-             // Return a dummy entry for the Dark Dimension
-             // We use BlockPos.ZERO or a specific coordinate if needed.
-             // But connecting to BlockPos.ZERO might cause issues if there is no portal there.
-             // However, for the purpose of "unlocking", this satisfies the lookup.
-             // The PortalConnectionManager might fail later if it checks for a PortalCoreBlockEntity at destination.
-             // But we satisfied the first step.
-             ResourceKey<Level> dim = ResourceKey.create(net.minecraft.core.registries.Registries.DIMENSION, ResourceLocation.parse("universegate:rift"));
-             return new PortalEntry(id, "Dark Dimension", dim, BlockPos.ZERO, false);
+            PortalEntry darkTarget = findDarkDimensionTarget();
+            if (darkTarget != null) {
+                return darkTarget;
+            }
+            return new PortalEntry(id, "Dark Dimension", UniverseGateDimensions.RIFT, BlockPos.ZERO, false);
         }
         return portals.get(id);
+    }
+
+    private PortalEntry findDarkDimensionTarget() {
+        PortalEntry best = null;
+        double bestDistance = Double.MAX_VALUE;
+
+        for (PortalEntry entry : portals.values()) {
+            if (!entry.dim().equals(UniverseGateDimensions.RIFT)) continue;
+
+            double distance = entry.pos().distSqr(BlockPos.ZERO);
+            if (best == null || distance < bestDistance) {
+                best = entry;
+                bestDistance = distance;
+            }
+        }
+
+        return best;
     }
 
     public void upsertPortal(ServerLevel level, UUID id, String name, BlockPos pos) {

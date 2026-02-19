@@ -24,7 +24,7 @@ Before building a portal, you need energy.
 1.  Construct a **Portal Frame** with a **3x4 interior** (5x6 outer size).
 2.  Place the **Portal Core** at the **bottom center** of the frame.
 3.  Connect the Portal Core (or Frame) to your energy network using Conduits.
-    *   *Opening a portal costs **4000 EU**.*
+    *   *Opening a portal uses a dynamic cost: base **1200 EU**, then increases with distance and if dimensions differ.*
     *   *Maintaining the connection costs **120 EU/s**.*
 4.  Place a **Portal Controller** (formerly Keyboard) nearby (within 8 blocks).
 

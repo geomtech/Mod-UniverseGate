@@ -12,10 +12,15 @@ import java.util.Comparator;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
+import java.util.UUID;
 
 public final class EnergyNetworkHelper {
 
-    public static final int PORTAL_OPEN_ENERGY_COST = 4000;
+    public static final int PORTAL_OPEN_BASE_ENERGY_COST = 1200;
+    public static final int PORTAL_OPEN_MIN_ENERGY_COST = 900;
+    public static final double PORTAL_OPEN_DISTANCE_COST_PER_BLOCK = 0.05D;
+    public static final int PORTAL_OPEN_CROSS_DIMENSION_BONUS = 700;
+    public static final int PORTAL_OPEN_RIFT_DIMENSION_BONUS = 900;
     public static final int PORTAL_ACTIVE_ENERGY_COST_PER_SECOND = 120;
     public static final int PORTAL_UNSTABLE_COST_BONUS_PERCENT = 50;
 
@@ -237,6 +242,37 @@ public final class EnergyNetworkHelper {
 
         double factor = 1.0D + (PORTAL_UNSTABLE_COST_BONUS_PERCENT / 100.0D);
         return (int) Math.ceil(PORTAL_ACTIVE_ENERGY_COST_PER_SECOND * factor);
+    }
+
+    public static int getPortalOpenEnergyCost(ServerLevel sourceLevel, BlockPos sourceCorePos, UUID targetPortalId) {
+        if (targetPortalId == null) return PORTAL_OPEN_BASE_ENERGY_COST;
+
+        PortalRegistrySavedData.PortalEntry targetEntry =
+                PortalRegistrySavedData.get(sourceLevel.getServer()).get(targetPortalId);
+        if (targetEntry == null) return PORTAL_OPEN_BASE_ENERGY_COST;
+
+        return getPortalOpenEnergyCost(sourceLevel, sourceCorePos, targetEntry);
+    }
+
+    public static int getPortalOpenEnergyCost(ServerLevel sourceLevel,
+                                              BlockPos sourceCorePos,
+                                              PortalRegistrySavedData.PortalEntry targetEntry) {
+        double distance = Math.sqrt(sourceCorePos.distSqr(targetEntry.pos()));
+        int distanceBlocks = (int) Math.ceil(distance);
+        int distanceCost = (int) Math.ceil(distanceBlocks * PORTAL_OPEN_DISTANCE_COST_PER_BLOCK);
+
+        int dimensionCost = 0;
+        boolean crossDimension = !sourceLevel.dimension().equals(targetEntry.dim());
+        if (crossDimension) {
+            dimensionCost += PORTAL_OPEN_CROSS_DIMENSION_BONUS;
+        }
+        if (sourceLevel.dimension().equals(UniverseGateDimensions.RIFT)
+                || targetEntry.dim().equals(UniverseGateDimensions.RIFT)) {
+            dimensionCost += PORTAL_OPEN_RIFT_DIMENSION_BONUS;
+        }
+
+        int total = PORTAL_OPEN_BASE_ENERGY_COST + distanceCost + dimensionCost;
+        return Math.max(PORTAL_OPEN_MIN_ENERGY_COST, total);
     }
 
     public static boolean isRiftDimension(ServerLevel level) {

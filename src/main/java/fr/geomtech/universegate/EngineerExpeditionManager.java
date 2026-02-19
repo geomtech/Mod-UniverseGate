@@ -601,7 +601,10 @@ public final class EngineerExpeditionManager {
             for (int dx = -radiusXZ; dx <= radiusXZ; dx++) {
                 for (int dz = -radiusXZ; dz <= radiusXZ; dz++) {
                     BlockPos p = center.offset(dx, dy, dz);
-                    if (!level.getBlockState(p).is(ModBlocks.PORTAL_KEYBOARD)) continue;
+                    var state = level.getBlockState(p);
+                    if (!state.is(ModBlocks.PORTAL_KEYBOARD) && !state.is(ModBlocks.PORTAL_NATURAL_KEYBOARD)) {
+                        continue;
+                    }
                     double dist = p.distSqr(center);
                     if (dist < bestDist) {
                         bestDist = dist;
@@ -618,7 +621,8 @@ public final class EngineerExpeditionManager {
                                                       BlockPos corePos,
                                                       UUID targetPortalId,
                                                       @Nullable BlockPos keyboardPos) {
-        if (!prepareVillagerEnergyNetwork(level, corePos, keyboardPos)) {
+        int openEnergyCost = EnergyNetworkHelper.getPortalOpenEnergyCost(level, corePos, targetPortalId);
+        if (!prepareVillagerEnergyNetwork(level, corePos, openEnergyCost, keyboardPos)) {
             return false;
         }
 
@@ -629,7 +633,7 @@ public final class EngineerExpeditionManager {
             boolean consumed = EnergyNetworkHelper.consumePortalEnergy(
                     level,
                     corePos,
-                    EnergyNetworkHelper.PORTAL_OPEN_ENERGY_COST
+                    openEnergyCost
             );
             if (!consumed) {
                 PortalConnectionManager.forceCloseOneSide(level, corePos);
@@ -642,12 +646,12 @@ public final class EngineerExpeditionManager {
 
     private static boolean prepareVillagerEnergyNetwork(ServerLevel level,
                                                         BlockPos corePos,
+                                                        int required,
                                                         @Nullable BlockPos keyboardPos) {
         if (EnergyNetworkHelper.isRiftDimension(level)) {
             return true;
         }
 
-        int required = EnergyNetworkHelper.PORTAL_OPEN_ENERGY_COST;
         int available = EnergyNetworkHelper.getAvailableEnergyForPortal(level, corePos);
         if (available >= required) {
             return true;
