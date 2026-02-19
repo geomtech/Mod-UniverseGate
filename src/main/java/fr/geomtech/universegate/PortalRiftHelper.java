@@ -22,6 +22,8 @@ public final class PortalRiftHelper {
     private static final float RIFT_UNSTABLE_MAX_VOLUME = 2.6F;
     private static final float RIFT_UNSTABLE_PITCH = 1.0F;
     private static final double RIFT_UNSTABLE_EXPONENT = 4.0D;
+    private static final int RIFT_SURFACE_SAMPLE_RADIUS = 24;
+    private static final int RIFT_SURFACE_SAMPLE_STEP = 8;
     private static final Map<ResourceKey<Level>, Map<BlockPos, PendingRiftCollapse>> PENDING_RIFT_COLLAPSES = new HashMap<>();
 
     private PortalRiftHelper() {}
@@ -261,7 +263,8 @@ public final class PortalRiftHelper {
     }
 
     private static BlockPos findRiftCorePos(ServerLevel rift, BlockPos anchor) {
-        BlockPos surface = findTopmostSurfaceNear(rift, anchor, 128);
+        rift.getChunk(anchor);
+        BlockPos surface = findTopmostSurfaceNear(rift, anchor, RIFT_SURFACE_SAMPLE_RADIUS, RIFT_SURFACE_SAMPLE_STEP);
         if (surface != null) {
             return surface.above();
         }
@@ -270,29 +273,26 @@ public final class PortalRiftHelper {
         return new BlockPos(anchor.getX(), y, anchor.getZ());
     }
 
-    private static BlockPos findTopmostSurfaceNear(ServerLevel level, BlockPos anchor, int radius) {
+    private static BlockPos findTopmostSurfaceNear(ServerLevel level,
+                                                   BlockPos anchor,
+                                                   int radius,
+                                                   int step) {
         BlockPos best = null;
         int bestY = level.getMinBuildHeight();
         double bestDist = Double.MAX_VALUE;
-        int maxY = level.getMaxBuildHeight() - 2;
 
-        for (int dx = -radius; dx <= radius; dx++) {
-            for (int dz = -radius; dz <= radius; dz++) {
-                BlockPos column = anchor.offset(dx, 0, dz);
-                int minY = level.getMinBuildHeight() + 1;
-                for (int scanY = maxY; scanY >= minY; scanY--) {
-                    BlockPos pos = new BlockPos(column.getX(), scanY, column.getZ());
-                    if (level.getBlockState(pos).isAir()) continue;
-                    if (!level.getBlockState(pos).is(ModBlocks.VOID_BLOCK)) continue;
-                    if (!level.getBlockState(pos.above()).isAir()) continue;
+        int samplingStep = Math.max(1, step);
+        for (int dx = -radius; dx <= radius; dx += samplingStep) {
+            for (int dz = -radius; dz <= radius; dz += samplingStep) {
+                BlockPos candidate = findTopmostVoidSurfaceAt(level, anchor.getX() + dx, anchor.getZ() + dz);
+                if (candidate == null) continue;
 
-                    double dist = pos.distSqr(anchor);
-                    if (scanY > bestY || (scanY == bestY && dist < bestDist)) {
-                        bestY = scanY;
-                        bestDist = dist;
-                        best = pos;
-                    }
-                    break;
+                int y = candidate.getY();
+                double dist = candidate.distSqr(anchor);
+                if (y > bestY || (y == bestY && dist < bestDist)) {
+                    bestY = y;
+                    bestDist = dist;
+                    best = candidate;
                 }
             }
         }
@@ -301,6 +301,29 @@ public final class PortalRiftHelper {
             UniverseGate.LOGGER.info("Rift surface chosen at {}", best);
         }
         return best;
+    }
+
+    private static BlockPos findTopmostVoidSurfaceAt(ServerLevel level, int x, int z) {
+        BlockPos column = new BlockPos(x, level.getMinBuildHeight(), z);
+        if (!level.hasChunkAt(column)) {
+            return null;
+        }
+
+        int maxY = level.getMaxBuildHeight() - 2;
+        int minY = level.getMinBuildHeight() + 1;
+        BlockPos.MutableBlockPos cursor = new BlockPos.MutableBlockPos();
+
+        for (int y = maxY; y >= minY; y--) {
+            cursor.set(x, y, z);
+            if (!level.getBlockState(cursor).is(ModBlocks.VOID_BLOCK)) continue;
+
+            cursor.set(x, y + 1, z);
+            if (!level.getBlockState(cursor).isAir()) continue;
+
+            return new BlockPos(x, y, z);
+        }
+
+        return null;
     }
 
     private static PortalRegistrySavedData.PortalEntry findRiftPortal(PortalRegistrySavedData reg) {

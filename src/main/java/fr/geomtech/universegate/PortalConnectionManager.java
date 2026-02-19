@@ -65,6 +65,8 @@ public final class PortalConnectionManager {
         // Interdire self link
         if (a.getPortalId().equals(targetId)) return false;
 
+        refreshCoreConnectionState(sourceLevel, sourceCorePos, a);
+
         // Refuser si déjà actif/en cours d’ouverture
         if (a.isActiveOrOpening()) return false;
 
@@ -98,6 +100,9 @@ public final class PortalConnectionManager {
         if (a.getPortalId().equals(resolvedTargetId)) {
             return false;
         }
+
+        refreshCoreConnectionState(targetLevel, bEntry.pos(), b);
+
         if (b.isActiveOrOpening()) return false;
 
         // Vérifier cadres (A et B)
@@ -125,6 +130,16 @@ public final class PortalConnectionManager {
         a.setChanged();
         b.setChanged();
         return true;
+    }
+
+    private static void refreshCoreConnectionState(ServerLevel level, BlockPos corePos, PortalCoreBlockEntity core) {
+        if (core.isOpening()) {
+            tickOpeningSequence(level, corePos, core);
+        }
+
+        if (level.getBlockEntity(corePos) instanceof PortalCoreBlockEntity refreshedCore) {
+            refreshedCore.closeIfExpired(level);
+        }
     }
 
     static void tickOpeningSequence(ServerLevel level, BlockPos corePos, PortalCoreBlockEntity core) {

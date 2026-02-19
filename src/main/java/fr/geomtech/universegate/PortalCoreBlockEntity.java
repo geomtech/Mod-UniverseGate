@@ -23,6 +23,7 @@ public class PortalCoreBlockEntity extends BlockEntity implements ExtendedScreen
     private static final long OPENING_DURATION_FALLBACK_TICKS = 20L * 9L;
     private static final long AMBIENT_LOOP_INTERVAL_TICKS = 20L * 27L;
     private static final long UNSTABLE_AMBIENT_LOOP_INTERVAL_TICKS = 10L;
+    private static final long TICK_DURATION_MILLIS = 50L;
 
     private UUID portalId;
     private String portalName = "";
@@ -32,6 +33,7 @@ public class PortalCoreBlockEntity extends BlockEntity implements ExtendedScreen
     private UUID connectionId = null;
     private UUID targetPortalId = null;
     private long activeUntilGameTime = 0L; // fermeture auto
+    private long activeUntilEpochMillis = 0L;
     private long activeStartedGameTime = 0L;
     private boolean visualUnstable = false;
     private boolean riftLightningLink = false;
@@ -123,8 +125,7 @@ public class PortalCoreBlockEntity extends BlockEntity implements ExtendedScreen
             activeStartedGameTime = now;
             setChanged();
         }
-        if (now >= activeUntilGameTime) {
-            PortalConnectionManager.forceCloseOneSide(sl, worldPosition);
+        if (closeIfExpired(sl, now)) {
             return;
         }
 
@@ -152,8 +153,7 @@ public class PortalCoreBlockEntity extends BlockEntity implements ExtendedScreen
         }
 
         long now = sl.getGameTime();
-        if (activeUntilGameTime > 0L && now >= activeUntilGameTime) {
-            PortalConnectionManager.forceCloseOneSide(sl, worldPosition);
+        if (closeIfExpired(sl, now)) {
             return false;
         }
 
@@ -251,7 +251,49 @@ public class PortalCoreBlockEntity extends BlockEntity implements ExtendedScreen
         if (!active) return;
 
         activeUntilGameTime = now + PER_ENTITY_EXTENSION_TICKS;
+        activeUntilEpochMillis = computeEpochDeadlineFromGameTime(now, activeUntilGameTime);
         setChanged();
+    }
+
+    boolean closeIfExpired(ServerLevel level) {
+        return closeIfExpired(level, level.getGameTime());
+    }
+
+    private boolean closeIfExpired(ServerLevel level, long nowGameTime) {
+        if (!active) return false;
+        if (!hasReachedActiveDeadline(nowGameTime)) return false;
+        PortalConnectionManager.forceCloseOneSide(level, worldPosition);
+        return true;
+    }
+
+    private boolean hasReachedActiveDeadline(long nowGameTime) {
+        if (activeUntilEpochMillis <= 0L && activeUntilGameTime > 0L) {
+            activeUntilEpochMillis = computeEpochDeadlineFromGameTime(nowGameTime, activeUntilGameTime);
+            setChanged();
+        }
+        if (activeUntilGameTime > 0L && nowGameTime >= activeUntilGameTime) {
+            return true;
+        }
+        return activeUntilEpochMillis > 0L && System.currentTimeMillis() >= activeUntilEpochMillis;
+    }
+
+    private static long computeEpochDeadlineFromGameTime(long nowGameTime, long untilGameTime) {
+        long remainingTicks = Math.max(0L, untilGameTime - nowGameTime);
+        long remainingMillis = ticksToMillis(remainingTicks);
+        long nowEpochMillis = System.currentTimeMillis();
+        long maxAddition = Long.MAX_VALUE - nowEpochMillis;
+        if (remainingMillis >= maxAddition) {
+            return Long.MAX_VALUE;
+        }
+        return nowEpochMillis + remainingMillis;
+    }
+
+    private static long ticksToMillis(long ticks) {
+        if (ticks <= 0L) return 0L;
+        if (ticks >= Long.MAX_VALUE / TICK_DURATION_MILLIS) {
+            return Long.MAX_VALUE;
+        }
+        return ticks * TICK_DURATION_MILLIS;
     }
 
     private boolean shouldUseUnstableVisuals(long now) {
@@ -329,6 +371,7 @@ public class PortalCoreBlockEntity extends BlockEntity implements ExtendedScreen
         this.connectionId = connectionId;
         this.targetPortalId = targetPortalId;
         this.activeUntilGameTime = 0L;
+        this.activeUntilEpochMillis = 0L;
         this.activeStartedGameTime = 0L;
         this.visualUnstable = false;
         this.riftLightningLink = riftLightningLink;
@@ -347,6 +390,7 @@ public class PortalCoreBlockEntity extends BlockEntity implements ExtendedScreen
         this.opening = false;
         this.active = true;
         this.activeUntilGameTime = activeUntilGameTime;
+        this.activeUntilEpochMillis = computeEpochDeadlineFromGameTime(activeStartedGameTime, activeUntilGameTime);
         this.activeStartedGameTime = Math.max(0L, activeStartedGameTime);
         this.visualUnstable = riftLightningLink;
         this.openingStartedGameTime = 0L;
@@ -368,6 +412,9 @@ public class PortalCoreBlockEntity extends BlockEntity implements ExtendedScreen
         this.connectionId = connectionId;
         this.targetPortalId = targetPortalId;
         this.activeUntilGameTime = activeUntilGameTime;
+        this.activeUntilEpochMillis = level instanceof ServerLevel sl
+                ? computeEpochDeadlineFromGameTime(sl.getGameTime(), activeUntilGameTime)
+                : 0L;
         this.activeStartedGameTime = 0L;
         this.visualUnstable = riftLightningLink;
         this.riftLightningLink = riftLightningLink;
@@ -387,6 +434,7 @@ public class PortalCoreBlockEntity extends BlockEntity implements ExtendedScreen
         this.connectionId = null;
         this.targetPortalId = null;
         this.activeUntilGameTime = 0L;
+        this.activeUntilEpochMillis = 0L;
         this.activeStartedGameTime = 0L;
         this.visualUnstable = false;
         this.riftLightningLink = false;
@@ -412,6 +460,7 @@ public class PortalCoreBlockEntity extends BlockEntity implements ExtendedScreen
         if (connectionId != null) tag.putUUID("ConnectionId", connectionId);
         if (targetPortalId != null) tag.putUUID("TargetPortalId", targetPortalId);
         tag.putLong("ActiveUntil", activeUntilGameTime);
+        tag.putLong("ActiveUntilEpoch", activeUntilEpochMillis);
         tag.putLong("ActiveStarted", activeStartedGameTime);
         tag.putBoolean("RiftLightning", riftLightningLink);
         tag.putBoolean("OutboundTravel", outboundTravelEnabled);
@@ -433,6 +482,7 @@ public class PortalCoreBlockEntity extends BlockEntity implements ExtendedScreen
         connectionId = tag.hasUUID("ConnectionId") ? tag.getUUID("ConnectionId") : null;
         targetPortalId = tag.hasUUID("TargetPortalId") ? tag.getUUID("TargetPortalId") : null;
         activeUntilGameTime = tag.getLong("ActiveUntil");
+        activeUntilEpochMillis = tag.contains("ActiveUntilEpoch") ? tag.getLong("ActiveUntilEpoch") : 0L;
         activeStartedGameTime = tag.contains("ActiveStarted") ? tag.getLong("ActiveStarted") : 0L;
         visualUnstable = false;
         riftLightningLink = tag.getBoolean("RiftLightning");
@@ -443,6 +493,7 @@ public class PortalCoreBlockEntity extends BlockEntity implements ExtendedScreen
         darkEnergyAmount = Math.max(0, Math.min(tag.getInt("DarkEnergyAmount"), DARK_ENERGY_THRESHOLD));
 
         if (!active) {
+            activeUntilEpochMillis = 0L;
             activeStartedGameTime = 0L;
             visualUnstable = false;
             nextAmbientLoopGameTime = 0L;

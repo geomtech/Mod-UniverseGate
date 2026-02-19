@@ -89,16 +89,10 @@ public final class UniverseGateNetwork {
                 }
 
                 // Cost logic: free from Rift/natural keyboard, otherwise dynamic
-                int openEnergyCost = 0;
-                if (!isFromRift && !isNaturalKeyboard) {
-                    openEnergyCost = EnergyNetworkHelper.getPortalOpenEnergyCost(level, corePos, targetPortalId);
-                    int availableEnergy = EnergyNetworkHelper.getAvailableEnergyForPortal(level, corePos);
-                    if (availableEnergy < openEnergyCost) {
-                        ModSounds.playAt(level, payload.keyboardPos(), ModSounds.PORTAL_ERROR, 0.9F, 1.0F);
-                        sendPortalConnectionError(player, "Énergie insuffisante pour l'ouverture du portail (" + openEnergyCost + " EU requis).");
-                        return;
-                    }
-                }
+                boolean requiresOpenEnergy = !isFromRift && !isNaturalKeyboard;
+                int openEnergyCost = requiresOpenEnergy
+                        ? EnergyNetworkHelper.getPortalOpenEnergyCost(level, corePos, targetPortalId)
+                        : 0;
 
                 boolean ok = PortalConnectionManager.openBothSides(
                         level,
@@ -108,12 +102,13 @@ public final class UniverseGateNetwork {
                         isNaturalKeyboard
                 );
                 if (ok) {
-                    if (!isFromRift && !isNaturalKeyboard) {
-                        EnergyNetworkHelper.consumePortalEnergy(
-                                level,
-                                corePos,
-                                openEnergyCost
-                        );
+                    if (requiresOpenEnergy) {
+                        boolean consumed = EnergyNetworkHelper.consumePortalEnergy(level, corePos, openEnergyCost);
+                        if (!consumed) {
+                            PortalConnectionManager.forceCloseOneSide(level, corePos);
+                            ModSounds.playAt(level, payload.keyboardPos(), ModSounds.PORTAL_ERROR, 0.9F, 1.0F);
+                            sendPortalConnectionError(player, "Énergie insuffisante pour l'ouverture du portail (" + openEnergyCost + " EU requis).");
+                        }
                     }
                 } else {
                     ModSounds.playAt(level, corePos, ModSounds.PORTAL_ERROR, 0.9F, 1.0F);
@@ -241,6 +236,7 @@ public final class UniverseGateNetwork {
             for (int x = -r; x <= r; x++) {
                 for (int z = -r; z <= r; z++) {
                     BlockPos p = center.offset(x, y, z);
+                    if (!level.hasChunkAt(p)) continue;
                     if (level.getBlockState(p).is(ModBlocks.PORTAL_CORE)) return p;
                 }
             }
