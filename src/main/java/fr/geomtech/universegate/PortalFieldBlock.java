@@ -148,27 +148,57 @@ public class PortalFieldBlock extends Block implements EntityBlock, SimpleWaterl
 
     @Override
     public void animateTick(BlockState state, Level level, BlockPos pos, RandomSource random) {
-        if (!state.getValue(UNSTABLE)) return;
-
         Direction.Axis axis = state.getValue(AXIS);
-        int count = 2 + random.nextInt(4);
+        boolean unstable = state.getValue(UNSTABLE);
+        if (!unstable) return;
+
+        int count = random.nextFloat() < 0.70F ? 2 : 1;
+        if (count == 0) return;
+
         for (int i = 0; i < count; i++) {
             double x = pos.getX() + 0.5;
             double y = pos.getY() + random.nextDouble();
             double z = pos.getZ() + 0.5;
 
             if (axis == Direction.Axis.X) {
-                x += (random.nextDouble() - 0.5) * 0.9;
-                z += (random.nextDouble() - 0.5) * 0.1;
+                x += (random.nextDouble() - 0.5) * 0.92;
             } else {
-                x += (random.nextDouble() - 0.5) * 0.1;
-                z += (random.nextDouble() - 0.5) * 0.9;
+                z += (random.nextDouble() - 0.5) * 0.92;
             }
 
-            double vx = (random.nextDouble() - 0.5) * 0.03;
-            double vy = (random.nextDouble() - 0.5) * 0.02;
-            double vz = (random.nextDouble() - 0.5) * 0.03;
-            level.addParticle(ParticleTypes.END_ROD, x, y, z, vx, vy, vz);
+            double centerX = pos.getX() + 0.5;
+            double centerZ = pos.getZ() + 0.5;
+            double pullX = (centerX - x) * (unstable ? 0.10 : 0.06);
+            double pullZ = (centerZ - z) * (unstable ? 0.10 : 0.06);
+
+            double vx = pullX + (random.nextDouble() - 0.5) * (unstable ? 0.018 : 0.010);
+            double vy = (random.nextDouble() - 0.5) * (unstable ? 0.035 : 0.018);
+            double vz = pullZ + (random.nextDouble() - 0.5) * (unstable ? 0.018 : 0.010);
+
+            double rodScale = unstable ? 0.34 : 0.20;
+            double rodY = unstable ? 0.24 : 0.14;
+            double normalOffset = unstable ? 0.46 : 0.43;
+            double normalSpread = unstable ? 0.035 : 0.020;
+            double normalSpeed = unstable ? 0.020 : 0.012;
+
+            for (int side = -1; side <= 1; side += 2) {
+                double px = x;
+                double py = y;
+                double pz = z;
+                double pvx = vx * rodScale;
+                double pvy = vy * rodY;
+                double pvz = vz * rodScale;
+
+                if (axis == Direction.Axis.X) {
+                    pz += side * normalOffset + (random.nextDouble() - 0.5) * normalSpread;
+                    pvz += side * normalSpeed;
+                } else {
+                    px += side * normalOffset + (random.nextDouble() - 0.5) * normalSpread;
+                    pvx += side * normalSpeed;
+                }
+
+                level.addParticle(ParticleTypes.END_ROD, px, py, pz, pvx, pvy, pvz);
+            }
         }
     }
 
