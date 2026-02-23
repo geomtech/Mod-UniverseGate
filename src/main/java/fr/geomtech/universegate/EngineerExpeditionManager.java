@@ -6,7 +6,6 @@ import net.fabricmc.fabric.api.event.lifecycle.v1.ServerTickEvents;
 import net.minecraft.commands.CommandSourceStack;
 import net.minecraft.commands.Commands;
 import net.minecraft.core.BlockPos;
-import net.minecraft.core.Direction;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceKey;
 import net.minecraft.server.MinecraftServer;
@@ -19,7 +18,6 @@ import net.minecraft.world.entity.npc.VillagerProfession;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
 import net.minecraft.world.level.Level;
-import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.phys.AABB;
 import org.jetbrains.annotations.Nullable;
 
@@ -193,12 +191,10 @@ public final class EngineerExpeditionManager {
         }
 
         if ((now - expedition.phaseStartedAtTick) % 20L == 0L) {
-            BlockPos targetKeyboard = findKeyboardNear(targetLevel, expedition.targetCorePos, CORE_SEARCH_RADIUS_XZ, CORE_SEARCH_RADIUS_Y);
             boolean opened = tryOpenPortalForExpedition(
                     targetLevel,
                     expedition.targetCorePos,
-                    expedition.sourcePortalId,
-                    targetKeyboard
+                    expedition.sourcePortalId
             );
             if (opened) {
                 expedition.phase = ExpeditionPhase.RETURN_CROSSING;
@@ -267,8 +263,7 @@ public final class EngineerExpeditionManager {
         boolean opened = tryOpenPortalForExpedition(
                 sourceLevel,
                 plan.sourceCorePos,
-                plan.targetPortalId,
-                plan.sourceKeyboardPos
+                plan.targetPortalId
         );
         if (!opened) return false;
 
@@ -619,10 +614,9 @@ public final class EngineerExpeditionManager {
 
     private static boolean tryOpenPortalForExpedition(ServerLevel level,
                                                       BlockPos corePos,
-                                                      UUID targetPortalId,
-                                                      @Nullable BlockPos keyboardPos) {
+                                                      UUID targetPortalId) {
         int openEnergyCost = EnergyNetworkHelper.getPortalOpenEnergyCost(level, corePos, targetPortalId);
-        if (!prepareVillagerEnergyNetwork(level, corePos, openEnergyCost, keyboardPos)) {
+        if (!prepareVillagerEnergyNetwork(level, corePos, openEnergyCost)) {
             return false;
         }
 
@@ -646,155 +640,12 @@ public final class EngineerExpeditionManager {
 
     private static boolean prepareVillagerEnergyNetwork(ServerLevel level,
                                                         BlockPos corePos,
-                                                        int required,
-                                                        @Nullable BlockPos keyboardPos) {
+                                                        int required) {
         if (EnergyNetworkHelper.isRiftDimension(level)) {
             return true;
         }
 
-        int available = EnergyNetworkHelper.getAvailableEnergyForPortal(level, corePos);
-        if (available >= required) {
-            return true;
-        }
-
-        BlockPos condenserPos = buildVillageEnergyInfrastructure(level, corePos, keyboardPos);
-        if (condenserPos == null) {
-            return false;
-        }
-
-        available = EnergyNetworkHelper.getAvailableEnergyForPortal(level, corePos);
-        if (available >= required) {
-            return true;
-        }
-
-        EnergyNetworkHelper.CondenserNetwork network = EnergyNetworkHelper.scanCondenserNetwork(level, condenserPos);
-        int missing = required - available;
-        if (missing > 0 && !network.condensers().isEmpty()) {
-            EnergyNetworkHelper.distributeEnergy(level, network.condensers(), missing);
-        }
-
         return EnergyNetworkHelper.getAvailableEnergyForPortal(level, corePos) >= required;
-    }
-
-    private static @Nullable BlockPos buildVillageEnergyInfrastructure(ServerLevel level,
-                                                                       BlockPos corePos,
-                                                                       @Nullable BlockPos keyboardPos) {
-        for (Direction direction : preferredEnergyDirections(level, corePos, keyboardPos)) {
-            EnergyLayout layout = new EnergyLayout(
-                    direction,
-                    corePos.relative(direction, 1),
-                    corePos.relative(direction, 2),
-                    corePos.relative(direction, 3),
-                    corePos.relative(direction, 4)
-            );
-
-            if (!canPlaceEnergyLayout(level, layout)) {
-                continue;
-            }
-
-            placeEnergyLayout(level, layout);
-            return layout.condenserPos();
-        }
-
-        return null;
-    }
-
-    private static List<Direction> preferredEnergyDirections(ServerLevel level,
-                                                             BlockPos corePos,
-                                                             @Nullable BlockPos keyboardPos) {
-        List<Direction> directions = new ArrayList<>();
-
-        PortalFrameDetector.find(level, corePos).ifPresent(match -> {
-            Direction normalA = match.right() == Direction.EAST ? Direction.SOUTH : Direction.EAST;
-            Direction normalB = normalA.getOpposite();
-            directions.add(normalA);
-            directions.add(normalB);
-            directions.add(match.right());
-            directions.add(match.right().getOpposite());
-        });
-
-        if (keyboardPos != null) {
-            Direction awayFromKeyboard = Direction.getNearest(
-                    corePos.getX() - keyboardPos.getX(),
-                    0,
-                    corePos.getZ() - keyboardPos.getZ()
-            );
-            if (awayFromKeyboard.getAxis().isHorizontal()) {
-                directions.add(0, awayFromKeyboard);
-            }
-        }
-
-        for (Direction direction : Direction.Plane.HORIZONTAL) {
-            if (!directions.contains(direction)) {
-                directions.add(direction);
-            }
-        }
-
-        return directions;
-    }
-
-    private static boolean canPlaceEnergyLayout(ServerLevel level, EnergyLayout layout) {
-        Direction panelFacing = layout.direction();
-
-        if (!canPlaceOrMatch(level.getBlockState(layout.conduitNearCore()), ModBlocks.ENERGY_CONDUIT)) return false;
-        if (!canPlaceOrMatch(level.getBlockState(layout.condenserPos()), ModBlocks.ENERGY_CONDENSER)) return false;
-        if (!canPlaceOrMatch(level.getBlockState(layout.conduitNearPanel()), ModBlocks.ENERGY_CONDUIT)) return false;
-
-        BlockPos panelBase = layout.panelBasePos();
-        BlockState base = level.getBlockState(panelBase);
-        BlockState lower = level.getBlockState(panelBase.above());
-        BlockState upper = level.getBlockState(panelBase.above(2));
-        BlockState top = level.getBlockState(panelBase.above(3));
-
-        boolean baseOk = isSolarPart(base, SolarPanelBlock.PanelPart.BASE, panelFacing) || base.canBeReplaced();
-        boolean lowerOk = isSolarPart(lower, SolarPanelBlock.PanelPart.LOWER, panelFacing) || lower.canBeReplaced();
-        boolean upperOk = isSolarPart(upper, SolarPanelBlock.PanelPart.UPPER, panelFacing) || upper.canBeReplaced();
-        boolean topOk = isSolarPart(top, SolarPanelBlock.PanelPart.TOP, panelFacing) || top.canBeReplaced();
-        if (!baseOk || !lowerOk || !upperOk || !topOk) return false;
-
-        BlockState belowPanel = level.getBlockState(panelBase.below());
-        return belowPanel.isFaceSturdy(level, panelBase.below(), Direction.UP)
-                || belowPanel.is(ModBlocks.ENERGY_CONDUIT);
-    }
-
-    private static void placeEnergyLayout(ServerLevel level, EnergyLayout layout) {
-        level.setBlock(layout.conduitNearCore(), ModBlocks.ENERGY_CONDUIT.defaultBlockState(), 3);
-        level.setBlock(layout.condenserPos(), ModBlocks.ENERGY_CONDENSER.defaultBlockState(), 3);
-        level.setBlock(layout.conduitNearPanel(), ModBlocks.ENERGY_CONDUIT.defaultBlockState(), 3);
-
-        Direction panelFacing = layout.direction();
-        BlockPos panelBase = layout.panelBasePos();
-        level.setBlock(panelBase, ModBlocks.SOLAR_PANEL.defaultBlockState()
-                .setValue(SolarPanelBlock.FACING, panelFacing)
-                .setValue(SolarPanelBlock.PART, SolarPanelBlock.PanelPart.BASE), 3);
-        level.setBlock(panelBase.above(), ModBlocks.SOLAR_PANEL.defaultBlockState()
-                .setValue(SolarPanelBlock.FACING, panelFacing)
-                .setValue(SolarPanelBlock.PART, SolarPanelBlock.PanelPart.LOWER), 3);
-        level.setBlock(panelBase.above(2), ModBlocks.SOLAR_PANEL.defaultBlockState()
-                .setValue(SolarPanelBlock.FACING, panelFacing)
-                .setValue(SolarPanelBlock.PART, SolarPanelBlock.PanelPart.UPPER), 3);
-        level.setBlock(panelBase.above(3), ModBlocks.SOLAR_PANEL.defaultBlockState()
-                .setValue(SolarPanelBlock.FACING, panelFacing)
-                .setValue(SolarPanelBlock.PART, SolarPanelBlock.PanelPart.TOP), 3);
-    }
-
-    private static boolean canPlaceOrMatch(BlockState state, net.minecraft.world.level.block.Block target) {
-        return state.is(target) || state.canBeReplaced();
-    }
-
-    private static boolean isSolarPart(BlockState state, SolarPanelBlock.PanelPart part, Direction facing) {
-        return state.is(ModBlocks.SOLAR_PANEL)
-                && state.hasProperty(SolarPanelBlock.PART)
-                && state.hasProperty(SolarPanelBlock.FACING)
-                && state.getValue(SolarPanelBlock.PART) == part
-                && state.getValue(SolarPanelBlock.FACING) == facing;
-    }
-
-    private record EnergyLayout(Direction direction,
-                                BlockPos conduitNearCore,
-                                BlockPos condenserPos,
-                                BlockPos conduitNearPanel,
-                                BlockPos panelBasePos) {
     }
 
     private static @Nullable ServerPlayer findNearbyPlayer(ServerLevel level,

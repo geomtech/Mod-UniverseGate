@@ -280,17 +280,39 @@ public final class PortalTeleportHandler {
     }
 
     private static BlockPos findCoreNear(ServerLevel level, BlockPos pos) {
+        BlockPos nearestActiveCore = null;
+        double nearestActiveDistance = Double.MAX_VALUE;
+        BlockPos nearestCore = null;
+        double nearestCoreDistance = Double.MAX_VALUE;
+
         for (int dy = -CORE_SEARCH_Y; dy <= CORE_SEARCH_Y; dy++) {
             for (int dx = -CORE_SEARCH_XZ; dx <= CORE_SEARCH_XZ; dx++) {
                 for (int dz = -CORE_SEARCH_XZ; dz <= CORE_SEARCH_XZ; dz++) {
                     BlockPos p = pos.offset(dx, dy, dz);
-                    if (level.getBlockState(p).is(ModBlocks.PORTAL_CORE)) {
-                        return p;
+                    if (!level.getBlockState(p).is(ModBlocks.PORTAL_CORE)) {
+                        continue;
+                    }
+
+                    double distance = p.distSqr(pos);
+                    if (distance < nearestCoreDistance) {
+                        nearestCoreDistance = distance;
+                        nearestCore = p;
+                    }
+
+                    if (distance < nearestActiveDistance
+                            && level.getBlockEntity(p) instanceof PortalCoreBlockEntity core
+                            && core.isActive()) {
+                        nearestActiveDistance = distance;
+                        nearestActiveCore = p;
                     }
                 }
             }
         }
-        return null;
+
+        if (nearestActiveCore != null) {
+            return nearestActiveCore;
+        }
+        return nearestCore;
     }
 
     private static PortalKeyboardBlockEntity findKeyboardNear(ServerLevel level, BlockPos corePos, int r) {
