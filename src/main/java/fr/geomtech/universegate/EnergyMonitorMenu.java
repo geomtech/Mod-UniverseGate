@@ -11,7 +11,7 @@ import net.minecraft.world.item.ItemStack;
 
 public class EnergyMonitorMenu extends AbstractContainerMenu {
 
-    public static final int DATA_COUNT = 7;
+    public static final int DATA_COUNT = 11;
 
     private final BlockPos monitorPos;
     private final ContainerData data;
@@ -46,33 +46,36 @@ public class EnergyMonitorMenu extends AbstractContainerMenu {
         return ItemStack.EMPTY;
     }
 
-    public int storedEnergy() {
-        return combine(data.get(0), data.get(1));
+    public long storedEnergy() {
+        return combineLong(data.get(0), data.get(1), data.get(2), data.get(3));
     }
 
-    public int capacity() {
-        return combine(data.get(2), data.get(3));
+    public long capacity() {
+        return combineLong(data.get(4), data.get(5), data.get(6), data.get(7));
     }
 
     public int condenserCount() {
-        return Math.max(0, data.get(4));
+        return Math.max(0, data.get(8));
     }
 
     public int panelCount() {
-        return Math.max(0, data.get(5));
+        return Math.max(0, data.get(9));
     }
 
     public int activePanelCount() {
-        return Math.max(0, data.get(6));
+        return Math.max(0, data.get(10));
     }
 
     public int chargePercent() {
-        int cap = capacity();
+        long cap = capacity();
         if (cap <= 0) return 0;
         return Mth.clamp((int) Math.round((storedEnergy() * 100.0D) / (double) cap), 0, 100);
     }
 
-    private static int combine(int low, int high) {
-        return ((high & 0xFFFF) << 16) | (low & 0xFFFF);
+    private static long combineLong(int a, int b, int c, int d) {
+        return ((long) (d & 0xFFFF) << 48)
+                | ((long) (c & 0xFFFF) << 32)
+                | ((long) (b & 0xFFFF) << 16)
+                | ((long) (a & 0xFFFF));
     }
 }

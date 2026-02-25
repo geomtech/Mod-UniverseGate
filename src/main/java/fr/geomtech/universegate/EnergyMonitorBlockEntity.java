@@ -17,8 +17,8 @@ public class EnergyMonitorBlockEntity extends BlockEntity implements ExtendedScr
 
     private static final int RESCAN_INTERVAL_TICKS = 10;
 
-    private int storedEnergy = 0;
-    private int capacity = 0;
+    private long storedEnergy = 0L;
+    private long capacity = 0L;
     private int condenserCount = 0;
     private int panelCount = 0;
     private int activePanelCount = 0;
@@ -28,13 +28,17 @@ public class EnergyMonitorBlockEntity extends BlockEntity implements ExtendedScr
         @Override
         public int get(int index) {
             return switch (index) {
-                case 0 -> storedEnergy & 0xFFFF;
-                case 1 -> (storedEnergy >>> 16) & 0xFFFF;
-                case 2 -> capacity & 0xFFFF;
-                case 3 -> (capacity >>> 16) & 0xFFFF;
-                case 4 -> condenserCount;
-                case 5 -> panelCount;
-                case 6 -> activePanelCount;
+                case 0 -> segment(storedEnergy, 0);
+                case 1 -> segment(storedEnergy, 1);
+                case 2 -> segment(storedEnergy, 2);
+                case 3 -> segment(storedEnergy, 3);
+                case 4 -> segment(capacity, 0);
+                case 5 -> segment(capacity, 1);
+                case 6 -> segment(capacity, 2);
+                case 7 -> segment(capacity, 3);
+                case 8 -> condenserCount;
+                case 9 -> panelCount;
+                case 10 -> activePanelCount;
                 default -> 0;
             };
         }
@@ -112,8 +116,8 @@ public class EnergyMonitorBlockEntity extends BlockEntity implements ExtendedScr
     @Override
     protected void saveAdditional(CompoundTag tag, HolderLookup.Provider registries) {
         super.saveAdditional(tag, registries);
-        tag.putInt("StoredEnergy", storedEnergy);
-        tag.putInt("Capacity", capacity);
+        tag.putLong("StoredEnergy", storedEnergy);
+        tag.putLong("Capacity", capacity);
         tag.putInt("CondenserCount", condenserCount);
         tag.putInt("PanelCount", panelCount);
         tag.putInt("ActivePanelCount", activePanelCount);
@@ -122,12 +126,16 @@ public class EnergyMonitorBlockEntity extends BlockEntity implements ExtendedScr
     @Override
     protected void loadAdditional(CompoundTag tag, HolderLookup.Provider registries) {
         super.loadAdditional(tag, registries);
-        storedEnergy = Math.max(0, tag.getInt("StoredEnergy"));
-        capacity = Math.max(0, tag.getInt("Capacity"));
+        storedEnergy = Math.max(0L, tag.getLong("StoredEnergy"));
+        capacity = Math.max(0L, tag.getLong("Capacity"));
         condenserCount = Math.max(0, tag.getInt("CondenserCount"));
         panelCount = Math.max(0, tag.getInt("PanelCount"));
         activePanelCount = Math.max(0, tag.getInt("ActivePanelCount"));
         rescanCooldown = 0;
+    }
+
+    private static int segment(long value, int index) {
+        return (int) ((value >>> (index * 16)) & 0xFFFFL);
     }
 
     @Override

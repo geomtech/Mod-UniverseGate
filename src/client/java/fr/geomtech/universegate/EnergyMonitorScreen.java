@@ -10,8 +10,8 @@ public class EnergyMonitorScreen extends AbstractContainerScreen<EnergyMonitorMe
 
     public EnergyMonitorScreen(EnergyMonitorMenu menu, Inventory inv, Component title) {
         super(menu, inv, title);
-        this.imageWidth = 196;
-        this.imageHeight = 108;
+        this.imageWidth = 320;
+        this.imageHeight = 112;
         this.inventoryLabelY = 10000;
     }
 
@@ -22,7 +22,7 @@ public class EnergyMonitorScreen extends AbstractContainerScreen<EnergyMonitorMe
 
         int barX = leftPos + 10;
         int barY = topPos + 24;
-        int barWidth = 176;
+        int barWidth = imageWidth - 20;
         int barHeight = 14;
 
         g.fill(barX, barY, barX + barWidth, barY + barHeight, 0xFF0E141D);
@@ -38,7 +38,11 @@ public class EnergyMonitorScreen extends AbstractContainerScreen<EnergyMonitorMe
         g.drawString(this.font, this.title, 10, 8, 0xDDE7FF, false);
 
         g.drawString(this.font,
-                Component.translatable("gui.universegate.energy_stored", menu.storedEnergy(), menu.capacity()),
+                Component.translatable(
+                        "gui.universegate.energy_stored",
+                        ZpcItem.formatEnergy(menu.storedEnergy()),
+                        ZpcItem.formatEnergy(menu.capacity())
+                ),
                 10,
                 44,
                 0xC6D3EE,
