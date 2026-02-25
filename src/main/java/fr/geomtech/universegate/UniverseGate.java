@@ -40,6 +40,7 @@ public class UniverseGate implements ModInitializer {
 		ServerTickEvents.END_WORLD_TICK.register(RiftShadeSpawner::tickWorld);
 		ServerTickEvents.END_WORLD_TICK.register(RiftCubeGenerator::tickWorld);
 		ServerTickEvents.END_WORLD_TICK.register(PortalRiftHelper::tickWorld);
+		ServerTickEvents.END_WORLD_TICK.register(PortalPursuitTracker::tickWorld);
 		ServerTickEvents.END_WORLD_TICK.register(OverworldVillagePortalGenerator::tickWorld);
 		fr.geomtech.universegate.net.UniverseGateNetwork.registerCommon();
 

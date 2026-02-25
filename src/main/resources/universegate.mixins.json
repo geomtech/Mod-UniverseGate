@@ -3,7 +3,9 @@
 	"package": "fr.geomtech.universegate.mixin",
 	"compatibilityLevel": "JAVA_21",
 	"mixins": [
+		"AnvilMenuMixin",
 		"ExampleMixin",
+		"MobDespawnMixin",
 		"PoiTypesAccessor",
 		"LightningBoltMixin"
 	],

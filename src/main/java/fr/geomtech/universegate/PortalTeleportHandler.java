@@ -12,10 +12,12 @@ import net.minecraft.world.effect.MobEffectInstance;
 import net.minecraft.world.effect.MobEffects;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.LivingEntity;
+import net.minecraft.world.entity.Mob;
 import net.minecraft.world.entity.RelativeMovement;
 import net.minecraft.world.entity.projectile.AbstractArrow;
 import net.minecraft.world.entity.projectile.ThrownEnderpearl;
 import net.minecraft.world.entity.vehicle.AbstractMinecart;
+import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.Vec3;
 
 import fr.geomtech.universegate.UniverseGateDimensions;
@@ -41,6 +43,10 @@ public final class PortalTeleportHandler {
     private static final double PORTAL_MIN_EXIT_OFFSET = 0.35D;
     private static final double PORTAL_FIELD_CLEARANCE = 0.55D;
     private static final double PORTAL_MINECART_EXTRA_OFFSET = 0.18D;
+
+    private static final double PURSUING_MOB_SEARCH_RADIUS_XZ = 8.0D;
+    private static final double PURSUING_MOB_SEARCH_RADIUS_Y = 5.0D;
+    private static final double PURSUING_MOB_MAX_PORTAL_DISTANCE_SQR = 49.0D;
 
     private static final float UNSTABLE_RIFT_CHANCE = 0.05F;
     private static final float UNSTABLE_DAMAGE_CHANCE = 0.40F;
@@ -68,6 +74,7 @@ public final class PortalTeleportHandler {
         Vec3 projectileVelocityAfterTeleport = preservedVelocity;
         float projectileYawAfterTeleport = preservedYaw;
         float projectilePitchAfterTeleport = preservedPitch;
+        List<UUID> pursuingMobIds = List.of();
 
         // 1) trouver le core associé au champ
         BlockPos corePos = findCoreNear(sourceLevel, fieldPos);
@@ -76,6 +83,7 @@ public final class PortalTeleportHandler {
         if (!(sourceLevel.getBlockEntity(corePos) instanceof PortalCoreBlockEntity core)) return;
         if (!core.isActive()) return;
         if (!core.isOutboundTravelEnabled()) {
+            keepPortalOpenFromDestinationContact(sourceLevel, core, now);
             if (entity instanceof ServerPlayer player) {
                 showBlockedDirectionMessage(player);
             }
@@ -191,11 +199,14 @@ public final class PortalTeleportHandler {
             }
         }
 
+        if (entity instanceof ServerPlayer player) {
+            pursuingMobIds = collectPursuingMobIds(sourceLevel, corePos, player);
+        }
+
         ModSounds.playAt(sourceLevel, corePos, ModSounds.PORTAL_ENTITY_GOING_THROUGH, 0.9F, 1.0F);
         boolean teleported;
         if (entity instanceof ServerPlayer player) {
-            player.teleportTo(targetLevel, x, y, z, yaw, player.getXRot());
-            teleported = true;
+            teleported = player.teleportTo(targetLevel, x, y, z, Set.<RelativeMovement>of(), yaw, pitch);
         } else {
             teleported = entity.teleportTo(targetLevel, x, y, z, Set.<RelativeMovement>of(), yaw, pitch);
         }
@@ -213,8 +224,19 @@ public final class PortalTeleportHandler {
             }
         }
 
+        if (entity instanceof Mob) {
+            Entity teleportedMobEntity = targetLevel.getEntity(entityId);
+            if (teleportedMobEntity instanceof Mob teleportedMob) {
+                PortalPursuitTracker.onMobTeleported(targetLevel, teleportedMob);
+            }
+        }
+
         ModSounds.playAt(targetLevel, targetEntry.pos(), ModSounds.PORTAL_ENTITY_GOING_THROUGH, 0.9F, 1.05F);
-        core.onEntityPassed(now);
+        if (entity instanceof ServerPlayer) {
+            core.onPlayerPassedThrough(now);
+        } else {
+            core.onEntityPassed(now);
+        }
         if (targetLevel.getBlockEntity(targetEntry.pos()) instanceof PortalCoreBlockEntity targetCore) {
             targetCore.onEntityPassed(targetLevel.getGameTime());
         }
@@ -228,6 +250,10 @@ public final class PortalTeleportHandler {
             applyUnstableDebuffs(livingEntity);
         }
 
+        if (entity instanceof ServerPlayer player && !pursuingMobIds.isEmpty()) {
+            markPursuingMobsForPortalFollow(sourceLevel, fieldPos, player, pursuingMobIds);
+        }
+
         if (isRift) {
             PortalRiftHelper.handleRiftArrival(targetLevel, targetEntry.pos());
         }
@@ -238,6 +264,28 @@ public final class PortalTeleportHandler {
                 Component.translatable("message.universegate.blocked_direction").withStyle(ChatFormatting.RED),
                 true
         );
+    }
+
+    private static void keepPortalOpenFromDestinationContact(ServerLevel destinationLevel,
+                                                             PortalCoreBlockEntity destinationCore,
+                                                             long now) {
+        destinationCore.onEntityPassed(now);
+
+        UUID sourcePortalId = destinationCore.getTargetPortalId();
+        UUID connectionId = destinationCore.getConnectionId();
+        if (sourcePortalId == null || connectionId == null) return;
+
+        PortalRegistrySavedData registry = PortalRegistrySavedData.get(destinationLevel.getServer());
+        PortalRegistrySavedData.PortalEntry sourceEntry = registry.get(sourcePortalId);
+        if (sourceEntry == null) return;
+
+        ServerLevel sourceLevel = destinationLevel.getServer().getLevel(sourceEntry.dim());
+        if (sourceLevel == null || !sourceLevel.hasChunkAt(sourceEntry.pos())) return;
+        if (!(sourceLevel.getBlockEntity(sourceEntry.pos()) instanceof PortalCoreBlockEntity sourceCore)) return;
+        if (!sourceCore.isActive()) return;
+        if (!connectionId.equals(sourceCore.getConnectionId())) return;
+
+        sourceCore.onEntityPassed(sourceLevel.getGameTime());
     }
 
     private static int sideSignFromEntry(PortalFrameDetector.FrameMatch match, BlockPos corePos, Entity entity) {
@@ -363,6 +411,55 @@ public final class PortalTeleportHandler {
         if (level == null) return false;
         level.getChunk(entry.pos());
         return level.getBlockEntity(entry.pos()) instanceof PortalCoreBlockEntity;
+    }
+
+    private static List<UUID> collectPursuingMobIds(ServerLevel level, BlockPos corePos, ServerPlayer player) {
+        Vec3 portalCenter = new Vec3(corePos.getX() + 0.5D, corePos.getY() + 1.0D, corePos.getZ() + 0.5D);
+        AABB searchBox = AABB.ofSize(
+                portalCenter,
+                PURSUING_MOB_SEARCH_RADIUS_XZ * 2.0D,
+                PURSUING_MOB_SEARCH_RADIUS_Y * 2.0D,
+                PURSUING_MOB_SEARCH_RADIUS_XZ * 2.0D
+        );
+
+        List<Mob> candidates = level.getEntitiesOfClass(
+                Mob.class,
+                searchBox,
+                mob -> isPursuingPlayerNearPortal(mob, player, portalCenter)
+        );
+        if (candidates.isEmpty()) {
+            return List.of();
+        }
+
+        candidates.sort((first, second) -> Double.compare(
+                first.distanceToSqr(portalCenter.x, portalCenter.y, portalCenter.z),
+                second.distanceToSqr(portalCenter.x, portalCenter.y, portalCenter.z)
+        ));
+
+        List<UUID> ids = new ArrayList<>(candidates.size());
+        for (int i = 0; i < candidates.size(); i++) {
+            ids.add(candidates.get(i).getUUID());
+        }
+        return ids;
+    }
+
+    private static boolean isPursuingPlayerNearPortal(Mob mob, ServerPlayer player, Vec3 portalCenter) {
+        if (!mob.isAlive() || mob.isPassenger()) return false;
+        if (mob.getTarget() != player) return false;
+        return mob.distanceToSqr(portalCenter.x, portalCenter.y, portalCenter.z) <= PURSUING_MOB_MAX_PORTAL_DISTANCE_SQR;
+    }
+
+    private static void markPursuingMobsForPortalFollow(ServerLevel sourceLevel,
+                                                        BlockPos fieldPos,
+                                                        ServerPlayer player,
+                                                        List<UUID> pursuingMobIds) {
+        for (UUID mobId : pursuingMobIds) {
+            Entity candidate = sourceLevel.getEntity(mobId);
+            if (!(candidate instanceof Mob mob)) continue;
+            if (!mob.isAlive()) continue;
+            if (mob.getTarget() != player) continue;
+            PortalPursuitTracker.trackMobTowardPortalField(sourceLevel, mob, fieldPos, player.getUUID());
+        }
     }
 
     private static void applyUnstableDebuffs(LivingEntity living) {

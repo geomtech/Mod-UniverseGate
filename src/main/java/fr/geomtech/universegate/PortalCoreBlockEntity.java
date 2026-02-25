@@ -5,6 +5,7 @@ import net.minecraft.core.BlockPos;
 import net.minecraft.core.HolderLookup;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.chat.Component;
+import net.minecraft.world.level.ChunkPos;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.core.particles.ParticleTypes;
 import net.minecraft.server.level.ServerPlayer;
@@ -23,6 +24,7 @@ public class PortalCoreBlockEntity extends BlockEntity implements ExtendedScreen
     private static final long OPENING_DURATION_FALLBACK_TICKS = 20L * 9L;
     private static final long AMBIENT_LOOP_INTERVAL_TICKS = 20L * 27L;
     private static final long UNSTABLE_AMBIENT_LOOP_INTERVAL_TICKS = 10L;
+    private static final long PLAYER_PASS_CHUNK_FORCE_TICKS = 20L * 15L;
     private static final long TICK_DURATION_MILLIS = 50L;
 
     private UUID portalId;
@@ -43,7 +45,9 @@ public class PortalCoreBlockEntity extends BlockEntity implements ExtendedScreen
     private long openingStartedGameTime = 0L;
     private long openingCompleteGameTime = 0L;
     private long nextAmbientLoopGameTime = 0L;
+    private long keepChunkForcedUntilGameTime = 0L;
     private boolean restorePending = false;
+    private boolean outboundChunkForceClaimed = false;
     private int darkEnergyAmount = 0;
     public static final int DARK_ENERGY_THRESHOLD = 4000;
 
@@ -87,6 +91,8 @@ public class PortalCoreBlockEntity extends BlockEntity implements ExtendedScreen
         if (isActiveOrOpening()) {
             PortalConnectionManager.forceCloseOneSide(sl, worldPosition);
         }
+        keepChunkForcedUntilGameTime = 0L;
+        syncOutboundChunkForce(sl);
         PortalRegistrySavedData.get(sl.getServer()).removePortal(portalId);
         setChanged();
     }
@@ -95,6 +101,7 @@ public class PortalCoreBlockEntity extends BlockEntity implements ExtendedScreen
     public void serverTick() {
         if (!(level instanceof ServerLevel sl)) return;
         long now = sl.getGameTime();
+        syncOutboundChunkForce(sl, now);
         if (restorePending) {
             restorePending = false;
             if (active && !restoreActiveState(sl)) return;
@@ -229,6 +236,23 @@ public class PortalCoreBlockEntity extends BlockEntity implements ExtendedScreen
         level.updateNeighborsAt(worldPosition, getBlockState().getBlock());
     }
 
+    private boolean shouldForceOutboundChunk(long now) {
+        return active || opening || now < keepChunkForcedUntilGameTime;
+    }
+
+    private void syncOutboundChunkForce(ServerLevel level) {
+        syncOutboundChunkForce(level, level.getGameTime());
+    }
+
+    private void syncOutboundChunkForce(ServerLevel level, long now) {
+        boolean shouldForce = shouldForceOutboundChunk(now);
+        if (shouldForce == outboundChunkForceClaimed) return;
+
+        ChunkPos chunkPos = new ChunkPos(worldPosition);
+        level.setChunkForced(chunkPos.x, chunkPos.z, shouldForce);
+        outboundChunkForceClaimed = shouldForce;
+    }
+
     // ---------- State helpers ----------
     public UUID getPortalId() { return portalId; }
     public boolean isActive() { return active; }
@@ -253,6 +277,16 @@ public class PortalCoreBlockEntity extends BlockEntity implements ExtendedScreen
         activeUntilGameTime = now + PER_ENTITY_EXTENSION_TICKS;
         activeUntilEpochMillis = computeEpochDeadlineFromGameTime(now, activeUntilGameTime);
         setChanged();
+    }
+
+    void onPlayerPassedThrough(long now) {
+        onEntityPassed(now);
+
+        long keepUntil = now + PLAYER_PASS_CHUNK_FORCE_TICKS;
+        if (keepUntil > keepChunkForcedUntilGameTime) {
+            keepChunkForcedUntilGameTime = keepUntil;
+            setChanged();
+        }
     }
 
     boolean closeIfExpired(ServerLevel level) {
@@ -382,6 +416,9 @@ public class PortalCoreBlockEntity extends BlockEntity implements ExtendedScreen
         this.nextAmbientLoopGameTime = 0L;
         setChanged();
         updateRedstoneSignal(previouslyEmitting);
+        if (level instanceof ServerLevel sl) {
+            syncOutboundChunkForce(sl);
+        }
     }
 
     void finalizeOpeningState(long activeUntilGameTime, long activeStartedGameTime) {
@@ -398,6 +435,9 @@ public class PortalCoreBlockEntity extends BlockEntity implements ExtendedScreen
         this.nextAmbientLoopGameTime = 0L;
         setChanged();
         updateRedstoneSignal(previouslyEmitting);
+        if (level instanceof ServerLevel sl) {
+            syncOutboundChunkForce(sl);
+        }
     }
 
     void setActiveState(UUID connectionId,
@@ -425,6 +465,9 @@ public class PortalCoreBlockEntity extends BlockEntity implements ExtendedScreen
         this.nextAmbientLoopGameTime = 0L;
         setChanged();
         updateRedstoneSignal(previouslyEmitting);
+        if (level instanceof ServerLevel sl) {
+            syncOutboundChunkForce(sl);
+        }
     }
 
     void clearActiveState() {
@@ -445,6 +488,9 @@ public class PortalCoreBlockEntity extends BlockEntity implements ExtendedScreen
         this.nextAmbientLoopGameTime = 0L;
         setChanged();
         updateRedstoneSignal(previouslyEmitting);
+        if (level instanceof ServerLevel sl) {
+            syncOutboundChunkForce(sl);
+        }
     }
 
     // ---------- NBT ----------
@@ -467,6 +513,7 @@ public class PortalCoreBlockEntity extends BlockEntity implements ExtendedScreen
         tag.putBoolean("MaintenanceEnergyBypass", maintenanceEnergyBypass);
         tag.putLong("OpeningStart", openingStartedGameTime);
         tag.putLong("OpeningComplete", openingCompleteGameTime);
+        tag.putLong("ChunkForceUntil", keepChunkForcedUntilGameTime);
         tag.putInt("DarkEnergyAmount", darkEnergyAmount);
     }
 
@@ -490,7 +537,9 @@ public class PortalCoreBlockEntity extends BlockEntity implements ExtendedScreen
         maintenanceEnergyBypass = tag.getBoolean("MaintenanceEnergyBypass");
         openingStartedGameTime = tag.contains("OpeningStart") ? tag.getLong("OpeningStart") : 0L;
         openingCompleteGameTime = tag.contains("OpeningComplete") ? tag.getLong("OpeningComplete") : 0L;
+        keepChunkForcedUntilGameTime = tag.contains("ChunkForceUntil") ? tag.getLong("ChunkForceUntil") : 0L;
         darkEnergyAmount = Math.max(0, Math.min(tag.getInt("DarkEnergyAmount"), DARK_ENERGY_THRESHOLD));
+        outboundChunkForceClaimed = false;
 
         if (!active) {
             activeUntilEpochMillis = 0L;
