@@ -28,25 +28,29 @@ public final class DarkEnergyNetworkHelper {
         Set<BlockPos> framePositions = new HashSet<>();
         framePositions.add(corePos);
         framePositions.addAll(PortalFrameHelper.collectFrame(match.get(), corePos));
-        
-        // Search for connected Dark Energy Generators via Dark Energy Conduits
+
+        return isConnectedToPoweredGenerator(level, framePositions);
+    }
+
+    public static boolean isMachinePowered(ServerLevel level, BlockPos machinePos) {
+        Set<BlockPos> machinePositions = new HashSet<>();
+        machinePositions.add(machinePos.immutable());
+        return isConnectedToPoweredGenerator(level, machinePositions);
+    }
+
+    private static boolean isConnectedToPoweredGenerator(ServerLevel level, Set<BlockPos> sourcePositions) {
         Set<BlockPos> visited = new HashSet<>();
         ArrayDeque<BlockPos> queue = new ArrayDeque<>();
-        
-        // Add initial adjacent conduits/generators from ANY portal part
-        for (BlockPos partPos : framePositions) {
-            for (Direction dir : Direction.values()) {
-                BlockPos neighbor = partPos.relative(dir);
-                BlockState neighborState = level.getBlockState(neighbor);
 
-                if (neighborState.is(ModBlocks.DARK_ENERGY_GENERATOR)) {
-                    BlockEntity be = level.getBlockEntity(neighbor);
-                    if (be instanceof DarkEnergyGeneratorBlockEntity generator && (generator.isGenerating() || generator.hasFuel())) {
-                        return true;
-                    }
-                } else if (isValidConduit(level, neighbor)) {
-                    queue.add(neighbor);
-                    visited.add(neighbor);
+        for (BlockPos sourcePos : sourcePositions) {
+            for (Direction dir : Direction.values()) {
+                BlockPos neighbor = sourcePos.relative(dir);
+                if (isGeneratorOnline(level, neighbor)) {
+                    return true;
+                }
+
+                if (isValidConduit(level, neighbor) && visited.add(neighbor.immutable())) {
+                    queue.add(neighbor.immutable());
                 }
             }
         }
@@ -56,26 +60,29 @@ public final class DarkEnergyNetworkHelper {
             BlockPos current = queue.poll();
             steps++;
 
-            // Check neighbors of current conduit
             for (Direction dir : Direction.values()) {
                 BlockPos neighbor = current.relative(dir);
-                if (visited.contains(neighbor)) continue;
+                if (isGeneratorOnline(level, neighbor)) {
+                    return true;
+                }
 
-                BlockState state = level.getBlockState(neighbor);
-                
-                if (state.is(ModBlocks.DARK_ENERGY_GENERATOR)) {
-                    BlockEntity be = level.getBlockEntity(neighbor);
-                    if (be instanceof DarkEnergyGeneratorBlockEntity generator && (generator.isGenerating() || generator.hasFuel())) {
-                        return true;
-                    }
-                } else if (isValidConduit(level, neighbor)) {
-                    visited.add(neighbor);
-                    queue.add(neighbor);
+                if (isValidConduit(level, neighbor) && visited.add(neighbor.immutable())) {
+                    queue.add(neighbor.immutable());
                 }
             }
         }
 
         return false;
+    }
+
+    private static boolean isGeneratorOnline(ServerLevel level, BlockPos pos) {
+        BlockState state = level.getBlockState(pos);
+        if (!state.is(ModBlocks.DARK_ENERGY_GENERATOR)) {
+            return false;
+        }
+
+        BlockEntity be = level.getBlockEntity(pos);
+        return be instanceof DarkEnergyGeneratorBlockEntity generator && generator.canSupplyNetwork();
     }
 
     private static boolean isValidConduit(ServerLevel level, BlockPos pos) {

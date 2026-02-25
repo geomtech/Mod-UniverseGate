@@ -33,6 +33,8 @@ public class UniverseGateClient implements ClientModInitializer {
 		MenuScreens.register(ModMenuTypes.ZPC_INTERFACE_CONTROLLER, ZpcInterfaceControllerScreen::new);
 		MenuScreens.register(ModMenuTypes.RIFT_REFINER, RiftRefinerScreen::new);
 		MenuScreens.register(ModMenuTypes.COMBUSTION_GENERATOR, CombustionGeneratorScreen::new);
+		MenuScreens.register(ModMenuTypes.DARK_ENERGY_GENERATOR, DarkEnergyGeneratorScreen::new);
+		MenuScreens.register(ModMenuTypes.MOB_CLONER_CONTROLLER, MobClonerControllerScreen::new);
 		BlockRenderLayerMap.INSTANCE.putBlock(ModBlocks.PORTAL_FIELD, RenderType.translucent());
 		EntityModelLayerRegistry.registerModelLayer(RiftShadeModel.LAYER_LOCATION, RiftShadeModel::createBodyLayer);
 		EntityRendererRegistry.register(ModEntityTypes.RIFT_BEAST, RiftBeastRenderer::new);
@@ -45,5 +47,6 @@ public class UniverseGateClient implements ClientModInitializer {
 		BlockRenderLayerMap.INSTANCE.putBlock(ModBlocks.FLUID_PIPE, RenderType.translucent());
 		fr.geomtech.universegate.net.UniverseGateClientNetwork.registerClient();
 		ModTooltips.register();
+		DnaExtractionHudOverlay.register();
 	}
 }

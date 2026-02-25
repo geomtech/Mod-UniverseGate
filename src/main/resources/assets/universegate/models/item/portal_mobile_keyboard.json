@@ -1,6 +1,6 @@
 {
   "parent": "item/generated",
   "textures": {
-    "layer0": "universegate:block/portal_keyboard"
+    "layer0": "universegate:item/portal_mobile_keyboard"
   }
 }

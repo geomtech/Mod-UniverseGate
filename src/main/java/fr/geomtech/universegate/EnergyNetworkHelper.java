@@ -39,17 +39,17 @@ public final class EnergyNetworkHelper {
                                    Set<BlockPos> solarPanels,
                                    Set<BlockPos> parabolas,
                                    Set<BlockPos> zpcInterfaces) {}
-    public record EnergyNetworkSnapshot(int storedEnergy,
-                                        int capacity,
+    public record EnergyNetworkSnapshot(long storedEnergy,
+                                        long capacity,
                                         int condenserCount,
                                         int panelCount,
                                         int activePanelCount,
                                         int parabolaCount) {
-        public static final EnergyNetworkSnapshot EMPTY = new EnergyNetworkSnapshot(0, 0, 0, 0, 0, 0);
+        public static final EnergyNetworkSnapshot EMPTY = new EnergyNetworkSnapshot(0L, 0L, 0, 0, 0, 0);
 
         public int chargePercent() {
             if (capacity <= 0) return 0;
-            return (int) Math.round((storedEnergy * 100.0D) / (double) capacity);
+            return (int) Math.max(0L, Math.min(100L, Math.round((storedEnergy * 100.0D) / (double) capacity)));
         }
     }
 
@@ -96,15 +96,31 @@ public final class EnergyNetworkHelper {
 
         CondenserNetwork network = scanCondenserNetwork(level, condenserPos);
         List<EnergyCondenserBlockEntity> condensers = getCondensers(level, network.condensers());
-        if (condensers.isEmpty()) {
+        List<ZpcInterfaceControllerBlockEntity> zpcInterfaces = getZpcInterfaces(level, network.zpcInterfaces());
+        if (condensers.isEmpty() && zpcInterfaces.isEmpty()) {
             return EnergyNetworkSnapshot.EMPTY;
         }
 
-        int stored = 0;
-        int capacity = 0;
+        long stored = 0L;
+        long capacity = 0L;
+        int reservoirs = 0;
+
         for (EnergyCondenserBlockEntity condenser : condensers) {
             stored += condenser.getStoredEnergy();
             capacity += EnergyCondenserBlockEntity.CAPACITY;
+            reservoirs++;
+        }
+
+        for (ZpcInterfaceControllerBlockEntity zpcInterface : zpcInterfaces) {
+            long zpcCapacity = Math.max(0L, zpcInterface.getTotalCapacity());
+            long zpcStored = Math.max(0L, zpcInterface.getStoredEnergy());
+            if (zpcCapacity <= 0L && zpcStored <= 0L) {
+                continue;
+            }
+
+            stored += zpcStored;
+            capacity += zpcCapacity;
+            reservoirs++;
         }
 
         int activePanels = 0;
@@ -117,7 +133,7 @@ public final class EnergyNetworkHelper {
         return new EnergyNetworkSnapshot(
                 stored,
                 capacity,
-                condensers.size(),
+                reservoirs,
                 network.solarPanels().size(),
                 activePanels,
                 network.parabolas().size()
@@ -156,6 +172,30 @@ public final class EnergyNetworkHelper {
 
         ConduitScanResult scan = scanConduits(level, startConduits);
         return consumeFromSources(level, scan.condensers(), scan.zpcInterfaces(), amount);
+    }
+
+    public static long getAvailableEnergyLongFromNetwork(ServerLevel level, BlockPos startNode) {
+        Set<BlockPos> startConduits = new HashSet<>();
+        collectAdjacentConduits(level, startNode, startConduits);
+        if (startConduits.isEmpty()) return 0L;
+
+        ConduitScanResult scan = scanConduits(level, startConduits);
+        List<EnergyCondenserBlockEntity> condensers = getCondensers(level, scan.condensers());
+        List<ZpcInterfaceControllerBlockEntity> zpcInterfaces = getZpcInterfaces(level, scan.zpcInterfaces());
+        zpcInterfaces.removeIf(controller -> !controller.canSupplyEnergy() || controller.getStoredEnergy() <= 0L);
+
+        return getTotalEnergyStored(condensers, zpcInterfaces);
+    }
+
+    public static int getAvailableEnergyFromNetwork(ServerLevel level, BlockPos startNode) {
+        long total = getAvailableEnergyLongFromNetwork(level, startNode);
+        return (int) Math.min(Integer.MAX_VALUE, total);
+    }
+
+    public static boolean isNodeLinkedToEnergyConduit(ServerLevel level, BlockPos startNode) {
+        Set<BlockPos> startConduits = new HashSet<>();
+        collectAdjacentConduits(level, startNode, startConduits);
+        return !startConduits.isEmpty();
     }
 
     private static boolean consumeFromSources(ServerLevel level,
@@ -276,6 +316,40 @@ public final class EnergyNetworkHelper {
         return level.dimension().equals(UniverseGateDimensions.RIFT);
     }
 
+    public static BlockPos findNearestMobClonerOnNetwork(ServerLevel level, BlockPos startNode) {
+        Set<BlockPos> startConduits = collectMachineStartConduits(level, startNode);
+        if (startConduits.isEmpty()) return null;
+
+        Set<BlockPos> mobCloners = scanMobCloners(level, startConduits);
+        if (mobCloners.isEmpty()) return null;
+
+        BlockPos origin = startNode.immutable();
+        return mobCloners.stream()
+                .min(Comparator
+                        .comparingDouble((BlockPos pos) -> pos.distSqr(origin))
+                        .thenComparing(POS_COMPARATOR))
+                .orElse(null);
+    }
+
+    private static Set<BlockPos> collectMachineStartConduits(ServerLevel level, BlockPos startNode) {
+        Set<BlockPos> startConduits = new HashSet<>();
+        collectAdjacentConduits(level, startNode, startConduits);
+        if (!startConduits.isEmpty()) {
+            return startConduits;
+        }
+
+        for (Direction direction : Direction.values()) {
+            BlockPos neighborPos = startNode.relative(direction);
+            BlockState neighborState = level.getBlockState(neighborPos);
+
+            if (neighborState.is(ModBlocks.MOB_CLONER) || neighborState.is(ModBlocks.MOB_CLONER_CONTROLLER)) {
+                collectAdjacentConduits(level, neighborPos, startConduits);
+            }
+        }
+
+        return startConduits;
+    }
+
     private static List<EnergyCondenserBlockEntity> getPortalCondensers(ServerLevel level, BlockPos corePos) {
         Set<BlockPos> startConduits = collectPortalStartConduits(level, corePos);
         if (startConduits.isEmpty()) return new ArrayList<>();
@@ -303,6 +377,43 @@ public final class EnergyNetworkHelper {
             }
         }
         return starts;
+    }
+
+    private static Set<BlockPos> scanMobCloners(ServerLevel level, Set<BlockPos> startConduits) {
+        Set<BlockPos> visited = new HashSet<>();
+        ArrayDeque<BlockPos> queue = new ArrayDeque<>();
+        Set<BlockPos> mobCloners = new HashSet<>();
+
+        for (BlockPos start : startConduits) {
+            if (level.getBlockState(start).is(ModBlocks.ENERGY_CONDUIT) && visited.add(start.immutable())) {
+                queue.add(start.immutable());
+            }
+        }
+
+        int searched = 0;
+        while (!queue.isEmpty()) {
+            BlockPos conduitPos = queue.removeFirst();
+            searched++;
+            if (searched > MAX_CONDUIT_SEARCH) {
+                break;
+            }
+
+            for (Direction direction : Direction.values()) {
+                BlockPos neighborPos = conduitPos.relative(direction);
+                BlockState neighborState = level.getBlockState(neighborPos);
+
+                if (neighborState.is(ModBlocks.ENERGY_CONDUIT) && visited.add(neighborPos.immutable())) {
+                    queue.addLast(neighborPos.immutable());
+                    continue;
+                }
+
+                if (neighborState.is(ModBlocks.MOB_CLONER)) {
+                    mobCloners.add(neighborPos.immutable());
+                }
+            }
+        }
+
+        return mobCloners;
     }
 
     private static List<EnergyCondenserBlockEntity> getCondensers(ServerLevel level, Set<BlockPos> positions) {

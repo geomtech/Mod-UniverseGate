@@ -1,0 +1,6 @@
+{
+  "parent": "block/cube_all",
+  "textures": {
+    "all": "universegate:block/mob_cloner_controller"
+  }
+}

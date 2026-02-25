@@ -156,6 +156,16 @@ public final class ModItems {
             new Item(new Item.Properties().stacksTo(64))
     );
 
+    public static final Item DNA_EXTRACTOR = register(
+            "dna_extractor",
+            new DnaExtractorItem(new Item.Properties())
+    );
+
+    public static final Item DNA = register(
+            "dna",
+            new DnaSampleItem(new Item.Properties())
+    );
+
     public static final Item ZPC = register(
             "zpc",
             new ZpcItem(new Item.Properties())
@@ -184,6 +194,16 @@ public final class ModItems {
     public static final Item DARK_ENERGY_GENERATOR_ITEM = register(
             "dark_energy_generator",
             new BlockItem(ModBlocks.DARK_ENERGY_GENERATOR, new Item.Properties())
+    );
+
+    public static final Item MOB_CLONER_ITEM = register(
+            "mob_cloner",
+            new BlockItem(ModBlocks.MOB_CLONER, new Item.Properties())
+    );
+
+    public static final Item MOB_CLONER_CONTROLLER_ITEM = register(
+            "mob_cloner_controller",
+            new BlockItem(ModBlocks.MOB_CLONER_CONTROLLER, new Item.Properties())
     );
 
     private static Item register(String id, Item item) {

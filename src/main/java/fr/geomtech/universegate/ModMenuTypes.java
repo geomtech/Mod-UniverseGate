@@ -98,6 +98,26 @@ public final class ModMenuTypes {
                     )
             );
 
+    public static final ExtendedScreenHandlerType<DarkEnergyGeneratorMenu, BlockPos> DARK_ENERGY_GENERATOR =
+            Registry.register(
+                    BuiltInRegistries.MENU,
+                    ResourceLocation.fromNamespaceAndPath(UniverseGate.MOD_ID, "dark_energy_generator"),
+                    new ExtendedScreenHandlerType<>(
+                            DarkEnergyGeneratorMenu::new,
+                            BlockPos.STREAM_CODEC
+                    )
+            );
+
+    public static final ExtendedScreenHandlerType<MobClonerControllerMenu, BlockPos> MOB_CLONER_CONTROLLER =
+            Registry.register(
+                    BuiltInRegistries.MENU,
+                    ResourceLocation.fromNamespaceAndPath(UniverseGate.MOD_ID, "mob_cloner_controller"),
+                    new ExtendedScreenHandlerType<>(
+                            MobClonerControllerMenu::new,
+                            BlockPos.STREAM_CODEC
+                    )
+            );
+
     public static void register() {}
 
     private ModMenuTypes() {}

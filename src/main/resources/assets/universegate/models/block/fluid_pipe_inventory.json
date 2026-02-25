@@ -1,0 +1,7 @@
+{
+  "parent": "universegate:block/energy_conduit_inventory",
+  "textures": {
+    "pipe": "universegate:block/fluid_pipe",
+    "particle": "universegate:block/fluid_pipe"
+  }
+}

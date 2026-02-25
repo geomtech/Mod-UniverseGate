@@ -217,6 +217,20 @@ public final class ModBlocks {
             new DarkEnergyGeneratorBlock(BlockBehaviour.Properties.ofFullCopy(Blocks.IRON_BLOCK))
     );
 
+    public static final Block MOB_CLONER = register(
+            "mob_cloner",
+            new MobClonerBlock(BlockBehaviour.Properties.ofFullCopy(Blocks.OBSIDIAN)
+                    .strength(4.0F, 8.0F)
+                    .requiresCorrectToolForDrops())
+    );
+
+    public static final Block MOB_CLONER_CONTROLLER = register(
+            "mob_cloner_controller",
+            new MobClonerControllerBlock(BlockBehaviour.Properties.ofFullCopy(Blocks.IRON_BLOCK)
+                    .strength(3.0F, 6.0F)
+                    .requiresCorrectToolForDrops())
+    );
+
     private static Block register(String id, Block block) {
         return Registry.register(
                 BuiltInRegistries.BLOCK,

@@ -126,6 +126,13 @@ public final class ModBlockEntities {
                     BlockEntityType.Builder.of(FluidPipeBlockEntity::new, ModBlocks.FLUID_PIPE).build(null)
             );
 
+    public static final BlockEntityType<MobClonerControllerBlockEntity> MOB_CLONER_CONTROLLER =
+            Registry.register(
+                    BuiltInRegistries.BLOCK_ENTITY_TYPE,
+                    ResourceLocation.fromNamespaceAndPath(UniverseGate.MOD_ID, "mob_cloner_controller"),
+                    BlockEntityType.Builder.of(MobClonerControllerBlockEntity::new, ModBlocks.MOB_CLONER_CONTROLLER).build(null)
+            );
+
     public static void register() {}
 
     private ModBlockEntities() {}

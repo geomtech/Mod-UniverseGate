@@ -1,0 +1,29 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "pattern": [
+    "ECE",
+    "ADA",
+    "ERE"
+  ],
+  "key": {
+    "E": {
+      "item": "universegate:energy_conduit"
+    },
+    "C": {
+      "item": "universegate:energy_monitor"
+    },
+    "A": {
+      "item": "universegate:dna_extractor"
+    },
+    "D": {
+      "item": "minecraft:redstone_block"
+    },
+    "R": {
+      "item": "universegate:rift_crystal"
+    }
+  },
+  "result": {
+    "id": "universegate:mob_cloner_controller",
+    "count": 1
+  }
+}

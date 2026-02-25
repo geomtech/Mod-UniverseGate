@@ -2,8 +2,8 @@ package fr.geomtech.universegate;
 
 import net.minecraft.core.BlockPos;
 import net.minecraft.server.level.ServerPlayer;
-import net.minecraft.world.InteractionHand;
 import net.minecraft.world.InteractionResult;
+import net.minecraft.world.MenuProvider;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.BaseEntityBlock;
@@ -39,12 +39,15 @@ public class DarkEnergyGeneratorBlock extends BaseEntityBlock {
 
     @Override
     protected InteractionResult useWithoutItem(BlockState state, Level level, BlockPos pos, Player player, BlockHitResult hit) {
-        if (!level.isClientSide) {
-             // Open GUI if we have one, otherwise just return success
-             // For now, no GUI requested for Generator specifically, but likely needed for inputting fluid manually if pipes don't work yet.
-             // But the prompt implies using pipes.
+        if (level.isClientSide) {
+            return InteractionResult.SUCCESS;
         }
-        return InteractionResult.SUCCESS;
+
+        BlockEntity blockEntity = level.getBlockEntity(pos);
+        if (blockEntity instanceof MenuProvider provider && player instanceof ServerPlayer sp) {
+            sp.openMenu(provider);
+        }
+        return InteractionResult.CONSUME;
     }
 
     @Nullable

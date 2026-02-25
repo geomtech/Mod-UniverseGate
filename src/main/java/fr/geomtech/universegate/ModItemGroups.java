@@ -49,6 +49,8 @@ public final class ModItemGroups {
                 output.accept(ModItems.COOKED_RIFT_MEAT);
                 output.accept(ModItems.ENERGY_CRYSTAL);
                 output.accept(ModItems.RIFT_CRYSTAL);
+                output.accept(ModItems.DNA_EXTRACTOR);
+                output.accept(ModItems.DNA);
                 output.accept(ModItems.ZPC);
                 output.accept(ModItems.RIFT_SHADE_SPAWN_EGG);
                 output.accept(ModItems.RIFT_BEAST_SPAWN_EGG);
@@ -57,6 +59,8 @@ public final class ModItemGroups {
                 output.accept(ModItems.FLUID_PIPE_ITEM);
                 output.accept(ModItems.DARK_ENERGY_CONDUIT_ITEM);
                 output.accept(ModItems.DARK_ENERGY_GENERATOR_ITEM);
+                output.accept(ModItems.MOB_CLONER_ITEM);
+                output.accept(ModItems.MOB_CLONER_CONTROLLER_ITEM);
             })
             .build();
 

@@ -91,7 +91,7 @@ public class DarkEnergyConduitBlock extends Block {
     private boolean canConnectTo(BlockGetter level, BlockPos pos, Direction direction) {
         BlockState state = level.getBlockState(pos);
         Block block = state.getBlock();
-        if (block instanceof DarkEnergyConduitBlock || block instanceof DarkEnergyGeneratorBlock) return true;
+        if (block instanceof DarkEnergyConduitBlock || block instanceof DarkEnergyGeneratorBlock || block instanceof MobClonerBlock) return true;
         
         net.minecraft.resources.ResourceLocation key = BuiltInRegistries.BLOCK.getKey(state.getBlock());
         return key.getPath().startsWith("portal_");

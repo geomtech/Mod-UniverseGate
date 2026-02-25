@@ -15,6 +15,8 @@
     "universegate:combustion_generator",
     "universegate:energy_monitor",
     "universegate:zpc_interface_controller",
+    "universegate:mob_cloner",
+    "universegate:mob_cloner_controller",
     "universegate:portal_core",
     "universegate:portal_frame",
     "universegate:portal_keyboard"

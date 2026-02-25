@@ -1,0 +1,26 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "pattern": [
+    "RER",
+    "SCS",
+    "RER"
+  ],
+  "key": {
+    "R": {
+      "item": "universegate:rift_crystal"
+    },
+    "E": {
+      "item": "universegate:energy_crystal"
+    },
+    "S": {
+      "item": "minecraft:iron_ingot"
+    },
+    "C": {
+      "item": "minecraft:spyglass"
+    }
+  },
+  "result": {
+    "id": "universegate:dna_extractor",
+    "count": 1
+  }
+}
