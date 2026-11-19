@@ -16,13 +16,13 @@ import java.util.UUID;
 
 public final class EnergyNetworkHelper {
 
-    public static final int PORTAL_OPEN_BASE_ENERGY_COST = 1200;
-    public static final int PORTAL_OPEN_MIN_ENERGY_COST = 900;
-    public static final double PORTAL_OPEN_DISTANCE_COST_PER_BLOCK = 0.05D;
-    public static final int PORTAL_OPEN_CROSS_DIMENSION_BONUS = 700;
-    public static final int PORTAL_OPEN_RIFT_DIMENSION_BONUS = 900;
-    public static final int PORTAL_ACTIVE_ENERGY_COST_PER_SECOND = 120;
-    public static final int PORTAL_UNSTABLE_COST_BONUS_PERCENT = 50;
+    public static final int PORTAL_OPEN_BASE_ENERGY_COST = PortalEnergyCosts.OPEN_BASE_COST;
+    public static final int PORTAL_OPEN_MIN_ENERGY_COST = PortalEnergyCosts.OPEN_MIN_COST;
+    public static final double PORTAL_OPEN_DISTANCE_COST_PER_BLOCK = PortalEnergyCosts.OPEN_DISTANCE_COST_PER_BLOCK;
+    public static final int PORTAL_OPEN_CROSS_DIMENSION_BONUS = PortalEnergyCosts.OPEN_CROSS_DIMENSION_BONUS;
+    public static final int PORTAL_OPEN_RIFT_DIMENSION_BONUS = PortalEnergyCosts.OPEN_RIFT_DIMENSION_BONUS;
+    public static final int PORTAL_ACTIVE_ENERGY_COST_PER_SECOND = PortalEnergyCosts.ACTIVE_COST_PER_SECOND;
+    public static final int PORTAL_UNSTABLE_COST_BONUS_PERCENT = PortalEnergyCosts.UNSTABLE_COST_BONUS_PERCENT;
 
     private static final int MAX_CONDUIT_SEARCH = 8192;
     private static final Comparator<BlockPos> POS_COMPARATOR = (a, b) -> {
@@ -275,10 +275,7 @@ public final class EnergyNetworkHelper {
     }
 
     public static int getPortalActiveEnergyCostPerSecond(boolean unstableByTime) {
-        if (!unstableByTime) return PORTAL_ACTIVE_ENERGY_COST_PER_SECOND;
-
-        double factor = 1.0D + (PORTAL_UNSTABLE_COST_BONUS_PERCENT / 100.0D);
-        return (int) Math.ceil(PORTAL_ACTIVE_ENERGY_COST_PER_SECOND * factor);
+        return PortalEnergyCosts.activeCostPerSecond(unstableByTime);
     }
 
     public static int getPortalOpenEnergyCost(ServerLevel sourceLevel, BlockPos sourceCorePos, UUID targetPortalId) {
@@ -294,22 +291,11 @@ public final class EnergyNetworkHelper {
     public static int getPortalOpenEnergyCost(ServerLevel sourceLevel,
                                               BlockPos sourceCorePos,
                                               PortalRegistrySavedData.PortalEntry targetEntry) {
-        double distance = Math.sqrt(sourceCorePos.distSqr(targetEntry.pos()));
-        int distanceBlocks = (int) Math.ceil(distance);
-        int distanceCost = (int) Math.ceil(distanceBlocks * PORTAL_OPEN_DISTANCE_COST_PER_BLOCK);
-
-        int dimensionCost = 0;
         boolean crossDimension = !sourceLevel.dimension().equals(targetEntry.dim());
-        if (crossDimension) {
-            dimensionCost += PORTAL_OPEN_CROSS_DIMENSION_BONUS;
-        }
-        if (sourceLevel.dimension().equals(UniverseGateDimensions.RIFT)
-                || targetEntry.dim().equals(UniverseGateDimensions.RIFT)) {
-            dimensionCost += PORTAL_OPEN_RIFT_DIMENSION_BONUS;
-        }
-
-        int total = PORTAL_OPEN_BASE_ENERGY_COST + distanceCost + dimensionCost;
-        return Math.max(PORTAL_OPEN_MIN_ENERGY_COST, total);
+        boolean involvesRift = sourceLevel.dimension().equals(UniverseGateDimensions.RIFT)
+                || targetEntry.dim().equals(UniverseGateDimensions.RIFT);
+        return PortalEnergyCosts.openCost(
+                sourceCorePos.distSqr(targetEntry.pos()), crossDimension, involvesRift);
     }
 
     public static boolean isRiftDimension(ServerLevel level) {

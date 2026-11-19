@@ -21,8 +21,15 @@ jobs:
           distribution: 'microsoft'
       - name: make gradle wrapper executable
         run: chmod +x ./gradlew
-      - name: build
+      - name: build and test
         run: ./gradlew build
+      - name: publish test report
+        if: ${{ !cancelled() }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: test-report
+          path: common/build/reports/tests/test/
+          if-no-files-found: ignore
       - name: capture build artifacts
         uses: actions/upload-artifact@v4
         with:
