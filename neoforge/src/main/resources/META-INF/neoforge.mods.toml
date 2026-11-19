@@ -1,0 +1,35 @@
+modLoader = "javafml"
+loaderVersion = "[4,)"
+license = "CC0-1.0"
+issueTrackerURL = "https://github.com/geomtech/Mod-UniverseGate/issues"
+
+[[mods]]
+modId = "universegate"
+version = "${version}"
+displayName = "UniverseGate"
+authors = "GeomTech"
+displayURL = "https://geomtech.fr/"
+logoFile = "assets/universegate/icon.png"
+description = '''
+UniverseGate est un mod axé portails qui te permet de construire et relier des portes entre lieux et dimensions, puis d'explorer la Rift.
+'''
+
+[[mixins]]
+config = "universegate.mixins.json"
+
+[[mixins]]
+config = "universegate.client.mixins.json"
+
+[[dependencies.universegate]]
+modId = "neoforge"
+type = "required"
+versionRange = "[${neoforge_version},)"
+ordering = "NONE"
+side = "BOTH"
+
+[[dependencies.universegate]]
+modId = "minecraft"
+type = "required"
+versionRange = "[1.21.1,1.21.2)"
+ordering = "NONE"
+side = "BOTH"

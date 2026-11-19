@@ -1,6 +1,6 @@
 # UniverseGate
 
-UniverseGate is a portal-focused mod for Fabric that introduces a new energy system, advanced machinery, and a mysterious dimension called **The Rift**. Build portal networks, generate power, travel between villages, manipulate the weather, harness Dark Energy and even clone the creatures you meet.
+UniverseGate is a portal-focused mod for **Fabric** and **NeoForge** that introduces a new energy system, advanced machinery, and a mysterious dimension called **The Rift**. Build portal networks, generate power, travel between villages, manipulate the weather, harness Dark Energy and even clone the creatures you meet.
 
 ## Main Features
 
@@ -108,15 +108,31 @@ A **ZPC** stores up to **40,000,000,000 EU**.
 ## Requirements
 
 - Minecraft **1.21.1**
-- Fabric Loader
-- Fabric API
+- **Fabric**: Fabric Loader and Fabric API
+- **NeoForge**: NeoForge 21.1.x
 
 ## Installation
 
-1.  Download the `.jar` file.
+Each release ships two jars. Pick the one that matches your loader:
+
+| Loader | Jar |
+| --- | --- |
+| Fabric | `universegate-fabric-<version>.jar` (requires **Fabric API**) |
+| NeoForge | `universegate-neoforge-<version>.jar` |
+
+1.  Download the jar for your loader.
 2.  Place it in your `mods` folder.
-3.  Ensure **Fabric API** is installed.
-4.  For multiplayer, install on **both client and server**.
+3.  For multiplayer, install the **same loader's jar on both the client and the server** (a NeoForge server needs NeoForge clients).
+
+## Building from source
+
+The project is a multi-loader Gradle build:
+
+- `common/`: all game code and assets, compiled against vanilla Minecraft (Mojang mappings), plus the JUnit tests.
+- `fabric/`: Fabric entrypoints and Fabric API glue.
+- `neoforge/`: NeoForge entrypoints and NeoForge glue.
+
+Run `./gradlew build` (JDK 21+). The jars end up in `fabric/build/libs/` and `neoforge/build/libs/`. Dev servers: `./gradlew :fabric:runServer` or `./gradlew :neoforge:runServer`.
 
 ## License
 
