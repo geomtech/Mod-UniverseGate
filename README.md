@@ -1,47 +1,69 @@
 # UniverseGate
 
-UniverseGate is a portal-focused mod for Fabric that introduces a new energy system, advanced machinery, and a mysterious dimension called **The Rift**. Build complex portal networks, generate power, manipulate the weather, and explore the void.
+UniverseGate is a portal-focused mod for Fabric that introduces a new energy system, advanced machinery, and a mysterious dimension called **The Rift**. Build portal networks, generate power, travel between villages, manipulate the weather, harness Dark Energy and even clone the creatures you meet.
 
 ## Main Features
 
 - **Advanced Portals**: Build 3x4 gateways fueled by a new energy system.
-- **Energy System**: Generate power with **Solar Panels**, store it in **Energy Condensers**, and transport it via **Conduits**.
+- **Portal Network**: Name your portals and dial any other gate in the network using the **Portal Controller** or the handheld **Mobile Portal Controller**.
+- **Energy System**: Generate power with **Solar Panels** and **Combustion Generators**, store it in **Energy Condensers**, transport it via **Energy Conduits** and watch it with the **Energy Monitor**.
 - **The Rift Dimension**: A hostile, void-like world filled with unique resources like **Kelo Wood**, **Rift Crystals**, and dangerous **Rift Shades**.
-- **Meteorological Control**: Construct a massive multi-block machine to control the weather.
-- **Rift Refining**: Process Rift materials into **Dark Matter** for advanced technology.
-- **Portal Network**: Name your portals and dial any other gate in the network using the **Portal Controller**.
+- **Village Portals**: Large villages get their own gate, and **Portal Engineer** villagers travel the network.
+- **Meteorological Control**: Construct a multi-block machine to set the weather to clear, rain or thunder.
+- **Dark Energy**: Refine Rift Crystals into **Dark Matter**, burn it in a **Dark Energy Generator**, and unlock the **Dark Dimension** destination.
+- **ZPC**: Find rare **ZPC** power cells and plug them into a **ZPC Interface Controller** to feed huge amounts of energy into your network.
+- **DNA & Cloning**: Extract a mob's **DNA** and clone it with the **Mob Cloner**.
 
 ## Getting Started
 
 ### 1. Power Generation
 Before building a portal, you need energy.
 1.  Craft **Solar Panels**.
-2.  Place an **Energy Condenser**. This acts as a battery and network controller.
+2.  Place an **Energy Condenser**. This acts as a battery (20,000 EU) and network controller.
 3.  Connect Solar Panels to the Condenser using **Energy Conduits**.
     *   *Note: Panels must see the sky and only work during the day.*
+4.  Need power at night? A **Combustion Generator** burns any furnace fuel, or **Rift Crystals** (24,000 EU each), and outputs up to **480 EU/s**.
+5.  Place an **Energy Monitor** on the network to check stored energy, total capacity and connected devices.
 
 ### 2. Building a Portal
 1.  Construct a **Portal Frame** with a **3x4 interior** (5x6 outer size).
 2.  Place the **Portal Core** at the **bottom center** of the frame.
 3.  Connect the Portal Core (or Frame) to your energy network using Conduits.
     *   *Opening a portal uses a dynamic cost: base **1200 EU**, then increases with distance and if dimensions differ.*
-    *   *Maintaining the connection costs **120 EU/s**.*
-4.  Place a **Portal Controller** (formerly Keyboard) nearby (within 8 blocks).
+    *   *Maintaining the connection costs **120 EU/s** (more while the vortex is unstable).*
+4.  Place a **Portal Controller** nearby (within 8 blocks).
+5.  Optional: craft a **Mobile Portal Controller** to dial from your hand while standing near a portal.
 
 ### 3. Entering The Rift (Unstable Link)
 To reach the Rift for the first time, you need to force an unstable connection:
 1.  Craft a **Portal Lightning Rod**.
 2.  Place it within range of your portal.
-3.  Wait for a **Thunderstorm** (or force one, see below).
+3.  Wait for a **Thunderstorm** (or create one with the Meteorological Machine, see below).
 4.  When lightning strikes the rod, it will force the portal to open an unstable Rift link.
     *   *Warning: Unstable portals are volatile.*
 
-### 4. The Meteorological Machine
-Tired of waiting for rain? Build the Meteorological Controller to change the weather.
-1.  **Structure**: Requires a specific multi-block setup (Parabola, Controller, Catalyst).
-2.  **Power**: Connect it to your energy network (requires **2500 EU** per operation).
-3.  **Catalyst**: Insert a **Meteorological Catalyst** crystal.
-4.  **Activate**: Select "Thunder" to charge your Lightning Rods instantly.
+## Village Portals
+
+UniverseGate brings portals to the villages of the Overworld:
+- When a player gets near a large village (at least **9 adult villagers**), a **Village Gate** is built 10 to 30 blocks from its center, with a **Natural Portal Controller**.
+- Once you own a portal in the Overworld, a few extra village gates (up to 7) are also generated in distant villages (more than 1200 blocks from spawn), so the network has places to go.
+- Opening a portal from a Natural Portal Controller is **free**.
+- The Portal Controller is the workstation of a new villager profession, the **Portal Engineer**.
+- **Engineer Expeditions**: every 4 to 5 in-game days, a Portal Engineer and 2 or 3 companions dial another portal, travel through it, then come back home. If you are near the destination when they arrive, they give you a thank-you gift (energy blocks, conduits, emeralds and other materials).
+- Operators can manage expeditions with `/universegate engineer_event force|status|cancel`.
+
+## The Meteorological Machine
+
+Build the Meteorological Machine to change the weather.
+1.  **Structure**:
+    *   Place a **Meteorological Controller**.
+    *   Next to it (within 1 block), stack **2 Meteorological Condensers** to form a tower.
+    *   Place a **Meteorological Catalyst** on top of the tower and insert an **Energy Crystal** in it.
+2.  **Power**: Connect the tower to your energy network with Energy Conduits, and add a **Parabola** on the same network. The Parabola draws **120 EU/s** while powered.
+3.  **Charge**: Once everything is in place, the controller charges for **5 minutes**.
+4.  **Activate**: Choose **Clear**, **Rain** or **Thunder**. Activation costs **2500 EU** and consumes the catalyst's Energy Crystal. The chosen weather lasts **10 minutes**.
+    *   *Thunder is the easiest way to strike your Portal Lightning Rods.*
+- Operators can skip the charge time with `/universegate weather_machine charge [pos]`.
 
 ## The Rift
 
@@ -52,9 +74,36 @@ The Rift is a dark, void-based dimension.
 
 ## Advanced Tech
 
-- **Rift Refiner**: Use **Rift Crystals** and a Bucket to craft **Dark Matter**.
-- **Dark Energy**: (Coming Soon) Use Dark Matter to power advanced **Dark Energy Generators**.
-- **Fluid Pipes**: Transport fluids like Dark Matter between machines.
+### Dark Matter & Dark Energy
+1.  **Rift Refiner**: Insert **Rift Crystals** to turn them into liquid **Dark Matter** (156 mB per crystal, 10,000 mB internal tank).
+2.  **Fluid Pipes**: Carry Dark Matter from the Refiner to the generator (or place the generator directly against the Refiner).
+3.  **Dark Energy Generator**: Burns **250 mB of Dark Matter per unit of Dark Energy**.
+4.  **Dark Energy Conduits**: Link the generator to a portal (core or frame) or to other dark-energy machines.
+
+### The Dark Dimension
+Once a Portal Core has stored **4000 units of Dark Energy** and stays linked to a running Dark Energy Generator, the **Dark Dimension** entry unlocks in its Portal Controller. It opens a link to the Rift without waiting for a lightning strike. Until then, it shows as `???` and cannot be dialed.
+
+### ZPC (Zero Point Cell)
+A **ZPC** stores up to **40,000,000,000 EU**.
+- **Where to find one**:
+    *   Each **Ancient City** holds one guaranteed ZPC, placed in the first loot chest you open there.
+    *   Any vanilla loot chest has a very small chance (0.35%) to contain one.
+    *   Found ZPCs are charged between 1% and 30%.
+    *   A ZPC can also be crafted, but it comes out **empty**.
+- **ZPC Interface Controller**: Holds up to **3 ZPCs** and feeds them into the energy network it is connected to.
+    *   Right-click with a ZPC to insert it.
+    *   Sneak + right-click to engage the inserted ZPCs (short insertion animation). Only engaged ZPCs supply energy.
+    *   Sneak + right-click again to eject a ZPC.
+    *   Right-click to open its interface (charge, output, network link).
+
+### DNA Extraction & Mob Cloning
+1.  **DNA Extractor**: Aim at a mob (up to 14 blocks away) and hold right-click for **20 seconds**.
+    *   Each extraction costs **640 Rift Crystals** (10 stacks) from your inventory.
+    *   The extraction is cancelled if the mob takes damage or leaves your sight.
+2.  **DNA Sample**: Stores the mob type (and its custom name). A sample has **100 uses**, plus **50 per level of Unbreaking** (apply it with an anvil, max Unbreaking III).
+3.  **Mob Cloner**: Place the **Mob Cloner** and a **Mob Cloner Controller** on the same energy network (Energy Conduits). The Cloner must also be linked to a running **Dark Energy Generator** with Dark Energy Conduits, and needs free space above it.
+4.  **Cloning**: Insert the DNA into the Controller and start the process. After an **8 second** charge, the clone appears on top of the Cloner.
+    *   *Cost: at least **1,000,000,000 EU** per clone, higher for monsters, high-health mobs and bosses (Wither, Ender Dragon, Warden, Elder Guardian). A ZPC is practically required.*
 
 ## Requirements
 
