@@ -35,13 +35,14 @@ import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.BiConsumer;
 import java.util.function.Consumer;
+import java.util.function.Supplier;
 
 public final class NeoForgePlatformHelper implements PlatformHelper {
 
     /** Network protocol version; bump when payloads change incompatibly. */
     private static final String NETWORK_VERSION = "1";
 
-    private static final Map<EntityType<? extends LivingEntity>, AttributeSupplier.Builder> ATTRIBUTES = new LinkedHashMap<>();
+    private static final Map<EntityType<? extends LivingEntity>, Supplier<AttributeSupplier.Builder>> ATTRIBUTES = new LinkedHashMap<>();
     private static final List<Consumer<RegisterSpawnPlacementsEvent>> SPAWN_PLACEMENTS = new ArrayList<>();
     private static final List<Consumer<PayloadRegistrar>> PAYLOADS = new ArrayList<>();
     static final Map<CustomPacketPayload.Type<?>, Consumer<?>> CLIENT_RECEIVERS = new ConcurrentHashMap<>();
@@ -74,7 +75,7 @@ public final class NeoForgePlatformHelper implements PlatformHelper {
     }
 
     @Override
-    public void registerEntityAttributes(EntityType<? extends LivingEntity> type, AttributeSupplier.Builder attributes) {
+    public void registerEntityAttributes(EntityType<? extends LivingEntity> type, Supplier<AttributeSupplier.Builder> attributes) {
         ATTRIBUTES.put(type, attributes);
     }
 
@@ -131,7 +132,7 @@ public final class NeoForgePlatformHelper implements PlatformHelper {
     }
 
     static void onEntityAttributeCreation(EntityAttributeCreationEvent event) {
-        ATTRIBUTES.forEach((type, builder) -> event.put(type, builder.build()));
+        ATTRIBUTES.forEach((type, attributes) -> event.put(type, attributes.get().build()));
     }
 
     static void onRegisterSpawnPlacements(RegisterSpawnPlacementsEvent event) {

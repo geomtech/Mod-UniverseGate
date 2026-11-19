@@ -5,6 +5,7 @@ import fr.geomtech.universegate.RiftDeathRecoveryHandler;
 import fr.geomtech.universegate.UniverseGate;
 import fr.geomtech.universegate.UpdateCheckManager;
 import fr.geomtech.universegate.ZpcStructureLoot;
+import net.minecraft.core.registries.Registries;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.level.storage.loot.LootPool;
@@ -32,10 +33,13 @@ public final class UniverseGateNeoForge {
 
     public UniverseGateNeoForge(IEventBus modBus) {
         // NeoForge unfreezes every registry while RegisterEvent is being fired, so the
-        // common (vanilla-style) registration code runs on the first RegisterEvent.
+        // common (vanilla-style) registration code runs once, on the BLOCK RegisterEvent:
+        // by then attributes, data components and NeoForge's own early entries are bound.
         modBus.addListener(EventPriority.HIGH, RegisterEvent.class, event -> {
-            NeoForgeFluids.register();
-            UniverseGate.registerContent();
+            if (event.getRegistryKey().equals(Registries.BLOCK)) {
+                NeoForgeFluids.register();
+                UniverseGate.registerContent();
+            }
         });
         modBus.addListener(EntityAttributeCreationEvent.class, NeoForgePlatformHelper::onEntityAttributeCreation);
         modBus.addListener(RegisterSpawnPlacementsEvent.class, NeoForgePlatformHelper::onRegisterSpawnPlacements);

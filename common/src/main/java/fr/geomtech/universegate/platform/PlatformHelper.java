@@ -19,6 +19,7 @@ import net.minecraft.world.level.levelgen.Heightmap;
 import net.minecraft.world.level.material.FlowingFluid;
 
 import java.util.function.BiConsumer;
+import java.util.function.Supplier;
 
 /**
  * Everything the common code needs from the mod loader (Fabric or NeoForge).
@@ -39,7 +40,8 @@ public interface PlatformHelper {
     /** Opens a menu created by {@link #createPosMenuType} and sends {@code pos} to the client. */
     void openPosMenu(ServerPlayer player, MenuProvider provider, BlockPos pos);
 
-    void registerEntityAttributes(EntityType<? extends LivingEntity> type, AttributeSupplier.Builder attributes);
+    /** The supplier is called lazily on NeoForge (attributes must not be built while registries are being filled). */
+    void registerEntityAttributes(EntityType<? extends LivingEntity> type, Supplier<AttributeSupplier.Builder> attributes);
 
     <T extends Mob> void registerSpawnPlacement(EntityType<T> type,
                                                 SpawnPlacementType placementType,

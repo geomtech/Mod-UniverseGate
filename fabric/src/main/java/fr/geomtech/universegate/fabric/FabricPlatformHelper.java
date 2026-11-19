@@ -33,6 +33,7 @@ import net.minecraft.world.level.levelgen.Heightmap;
 import net.minecraft.world.level.material.FlowingFluid;
 
 import java.util.function.BiConsumer;
+import java.util.function.Supplier;
 
 public final class FabricPlatformHelper implements PlatformHelper {
 
@@ -80,8 +81,8 @@ public final class FabricPlatformHelper implements PlatformHelper {
     }
 
     @Override
-    public void registerEntityAttributes(EntityType<? extends LivingEntity> type, AttributeSupplier.Builder attributes) {
-        FabricDefaultAttributeRegistry.register(type, attributes);
+    public void registerEntityAttributes(EntityType<? extends LivingEntity> type, Supplier<AttributeSupplier.Builder> attributes) {
+        FabricDefaultAttributeRegistry.register(type, attributes.get());
     }
 
     @Override

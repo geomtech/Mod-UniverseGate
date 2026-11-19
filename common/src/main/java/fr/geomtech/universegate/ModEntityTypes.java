@@ -42,8 +42,8 @@ public final class ModEntityTypes {
     }
 
     public static void register() {
-        Services.PLATFORM.registerEntityAttributes(RIFT_BEAST, RiftBeastEntity.createAttributes());
-        Services.PLATFORM.registerEntityAttributes(RIFT_SHADE, RiftShadeEntity.createAttributes());
+        Services.PLATFORM.registerEntityAttributes(RIFT_BEAST, RiftBeastEntity::createAttributes);
+        Services.PLATFORM.registerEntityAttributes(RIFT_SHADE, RiftShadeEntity::createAttributes);
         Services.PLATFORM.registerSpawnPlacement(
                 RIFT_BEAST,
                 SpawnPlacementTypes.ON_GROUND,
