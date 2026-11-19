@@ -8,8 +8,17 @@ on: [pull_request, push]
 
 jobs:
   build:
-    runs-on: ubuntu-24.04
+    # Self-hosted Windows runner on Alexy's PC (label "universegate").
+    # Pull requests from forks never run here: they would execute untrusted code on that PC.
+    if: github.event_name == 'push' || github.event.pull_request.head.repo.full_name == github.repository
+    runs-on: [self-hosted, universegate]
+    defaults:
+      run:
+        shell: bash
     steps:
+      - name: use git bash
+        shell: pwsh
+        run: Add-Content -Path $env:GITHUB_PATH -Value "C:\Program Files\Git\bin"
       - name: checkout repository
         uses: actions/checkout@v4
       - name: validate gradle wrapper
@@ -17,12 +26,12 @@ jobs:
       - name: setup jdk
         uses: actions/setup-java@v4
         with:
-          java-version: '25'
-          distribution: 'microsoft'
+          java-version: '21'
+          distribution: 'temurin'
       - name: make gradle wrapper executable
         run: chmod +x ./gradlew
       - name: build and test
-        run: ./gradlew build
+        run: ./gradlew build --no-daemon --console=plain
       - name: publish test report
         if: ${{ !cancelled() }}
         uses: actions/upload-artifact@v4

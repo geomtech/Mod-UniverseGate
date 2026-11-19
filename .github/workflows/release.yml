@@ -15,9 +15,17 @@ concurrency:
 
 jobs:
   release:
-    runs-on: ubuntu-24.04
+    # Self-hosted Windows runner on Alexy's PC (label "universegate").
+    runs-on: [self-hosted, universegate]
+    defaults:
+      run:
+        shell: bash
 
     steps:
+      - name: use git bash
+        shell: pwsh
+        run: Add-Content -Path $env:GITHUB_PATH -Value "C:\Program Files\Git\bin"
+
       - name: checkout repository
         uses: actions/checkout@v4
         with:
@@ -95,9 +103,8 @@ jobs:
         if: steps.manual_bump.outputs.skip != 'true'
         uses: actions/setup-java@v4
         with:
-          java-version: '25'
-          distribution: 'microsoft'
-          cache: gradle
+          java-version: '21'
+          distribution: 'temurin'
 
       - name: make gradle wrapper executable
         if: steps.manual_bump.outputs.skip != 'true'
@@ -105,7 +112,7 @@ jobs:
 
       - name: build
         if: steps.manual_bump.outputs.skip != 'true'
-        run: ./gradlew clean build -Pmod_version=${{ steps.version.outputs.version }}
+        run: ./gradlew clean build --no-daemon --console=plain -Pmod_version=${{ steps.version.outputs.version }}
 
       - name: create git tag
         if: steps.manual_bump.outputs.skip != 'true' && steps.version.outputs.new_tag == 'true'
