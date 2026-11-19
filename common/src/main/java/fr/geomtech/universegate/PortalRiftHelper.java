@@ -35,14 +35,27 @@ public final class PortalRiftHelper {
         if (level.getBlockEntity(fixed) instanceof ChargedLightningRodBlockEntity fixedRod && fixedRod.hasCharge()) {
             return Optional.of(fixedRod);
         }
+        // Walk the block entities of the already-loaded chunks in range instead of probing every
+        // position of the (2r+1)^3 cube: this runs every 10 ticks for every portal core.
         ChargedLightningRodBlockEntity best = null;
         double bestDist = Double.MAX_VALUE;
-        for (int dy = -radius; dy <= radius; dy++) {
-            for (int dx = -radius; dx <= radius; dx++) {
-                for (int dz = -radius; dz <= radius; dz++) {
-                    BlockPos p = portalPos.offset(dx, dy, dz);
-                    if (!(level.getBlockEntity(p) instanceof ChargedLightningRodBlockEntity be)) continue;
-                    if (!be.hasCharge()) continue;
+        int minChunkX = (portalPos.getX() - radius) >> 4;
+        int maxChunkX = (portalPos.getX() + radius) >> 4;
+        int minChunkZ = (portalPos.getZ() - radius) >> 4;
+        int maxChunkZ = (portalPos.getZ() + radius) >> 4;
+        for (int cx = minChunkX; cx <= maxChunkX; cx++) {
+            for (int cz = minChunkZ; cz <= maxChunkZ; cz++) {
+                var chunk = level.getChunkSource().getChunkNow(cx, cz);
+                if (chunk == null) continue;
+                for (var blockEntity : chunk.getBlockEntities().values()) {
+                    if (!(blockEntity instanceof ChargedLightningRodBlockEntity be)) continue;
+                    BlockPos p = be.getBlockPos();
+                    if (Math.abs(p.getX() - portalPos.getX()) > radius
+                            || Math.abs(p.getY() - portalPos.getY()) > radius
+                            || Math.abs(p.getZ() - portalPos.getZ()) > radius) {
+                        continue;
+                    }
+                    if (be.isRemoved() || !be.hasCharge()) continue;
                     double dist = p.distSqr(portalPos);
                     if (dist < bestDist) {
                         bestDist = dist;

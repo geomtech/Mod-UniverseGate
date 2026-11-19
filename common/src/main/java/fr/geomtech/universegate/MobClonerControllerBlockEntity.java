@@ -313,8 +313,7 @@ public class MobClonerControllerBlockEntity extends net.minecraft.world.level.bl
             cost = computeCloneCost(mobType, mobType.getCategory(), maxHealth);
 
             if (clonerPos != null) {
-                @Nullable Mob preview = createMobFromType(serverLevel, mobType);
-                if (preview != null && canSpawnOnTopOfCloner(serverLevel, clonerPos, preview)) {
+                if (hasSpawnSpaceOnTopOfCloner(serverLevel, clonerPos, mobType)) {
                     flags |= MobClonerControllerMenu.FLAG_SPAWN_SPACE;
                 }
             }
@@ -367,17 +366,37 @@ public class MobClonerControllerBlockEntity extends net.minecraft.world.level.bl
         @Nullable EntityType<?> entityType = DnaSampleItem.getEntityType(dnaStack).orElse(null);
         if (entityType == null) return null;
 
-        @Nullable Mob mob = createMobFromType(level, entityType);
-        if (mob == null) return null;
-        return entityType;
+        return getMobInfo(level, entityType).isMob() ? entityType : null;
     }
 
     private static float estimateMobMaxHealth(ServerLevel level, EntityType<?> entityType) {
+        MobInfo info = getMobInfo(level, entityType);
+        return info.isMob() ? info.maxHealth() : 20.0F;
+    }
+
+    private record MobInfo(boolean isMob, float maxHealth) {}
+
+    /**
+     * The status refresh runs every 10 ticks and used to construct up to three throwaway mobs each
+     * time (with their AI goals and attributes). Whether a type is a mob and its base max health
+     * never change, so compute them once per type.
+     */
+    private static final java.util.Map<EntityType<?>, MobInfo> MOB_INFO_CACHE = new java.util.HashMap<>();
+
+    private static MobInfo getMobInfo(ServerLevel level, EntityType<?> entityType) {
+        MobInfo cached = MOB_INFO_CACHE.get(entityType);
+        if (cached != null) return cached;
+
         @Nullable Mob mob = createMobFromType(level, entityType);
-        if (mob == null) {
-            return 20.0F;
-        }
-        return mob.getMaxHealth();
+        MobInfo info = mob == null ? new MobInfo(false, 20.0F) : new MobInfo(true, mob.getMaxHealth());
+        if (mob != null) mob.discard();
+        MOB_INFO_CACHE.put(entityType, info);
+        return info;
+    }
+
+    private static boolean hasSpawnSpaceOnTopOfCloner(ServerLevel level, BlockPos clonerPos, EntityType<?> entityType) {
+        BlockPos spawnPos = clonerPos.above();
+        return level.noCollision(entityType.getSpawnAABB(spawnPos.getX() + 0.5D, spawnPos.getY(), spawnPos.getZ() + 0.5D));
     }
 
     private void completePendingClone(ServerLevel serverLevel) {

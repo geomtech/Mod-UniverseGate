@@ -76,6 +76,7 @@ public final class DarkEnergyNetworkHelper {
     }
 
     private static boolean isGeneratorOnline(ServerLevel level, BlockPos pos) {
+        if (!level.isLoaded(pos)) return false;
         BlockState state = level.getBlockState(pos);
         if (!state.is(ModBlocks.DARK_ENERGY_GENERATOR)) {
             return false;
@@ -86,6 +87,6 @@ public final class DarkEnergyNetworkHelper {
     }
 
     private static boolean isValidConduit(ServerLevel level, BlockPos pos) {
-        return level.getBlockState(pos).is(ModBlocks.DARK_ENERGY_CONDUIT);
+        return level.isLoaded(pos) && level.getBlockState(pos).is(ModBlocks.DARK_ENERGY_CONDUIT);
     }
 }

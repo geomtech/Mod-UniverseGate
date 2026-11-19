@@ -25,8 +25,18 @@ public class FluidPipeBlockEntity extends BlockEntity {
         super(ModBlockEntities.FLUID_PIPE, pos, state);
     }
 
+    // Client visuals only need the fill level a few times per second; sending a block entity
+    // packet for every pipe on every tick while fluid flows floods the network.
+    private static final long SYNC_INTERVAL_TICKS = 10L;
+    private boolean syncPending = false;
+    private long lastSyncGameTime = Long.MIN_VALUE;
+
     public static void tick(Level level, BlockPos pos, BlockState state, FluidPipeBlockEntity entity) {
         if (level.isClientSide) return;
+
+        if (entity.syncPending) {
+            entity.flushSync();
+        }
 
         if (entity.fluidAmount > 0) {
             entity.tryDistributeFluid(level, pos);
@@ -124,8 +134,18 @@ public class FluidPipeBlockEntity extends BlockEntity {
     // Syncing
     public void sync() {
         if (level != null && !level.isClientSide) {
-            level.sendBlockUpdated(worldPosition, getBlockState(), getBlockState(), 3);
+            syncPending = true;
+            flushSync();
         }
+    }
+
+    private void flushSync() {
+        if (level == null || level.isClientSide) return;
+        long now = level.getGameTime();
+        if (lastSyncGameTime != Long.MIN_VALUE && now - lastSyncGameTime < SYNC_INTERVAL_TICKS) return;
+        lastSyncGameTime = now;
+        syncPending = false;
+        level.sendBlockUpdated(worldPosition, getBlockState(), getBlockState(), 3);
     }
 
     @Override

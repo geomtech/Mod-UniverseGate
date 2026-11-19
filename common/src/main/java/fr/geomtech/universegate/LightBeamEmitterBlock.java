@@ -36,9 +36,10 @@ public class LightBeamEmitterBlock extends BaseEntityBlock {
 
     @Override
     public @Nullable <T extends BlockEntity> BlockEntityTicker<T> getTicker(Level level, BlockState state, BlockEntityType<T> type) {
-        if (level.isClientSide) return null;
+        // The beam is cosmetic only: tick it on the client, nothing to do on the server.
+        if (!level.isClientSide) return null;
         return (lvl, p, st, be) -> {
-            if (be instanceof LightBeamEmitterBlockEntity emitter) emitter.serverTick();
+            if (be instanceof LightBeamEmitterBlockEntity emitter) emitter.clientTick();
         };
     }
 }
