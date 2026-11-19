@@ -1,13 +1,11 @@
 package fr.geomtech.universegate;
 
-import net.fabricmc.fabric.api.object.builder.v1.entity.FabricDefaultAttributeRegistry;
-import net.fabricmc.fabric.api.object.builder.v1.entity.FabricEntityType;
+import fr.geomtech.universegate.platform.Services;
 import net.minecraft.core.Registry;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.MobCategory;
-import net.minecraft.world.entity.SpawnPlacements;
 import net.minecraft.world.entity.SpawnPlacementTypes;
 import net.minecraft.world.level.levelgen.Heightmap;
 
@@ -31,7 +29,7 @@ public final class ModEntityTypes {
                 .eyeHeight(3.45F)
                 .clientTrackingRange(10);
 
-        return ((FabricEntityType.Builder<RiftBeastEntity>) builder).build();
+        return builder.build(UniverseGate.MOD_ID + ":rift_beast");
     }
 
     private static EntityType<RiftShadeEntity> createRiftShadeType() {
@@ -40,19 +38,19 @@ public final class ModEntityTypes {
                 .eyeHeight(1.95F)
                 .clientTrackingRange(8);
 
-        return ((FabricEntityType.Builder<RiftShadeEntity>) builder).build();
+        return builder.build(UniverseGate.MOD_ID + ":rift_shade");
     }
 
     public static void register() {
-        FabricDefaultAttributeRegistry.register(RIFT_BEAST, RiftBeastEntity.createAttributes());
-        FabricDefaultAttributeRegistry.register(RIFT_SHADE, RiftShadeEntity.createAttributes());
-        SpawnPlacements.register(
+        Services.PLATFORM.registerEntityAttributes(RIFT_BEAST, RiftBeastEntity.createAttributes());
+        Services.PLATFORM.registerEntityAttributes(RIFT_SHADE, RiftShadeEntity.createAttributes());
+        Services.PLATFORM.registerSpawnPlacement(
                 RIFT_BEAST,
                 SpawnPlacementTypes.ON_GROUND,
                 Heightmap.Types.MOTION_BLOCKING_NO_LEAVES,
                 RiftBeastEntity::canSpawn
         );
-        SpawnPlacements.register(
+        Services.PLATFORM.registerSpawnPlacement(
                 RIFT_SHADE,
                 SpawnPlacementTypes.ON_GROUND,
                 Heightmap.Types.MOTION_BLOCKING_NO_LEAVES,

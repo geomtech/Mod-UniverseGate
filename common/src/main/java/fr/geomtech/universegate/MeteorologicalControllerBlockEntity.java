@@ -1,6 +1,6 @@
 package fr.geomtech.universegate;
 
-import net.fabricmc.fabric.api.screenhandler.v1.ExtendedScreenHandlerFactory;
+import fr.geomtech.universegate.platform.PosMenuProvider;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.HolderLookup;
 import net.minecraft.core.particles.ParticleTypes;
@@ -21,7 +21,7 @@ import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.block.state.BlockState;
 import org.jetbrains.annotations.Nullable;
 
-public class MeteorologicalControllerBlockEntity extends BlockEntity implements ExtendedScreenHandlerFactory<BlockPos> {
+public class MeteorologicalControllerBlockEntity extends BlockEntity implements PosMenuProvider {
 
     public enum ForceChargeResult {
         CHARGED,

@@ -1,0 +1,34 @@
+plugins {
+	id 'net.fabricmc.fabric-loom-remap'
+}
+
+dependencies {
+	// To change the versions see the gradle.properties file
+	minecraft "com.mojang:minecraft:${rootProject.minecraft_version}"
+	mappings loom.officialMojangMappings()
+	modImplementation "net.fabricmc:fabric-loader:${rootProject.loader_version}"
+	modImplementation "net.fabricmc.fabric-api:fabric-api:${rootProject.fabric_api_version}"
+}
+
+loom {
+	runs {
+		client {
+			client()
+			ideConfigGenerated(true)
+			runDir('runs/client')
+		}
+		server {
+			server()
+			ideConfigGenerated(true)
+			runDir('runs/server')
+		}
+	}
+}
+
+processResources {
+	inputs.property 'version', project.version
+
+	filesMatching('fabric.mod.json') {
+		expand 'version': project.version
+	}
+}

@@ -1,6 +1,6 @@
 package fr.geomtech.universegate;
 
-import net.fabricmc.fabric.api.screenhandler.v1.ExtendedScreenHandlerFactory;
+import fr.geomtech.universegate.platform.PosMenuProvider;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.core.HolderLookup;
@@ -17,7 +17,7 @@ import net.minecraft.world.level.block.state.BlockState;
 
 import java.util.Objects;
 
-public class PortalKeyboardBlockEntity extends BlockEntity implements WorldlyContainer, ExtendedScreenHandlerFactory<BlockPos> {
+public class PortalKeyboardBlockEntity extends BlockEntity implements WorldlyContainer, PosMenuProvider {
 
     private static final int SLOT_FUEL = 0;
     private static final int SIZE = 1;

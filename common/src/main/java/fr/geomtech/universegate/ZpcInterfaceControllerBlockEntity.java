@@ -1,6 +1,6 @@
 package fr.geomtech.universegate;
 
-import net.fabricmc.fabric.api.screenhandler.v1.ExtendedScreenHandlerFactory;
+import fr.geomtech.universegate.platform.PosMenuProvider;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.core.HolderLookup;
@@ -23,7 +23,7 @@ import net.minecraft.world.level.block.state.BlockState;
 import org.jetbrains.annotations.Nullable;
 
 public class ZpcInterfaceControllerBlockEntity extends net.minecraft.world.level.block.entity.BlockEntity
-        implements ExtendedScreenHandlerFactory<BlockPos> {
+        implements PosMenuProvider {
 
     private static final int INSERTION_TICKS = 40;
     private static final int NETWORK_SCAN_INTERVAL = 20;

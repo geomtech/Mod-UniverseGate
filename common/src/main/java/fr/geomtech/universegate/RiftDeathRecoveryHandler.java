@@ -1,6 +1,5 @@
 package fr.geomtech.universegate;
 
-import net.fabricmc.fabric.api.entity.event.v1.ServerPlayerEvents;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.component.DataComponents;
 import net.minecraft.server.level.ServerLevel;
@@ -19,57 +18,56 @@ public final class RiftDeathRecoveryHandler {
 
     private RiftDeathRecoveryHandler() {}
 
-    public static void register() {
-        ServerPlayerEvents.ALLOW_DEATH.register((player, source, amount) -> {
-            if (!player.serverLevel().dimension().equals(UniverseGateDimensions.RIFT)) return true;
+    /** Called when a server player is about to die. */
+    public static void onPlayerDeath(ServerPlayer player) {
+        if (!player.serverLevel().dimension().equals(UniverseGateDimensions.RIFT)) return;
 
-            ItemStack compass = getRiftCompassFromInventory(player);
-            if (compass.isEmpty()) return true;
+        ItemStack compass = getRiftCompassFromInventory(player);
+        if (compass.isEmpty()) return;
 
-            PENDING_COMPASS_RESTORE.put(player.getUUID(), compass.copy());
-            UniverseGate.LOGGER.info("Queued Rift respawn recovery for {} (compass in inventory)", player.getGameProfile().getName());
-            return true;
-        });
+        PENDING_COMPASS_RESTORE.put(player.getUUID(), compass.copy());
+        UniverseGate.LOGGER.info("Queued Rift respawn recovery for {} (compass in inventory)", player.getGameProfile().getName());
+    }
 
-        ServerPlayerEvents.AFTER_RESPAWN.register((oldPlayer, newPlayer, alive) -> {
-            ItemStack restore = PENDING_COMPASS_RESTORE.remove(newPlayer.getUUID());
-            if (restore == null || restore.isEmpty()) {
-                return;
+    /** Called after a server player has respawned ({@code newPlayer} is the new player entity). */
+    public static void onPlayerRespawn(ServerPlayer newPlayer) {
+        ItemStack restore = PENDING_COMPASS_RESTORE.remove(newPlayer.getUUID());
+        if (restore == null || restore.isEmpty()) {
+            return;
+        }
+
+        var server = newPlayer.server;
+        if (server == null) return;
+
+        ServerLevel rift = UniverseGateDimensions.getRiftLevel(server);
+        if (rift == null) return;
+
+        RiftScenarioSavedData data = RiftScenarioSavedData.get(server);
+        BlockPos bedPos = data.getOutpostBedPos();
+        if (bedPos.equals(BlockPos.ZERO)) {
+            bedPos = data.getOutpostPos();
+        }
+        if (bedPos.equals(BlockPos.ZERO)) {
+            UniverseGate.LOGGER.warn("No outpost position stored for Rift death recovery.");
+            return;
+        }
+
+        BlockPos spawnPos = findSafeSpawnNearBed(rift, bedPos);
+        newPlayer.teleportTo(rift,
+                spawnPos.getX() + 0.5,
+                spawnPos.getY() + 0.1,
+                spawnPos.getZ() + 0.5,
+                newPlayer.getYRot(),
+                newPlayer.getXRot());
+
+        newPlayer.setRespawnPosition(UniverseGateDimensions.RIFT, bedPos, 0.0F, true, false);
+
+        if (!hasRiftCompassInInventory(newPlayer)) {
+            if (!newPlayer.getInventory().add(restore.copy())) {
+                newPlayer.drop(restore.copy(), false);
             }
-
-            var server = newPlayer.server;
-            if (server == null) return;
-
-            ServerLevel rift = UniverseGateDimensions.getRiftLevel(server);
-            if (rift == null) return;
-
-            RiftScenarioSavedData data = RiftScenarioSavedData.get(server);
-            BlockPos bedPos = data.getOutpostBedPos();
-            if (bedPos.equals(BlockPos.ZERO)) {
-                bedPos = data.getOutpostPos();
-            }
-            if (bedPos.equals(BlockPos.ZERO)) {
-                UniverseGate.LOGGER.warn("No outpost position stored for Rift death recovery.");
-                return;
-            }
-
-            BlockPos spawnPos = findSafeSpawnNearBed(rift, bedPos);
-            newPlayer.teleportTo(rift,
-                    spawnPos.getX() + 0.5,
-                    spawnPos.getY() + 0.1,
-                    spawnPos.getZ() + 0.5,
-                    newPlayer.getYRot(),
-                    newPlayer.getXRot());
-
-            newPlayer.setRespawnPosition(UniverseGateDimensions.RIFT, bedPos, 0.0F, true, false);
-
-            if (!hasRiftCompassInInventory(newPlayer)) {
-                if (!newPlayer.getInventory().add(restore.copy())) {
-                    newPlayer.drop(restore.copy(), false);
-                }
-                UniverseGate.LOGGER.info("Restored Rift Compass for {} after Rift death", newPlayer.getGameProfile().getName());
-            }
-        });
+            UniverseGate.LOGGER.info("Restored Rift Compass for {} after Rift death", newPlayer.getGameProfile().getName());
+        }
     }
 
     private static ItemStack getRiftCompassFromInventory(ServerPlayer player) {

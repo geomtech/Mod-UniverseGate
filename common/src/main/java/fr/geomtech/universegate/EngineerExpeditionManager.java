@@ -1,8 +1,7 @@
 package fr.geomtech.universegate;
 
+import com.mojang.brigadier.CommandDispatcher;
 import com.mojang.brigadier.context.CommandContext;
-import net.fabricmc.fabric.api.command.v2.CommandRegistrationCallback;
-import net.fabricmc.fabric.api.event.lifecycle.v1.ServerTickEvents;
 import net.minecraft.commands.CommandSourceStack;
 import net.minecraft.commands.Commands;
 import net.minecraft.core.BlockPos;
@@ -53,10 +52,8 @@ public final class EngineerExpeditionManager {
 
     private EngineerExpeditionManager() {}
 
-    public static void register() {
-        ServerTickEvents.END_SERVER_TICK.register(EngineerExpeditionManager::tickServer);
-
-        CommandRegistrationCallback.EVENT.register((dispatcher, registryAccess, environment) -> dispatcher.register(
+    public static void registerCommands(CommandDispatcher<CommandSourceStack> dispatcher) {
+        dispatcher.register(
                 Commands.literal("universegate")
                         .requires(source -> source.getEntity() instanceof ServerPlayer && source.hasPermission(2))
                         .then(Commands.literal("engineer_event")
@@ -64,10 +61,10 @@ public final class EngineerExpeditionManager {
                                 .then(Commands.literal("status").executes(EngineerExpeditionManager::statusCommand))
                                 .then(Commands.literal("cancel").executes(EngineerExpeditionManager::cancelCommand))
                         )
-        ));
+        );
     }
 
-    private static void tickServer(MinecraftServer server) {
+    public static void tickServer(MinecraftServer server) {
         ServerLevel overworld = server.overworld();
         long now = overworld.getGameTime();
         EngineerExpeditionSavedData data = EngineerExpeditionSavedData.get(server);

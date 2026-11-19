@@ -1,6 +1,6 @@
 package fr.geomtech.universegate;
 
-import net.fabricmc.fabric.api.screenhandler.v1.ExtendedScreenHandlerFactory;
+import fr.geomtech.universegate.platform.PosMenuProvider;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.HolderLookup;
 import net.minecraft.nbt.CompoundTag;
@@ -17,7 +17,7 @@ import net.minecraft.world.level.block.state.BlockState;
 
 import java.util.UUID;
 
-public class PortalCoreBlockEntity extends BlockEntity implements ExtendedScreenHandlerFactory<BlockPos> {
+public class PortalCoreBlockEntity extends BlockEntity implements PosMenuProvider {
 
     private static final long PER_ENTITY_EXTENSION_TICKS = 20L * 10L;
     private static final long UNSTABLE_THRESHOLD_TICKS = 20L * 60L;

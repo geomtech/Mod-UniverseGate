@@ -1,5 +1,7 @@
 package fr.geomtech.universegate;
 
+import fr.geomtech.universegate.platform.MenuHelper;
+
 import net.minecraft.core.BlockPos;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.InteractionHand;
@@ -42,7 +44,7 @@ public class RiftRefinerBlock extends BaseEntityBlock {
         if (!level.isClientSide) {
             BlockEntity be = level.getBlockEntity(pos);
             if (be instanceof RiftRefinerBlockEntity refiner) {
-                player.openMenu(refiner);
+                MenuHelper.open(player, refiner);
             }
         }
         return InteractionResult.SUCCESS;

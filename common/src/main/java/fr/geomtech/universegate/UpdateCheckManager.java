@@ -1,11 +1,8 @@
 package fr.geomtech.universegate;
 
+import fr.geomtech.universegate.platform.Services;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
-import net.fabricmc.fabric.api.event.lifecycle.v1.ServerLifecycleEvents;
-import net.fabricmc.fabric.api.event.lifecycle.v1.ServerTickEvents;
-import net.fabricmc.fabric.api.networking.v1.ServerPlayConnectionEvents;
-import net.fabricmc.loader.api.FabricLoader;
 import net.minecraft.ChatFormatting;
 import net.minecraft.network.chat.ClickEvent;
 import net.minecraft.network.chat.Component;
@@ -47,28 +44,28 @@ public final class UpdateCheckManager {
     private UpdateCheckManager() {
     }
 
-    public static void register() {
-        ServerLifecycleEvents.SERVER_STARTING.register(server -> {
-            updateAvailable = false;
-            latestVersion = "";
-            currentVersion = resolveCurrentVersion();
-            nextCheckAtMs = Long.MAX_VALUE;
-            NOTIFIED_PLAYERS.clear();
-        });
-
-        ServerLifecycleEvents.SERVER_STARTED.register(server -> {
-            nextCheckAtMs = System.currentTimeMillis() + UPDATE_CHECK_INTERVAL_MS;
-            checkForUpdatesAsync(server);
-        });
-
-        ServerTickEvents.END_SERVER_TICK.register(UpdateCheckManager::runPeriodicCheck);
-
-        ServerLifecycleEvents.SERVER_STOPPED.register(server -> nextCheckAtMs = Long.MAX_VALUE);
-
-        ServerPlayConnectionEvents.JOIN.register((handler, sender, server) -> notifyPlayerIfNeeded(handler.player));
+    public static void onServerStarting(MinecraftServer server) {
+        updateAvailable = false;
+        latestVersion = "";
+        currentVersion = resolveCurrentVersion();
+        nextCheckAtMs = Long.MAX_VALUE;
+        NOTIFIED_PLAYERS.clear();
     }
 
-    private static void runPeriodicCheck(MinecraftServer server) {
+    public static void onServerStarted(MinecraftServer server) {
+        nextCheckAtMs = System.currentTimeMillis() + UPDATE_CHECK_INTERVAL_MS;
+        checkForUpdatesAsync(server);
+    }
+
+    public static void onServerStopped(MinecraftServer server) {
+        nextCheckAtMs = Long.MAX_VALUE;
+    }
+
+    public static void onPlayerJoin(ServerPlayer player) {
+        notifyPlayerIfNeeded(player);
+    }
+
+    public static void runPeriodicCheck(MinecraftServer server) {
         long now = System.currentTimeMillis();
         if (now < nextCheckAtMs) {
             return;
@@ -145,10 +142,10 @@ public final class UpdateCheckManager {
     }
 
     private static String resolveCurrentVersion() {
-        String version = FabricLoader.getInstance()
-                .getModContainer(UniverseGate.MOD_ID)
-                .map(modContainer -> modContainer.getMetadata().getVersion().getFriendlyString())
-                .orElse("0.0.0");
+        String version = Services.PLATFORM.getModVersion();
+        if (version == null || version.isBlank()) {
+            version = "0.0.0";
+        }
         return normalizeVersion(version);
     }
 

@@ -1,0 +1,36 @@
+plugins {
+	id 'net.neoforged.moddev'
+}
+
+neoForge {
+	version = rootProject.neoforge_version
+
+	runs {
+		client {
+			client()
+			gameDirectory = project.file('runs/client')
+		}
+		server {
+			server()
+			gameDirectory = project.file('runs/server')
+		}
+	}
+
+	mods {
+		"${rootProject.archives_base_name}" {
+			sourceSet sourceSets.main
+		}
+	}
+}
+
+processResources {
+	def props = [
+			'version'         : project.version,
+			'neoforge_version': rootProject.neoforge_version
+	]
+	inputs.properties props
+
+	filesMatching('META-INF/neoforge.mods.toml') {
+		expand props
+	}
+}

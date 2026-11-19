@@ -1,6 +1,6 @@
 package fr.geomtech.universegate;
 
-import net.fabricmc.fabric.api.command.v2.CommandRegistrationCallback;
+import com.mojang.brigadier.CommandDispatcher;
 import net.minecraft.commands.CommandSourceStack;
 import net.minecraft.commands.Commands;
 import net.minecraft.commands.arguments.coordinates.BlockPosArgument;
@@ -17,8 +17,8 @@ public final class WeatherMachineCommand {
 
     private WeatherMachineCommand() {}
 
-    public static void register() {
-        CommandRegistrationCallback.EVENT.register((dispatcher, registryAccess, environment) -> dispatcher.register(
+    public static void registerCommands(CommandDispatcher<CommandSourceStack> dispatcher) {
+        dispatcher.register(
                 Commands.literal("universegate")
                         .requires(source -> source.hasPermission(2))
                         .then(Commands.literal("weather_machine")
@@ -32,7 +32,7 @@ public final class WeatherMachineCommand {
                                         )
                                 )
                         )
-        ));
+        );
     }
 
     private static int chargeNearest(CommandSourceStack source) {

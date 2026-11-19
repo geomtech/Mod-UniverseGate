@@ -14,8 +14,7 @@ import fr.geomtech.universegate.PortalNaturalKeyboardBlockEntity;
 import fr.geomtech.universegate.PortalNaturalKeyboardMenu;
 import fr.geomtech.universegate.PortalRiftHelper;
 import fr.geomtech.universegate.PortalRegistrySavedData;
-import net.fabricmc.fabric.api.networking.v1.PayloadTypeRegistry;
-import net.fabricmc.fabric.api.networking.v1.ServerPlayNetworking;
+import fr.geomtech.universegate.platform.Services;
 import net.minecraft.core.BlockPos;
 import net.minecraft.server.level.ServerLevel;
 
@@ -33,18 +32,14 @@ public final class UniverseGateNetwork {
 
     public static void registerCommon() {
         // types
-        PayloadTypeRegistry.playS2C().register(PortalListPayload.TYPE, PortalListPayload.STREAM_CODEC);
-        PayloadTypeRegistry.playS2C().register(PortalCoreNamePayload.TYPE, PortalCoreNamePayload.STREAM_CODEC);
-        PayloadTypeRegistry.playS2C().register(PortalKeyboardStatusPayload.TYPE, PortalKeyboardStatusPayload.STREAM_CODEC);
-        PayloadTypeRegistry.playS2C().register(PortalConnectionErrorPayload.TYPE, PortalConnectionErrorPayload.STREAM_CODEC);
-        PayloadTypeRegistry.playC2S().register(ConnectPortalPayload.TYPE, ConnectPortalPayload.STREAM_CODEC);
-        PayloadTypeRegistry.playC2S().register(RenamePortalPayload.TYPE, RenamePortalPayload.STREAM_CODEC);
-        PayloadTypeRegistry.playC2S().register(DisconnectPortalPayload.TYPE, DisconnectPortalPayload.STREAM_CODEC);
-
+        Services.PLATFORM.registerClientboundPayload(PortalListPayload.TYPE, PortalListPayload.STREAM_CODEC);
+        Services.PLATFORM.registerClientboundPayload(PortalCoreNamePayload.TYPE, PortalCoreNamePayload.STREAM_CODEC);
+        Services.PLATFORM.registerClientboundPayload(PortalKeyboardStatusPayload.TYPE, PortalKeyboardStatusPayload.STREAM_CODEC);
+        Services.PLATFORM.registerClientboundPayload(PortalConnectionErrorPayload.TYPE, PortalConnectionErrorPayload.STREAM_CODEC);
+                        
         // handler C2S (connect)
-        ServerPlayNetworking.registerGlobalReceiver(ConnectPortalPayload.TYPE, (payload, context) -> {
-            context.server().execute(() -> {
-                var player = context.player();
+        Services.PLATFORM.registerServerboundPayload(ConnectPortalPayload.TYPE, ConnectPortalPayload.STREAM_CODEC, (payload, player) -> {
+            player.server.execute(() -> {
                 ServerLevel level = player.serverLevel();
 
                 PortalControllerAccess access = resolveControllerAccess(player, payload.keyboardPos());
@@ -116,9 +111,8 @@ public final class UniverseGateNetwork {
             });
         });
 
-        ServerPlayNetworking.registerGlobalReceiver(RenamePortalPayload.TYPE, (payload, context) -> {
-            context.server().execute(() -> {
-                var player = context.player();
+        Services.PLATFORM.registerServerboundPayload(RenamePortalPayload.TYPE, RenamePortalPayload.STREAM_CODEC, (payload, player) -> {
+            player.server.execute(() -> {
                 ServerLevel level = player.serverLevel();
 
                 if (!(level.getBlockEntity(payload.corePos()) instanceof PortalCoreBlockEntity core)) return;
@@ -127,9 +121,8 @@ public final class UniverseGateNetwork {
             });
         });
 
-        ServerPlayNetworking.registerGlobalReceiver(DisconnectPortalPayload.TYPE, (payload, context) -> {
-            context.server().execute(() -> {
-                var player = context.player();
+        Services.PLATFORM.registerServerboundPayload(DisconnectPortalPayload.TYPE, DisconnectPortalPayload.STREAM_CODEC, (payload, player) -> {
+            player.server.execute(() -> {
                 ServerLevel level = player.serverLevel();
 
                 PortalControllerAccess access = resolveControllerAccess(player, payload.keyboardPos());
@@ -185,7 +178,7 @@ public final class UniverseGateNetwork {
                 darkOpenCost
         ));
 
-        ServerPlayNetworking.send(player, new PortalListPayload(access.controllerPos(), list));
+        Services.PLATFORM.sendToPlayer(player, new PortalListPayload(access.controllerPos(), list));
     }
 
     private static int computePortalOpenCostForUi(ServerLevel sourceLevel,
@@ -209,7 +202,7 @@ public final class UniverseGateNetwork {
             active = core.isActiveOrOpening();
             disconnectAllowed = canDisconnectFromKeyboard(core);
         }
-        ServerPlayNetworking.send(player, new PortalKeyboardStatusPayload(keyboardPos, active, disconnectAllowed));
+        Services.PLATFORM.sendToPlayer(player, new PortalKeyboardStatusPayload(keyboardPos, active, disconnectAllowed));
     }
 
     private static boolean canDisconnectFromKeyboard(PortalCoreBlockEntity core) {
@@ -220,11 +213,11 @@ public final class UniverseGateNetwork {
 
     public static void sendPortalCoreNameToPlayer(net.minecraft.server.level.ServerPlayer player, BlockPos corePos) {
         if (!(player.serverLevel().getBlockEntity(corePos) instanceof PortalCoreBlockEntity core)) return;
-        ServerPlayNetworking.send(player, new PortalCoreNamePayload(corePos, core.getPortalName()));
+        Services.PLATFORM.sendToPlayer(player, new PortalCoreNamePayload(corePos, core.getPortalName()));
     }
 
     public static void sendPortalConnectionError(net.minecraft.server.level.ServerPlayer player, String errorMessage) {
-        ServerPlayNetworking.send(player, new PortalConnectionErrorPayload(errorMessage));
+        Services.PLATFORM.sendToPlayer(player, new PortalConnectionErrorPayload(errorMessage));
     }
 
     private record PortalControllerAccess(BlockPos controllerPos, BlockPos corePos, boolean naturalKeyboard) { }

@@ -1,7 +1,8 @@
 package fr.geomtech.universegate;
 
 import fr.geomtech.universegate.net.UniverseGateNetwork;
-import net.fabricmc.fabric.api.screenhandler.v1.ExtendedScreenHandlerFactory;
+import fr.geomtech.universegate.platform.MenuHelper;
+import fr.geomtech.universegate.platform.PosMenuProvider;
 import net.minecraft.core.BlockPos;
 import net.minecraft.network.chat.Component;
 import net.minecraft.server.level.ServerPlayer;
@@ -41,7 +42,7 @@ public class PortalMobileKeyboardItem extends Item {
             return InteractionResultHolder.fail(stack);
         }
 
-        serverPlayer.openMenu(new ExtendedScreenHandlerFactory<BlockPos>() {
+        MenuHelper.open(serverPlayer, new PosMenuProvider() {
             @Override
             public BlockPos getScreenOpeningData(ServerPlayer player) {
                 return openingPos;

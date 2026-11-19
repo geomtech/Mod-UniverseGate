@@ -5,7 +5,7 @@ import fr.geomtech.universegate.PortalKeyboardMenu;
 import fr.geomtech.universegate.net.ConnectPortalPayload;
 import fr.geomtech.universegate.net.DisconnectPortalPayload;
 import fr.geomtech.universegate.net.UniverseGateNetwork;
-import net.fabricmc.fabric.api.client.networking.v1.ClientPlayNetworking;
+import fr.geomtech.universegate.platform.ClientServices;
 import net.minecraft.ChatFormatting;
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.gui.components.Button;
@@ -192,7 +192,7 @@ public class PortalKeyboardScreen extends AbstractContainerScreen<AbstractContai
         this.addRenderableWidget(searchBox);
 
         disconnectButton = Button.builder(Component.translatable("gui.universegate.disconnect"), (btn) -> {
-                    ClientPlayNetworking.send(new DisconnectPortalPayload(this.getKeyboardPos()));
+                    ClientServices.CLIENT.sendToServer(new DisconnectPortalPayload(this.getKeyboardPos()));
                 })
                 .bounds(leftPos + imageWidth - 88, topPos + 10, 78, 16)
                 .build();
@@ -235,7 +235,7 @@ public class PortalKeyboardScreen extends AbstractContainerScreen<AbstractContai
         }
 
         activationRequested = true;
-        ClientPlayNetworking.send(new ConnectPortalPayload(this.getKeyboardPos(), row.portal().id()));
+        ClientServices.CLIENT.sendToServer(new ConnectPortalPayload(this.getKeyboardPos(), row.portal().id()));
     }
 
     private void rebuildPortalButtons() {

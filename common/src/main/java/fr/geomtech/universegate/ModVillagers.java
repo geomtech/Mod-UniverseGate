@@ -2,6 +2,7 @@ package fr.geomtech.universegate;
 
 import com.google.common.collect.ImmutableSet;
 import fr.geomtech.universegate.mixin.PoiTypesAccessor;
+import fr.geomtech.universegate.platform.Services;
 import net.minecraft.core.Holder;
 import net.minecraft.core.Registry;
 import net.minecraft.core.registries.BuiltInRegistries;
@@ -47,7 +48,9 @@ public final class ModVillagers {
         );
 
         Optional<Holder.Reference<PoiType>> poiHolder = BuiltInRegistries.POINT_OF_INTEREST_TYPE.getHolder(PORTAL_KEYBOARD_POI_KEY);
-        if (poiHolder.isPresent()) {
+        if (Services.PLATFORM.autoRegistersPoiBlockStates()) {
+            // NeoForge maps the block states of newly registered POI types itself.
+        } else if (poiHolder.isPresent()) {
             PoiTypesAccessor.universegate$registerBlockStates(poiHolder.get(), keyboardStates);
         } else {
             UniverseGate.LOGGER.warn("Portal keyboard POI holder missing; engineer villagers may fail to acquire workstation.");

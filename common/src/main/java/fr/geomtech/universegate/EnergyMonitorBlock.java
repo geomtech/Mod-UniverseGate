@@ -1,5 +1,7 @@
 package fr.geomtech.universegate;
 
+import fr.geomtech.universegate.platform.MenuHelper;
+
 import com.mojang.serialization.MapCodec;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
@@ -143,7 +145,7 @@ public class EnergyMonitorBlock extends BaseEntityBlock {
 
         BlockEntity blockEntity = level.getBlockEntity(pos);
         if (blockEntity instanceof MenuProvider provider && player instanceof ServerPlayer sp) {
-            sp.openMenu(provider);
+            MenuHelper.open(sp, provider);
         }
         return InteractionResult.CONSUME;
     }

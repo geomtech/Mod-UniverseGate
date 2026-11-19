@@ -1,5 +1,7 @@
 package fr.geomtech.universegate;
 
+import fr.geomtech.universegate.platform.MenuHelper;
+
 import com.mojang.serialization.MapCodec;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
@@ -83,7 +85,7 @@ public class PortalCoreBlock extends BaseEntityBlock {
         if (!level.isClientSide) {
             BlockEntity be = level.getBlockEntity(pos);
             if (be instanceof MenuProvider provider && player instanceof ServerPlayer sp) {
-                sp.openMenu(provider);
+                MenuHelper.open(sp, provider);
                 fr.geomtech.universegate.net.UniverseGateNetwork.sendPortalCoreNameToPlayer(sp, pos);
             }
         }
@@ -96,7 +98,7 @@ public class PortalCoreBlock extends BaseEntityBlock {
 
         BlockEntity be = level.getBlockEntity(pos);
         if (be instanceof MenuProvider provider && player instanceof ServerPlayer sp) {
-            sp.openMenu(provider);
+            MenuHelper.open(sp, provider);
             fr.geomtech.universegate.net.UniverseGateNetwork.sendPortalCoreNameToPlayer(sp, pos);
         }
         return InteractionResult.CONSUME;

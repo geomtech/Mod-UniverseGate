@@ -1,18 +1,46 @@
-package fr.geomtech.universegate;
+package fr.geomtech.universegate.fabric;
 
+import fr.geomtech.universegate.CombustionGeneratorScreen;
+import fr.geomtech.universegate.DarkEnergyGeneratorScreen;
+import fr.geomtech.universegate.DnaExtractionHudOverlay;
+import fr.geomtech.universegate.EnergyMonitorScreen;
+import fr.geomtech.universegate.FluidPipeBlockEntityRenderer;
+import fr.geomtech.universegate.MeteorologicalCatalystCrystalGlowRenderer;
+import fr.geomtech.universegate.MeteorologicalControllerBeamRenderer;
+import fr.geomtech.universegate.MeteorologicalControllerScreen;
+import fr.geomtech.universegate.MobClonerControllerScreen;
+import fr.geomtech.universegate.ModBlockEntities;
+import fr.geomtech.universegate.ModBlocks;
+import fr.geomtech.universegate.ModEntityTypes;
+import fr.geomtech.universegate.ModFluids;
+import fr.geomtech.universegate.ModMenuTypes;
+import fr.geomtech.universegate.ModTooltips;
+import fr.geomtech.universegate.ParabolaDishRenderer;
+import fr.geomtech.universegate.PortalCoreScreen;
+import fr.geomtech.universegate.PortalKeyboardScreen;
+import fr.geomtech.universegate.RiftBeastRenderer;
+import fr.geomtech.universegate.RiftRefinerScreen;
+import fr.geomtech.universegate.RiftShadeModel;
+import fr.geomtech.universegate.RiftShadeRenderer;
+import fr.geomtech.universegate.UniverseGate;
+import fr.geomtech.universegate.ZpcInterfaceControllerRenderer;
+import fr.geomtech.universegate.ZpcInterfaceControllerScreen;
+import fr.geomtech.universegate.net.UniverseGateClientNetwork;
 import net.fabricmc.api.ClientModInitializer;
 import net.fabricmc.fabric.api.blockrenderlayer.v1.BlockRenderLayerMap;
+import net.fabricmc.fabric.api.client.item.v1.ItemTooltipCallback;
 import net.fabricmc.fabric.api.client.render.fluid.v1.FluidRenderHandlerRegistry;
 import net.fabricmc.fabric.api.client.render.fluid.v1.SimpleFluidRenderHandler;
 import net.fabricmc.fabric.api.client.rendering.v1.EntityModelLayerRegistry;
 import net.fabricmc.fabric.api.client.rendering.v1.EntityRendererRegistry;
+import net.fabricmc.fabric.api.client.rendering.v1.HudRenderCallback;
+import net.minecraft.client.gui.screens.MenuScreens;
 import net.minecraft.client.renderer.RenderType;
 import net.minecraft.client.renderer.blockentity.BlockEntityRenderers;
-import net.minecraft.client.gui.screens.MenuScreens;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.inventory.AbstractContainerMenu;
 
-public class UniverseGateClient implements ClientModInitializer {
+public class UniverseGateFabricClient implements ClientModInitializer {
 	@Override
 	public void onInitializeClient() {
 		ResourceLocation darkMatterStill = ResourceLocation.fromNamespaceAndPath(UniverseGate.MOD_ID, "block/dark_matter_still");
@@ -45,8 +73,8 @@ public class UniverseGateClient implements ClientModInitializer {
 		BlockEntityRenderers.register(ModBlockEntities.ZPC_INTERFACE_CONTROLLER, ZpcInterfaceControllerRenderer::new);
 		BlockEntityRenderers.register(ModBlockEntities.FLUID_PIPE, FluidPipeBlockEntityRenderer::new);
 		BlockRenderLayerMap.INSTANCE.putBlock(ModBlocks.FLUID_PIPE, RenderType.translucent());
-		fr.geomtech.universegate.net.UniverseGateClientNetwork.registerClient();
-		ModTooltips.register();
-		DnaExtractionHudOverlay.register();
+		UniverseGateClientNetwork.registerClient();
+		ItemTooltipCallback.EVENT.register((stack, context, type, lines) -> ModTooltips.appendTooltip(stack, lines));
+		HudRenderCallback.EVENT.register((guiGraphics, deltaTracker) -> DnaExtractionHudOverlay.render(guiGraphics));
 	}
 }

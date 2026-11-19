@@ -1,6 +1,5 @@
 package fr.geomtech.universegate;
 
-import net.fabricmc.fabric.api.client.rendering.v1.HudRenderCallback;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.player.LocalPlayer;
@@ -16,11 +15,8 @@ public final class DnaExtractionHudOverlay {
     private DnaExtractionHudOverlay() {
     }
 
-    public static void register() {
-        HudRenderCallback.EVENT.register((guiGraphics, deltaTracker) -> render(guiGraphics));
-    }
-
-    private static void render(GuiGraphics guiGraphics) {
+    /** Draws the overlay; called by each loader's HUD render hook. */
+    public static void render(GuiGraphics guiGraphics) {
         Minecraft minecraft = Minecraft.getInstance();
         if (minecraft.options.hideGui) return;
 

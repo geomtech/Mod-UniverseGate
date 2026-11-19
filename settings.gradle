@@ -4,7 +4,20 @@ pluginManagement {
 			name = 'Fabric'
 			url = 'https://maven.fabricmc.net/'
 		}
+		maven {
+			name = 'NeoForged'
+			url = 'https://maven.neoforged.net/releases'
+		}
 		mavenCentral()
 		gradlePluginPortal()
 	}
 }
+
+rootProject.name = 'universegate'
+
+// common   : loader-independent code and resources (compiled against vanilla Minecraft)
+// fabric   : Fabric entrypoints + Fabric API glue  -> universegate-fabric-<version>.jar
+// neoforge : NeoForge entrypoints + NeoForge glue  -> universegate-neoforge-<version>.jar
+include('common')
+include('fabric')
+include('neoforge')

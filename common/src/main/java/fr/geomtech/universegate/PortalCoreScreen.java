@@ -1,7 +1,7 @@
 package fr.geomtech.universegate;
 
 import fr.geomtech.universegate.net.RenamePortalPayload;
-import net.fabricmc.fabric.api.client.networking.v1.ClientPlayNetworking;
+import fr.geomtech.universegate.platform.ClientServices;
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.gui.components.Button;
 import net.minecraft.client.gui.components.EditBox;
@@ -55,7 +55,7 @@ public class PortalCoreScreen extends AbstractContainerScreen<PortalCoreMenu> {
 
     private void submitRename() {
         if (this.minecraft == null || this.minecraft.player == null) return;
-        ClientPlayNetworking.send(new RenamePortalPayload(this.menu.getCorePos(), nameBox.getValue()));
+        ClientServices.CLIENT.sendToServer(new RenamePortalPayload(this.menu.getCorePos(), nameBox.getValue()));
         this.minecraft.player.closeContainer();
     }
 

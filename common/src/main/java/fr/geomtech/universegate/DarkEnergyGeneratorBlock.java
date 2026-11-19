@@ -1,5 +1,7 @@
 package fr.geomtech.universegate;
 
+import fr.geomtech.universegate.platform.MenuHelper;
+
 import net.minecraft.core.BlockPos;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.InteractionResult;
@@ -45,7 +47,7 @@ public class DarkEnergyGeneratorBlock extends BaseEntityBlock {
 
         BlockEntity blockEntity = level.getBlockEntity(pos);
         if (blockEntity instanceof MenuProvider provider && player instanceof ServerPlayer sp) {
-            sp.openMenu(provider);
+            MenuHelper.open(sp, provider);
         }
         return InteractionResult.CONSUME;
     }

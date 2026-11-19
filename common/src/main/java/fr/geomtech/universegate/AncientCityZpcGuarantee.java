@@ -1,13 +1,14 @@
 package fr.geomtech.universegate;
 
-import net.fabricmc.fabric.api.event.player.UseBlockCallback;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.registries.Registries;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.tags.TagKey;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.InteractionResult;
+import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.phys.BlockHitResult;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.block.entity.RandomizableContainerBlockEntity;
@@ -25,32 +26,31 @@ public final class AncientCityZpcGuarantee {
 
     private AncientCityZpcGuarantee() {}
 
-    public static void register() {
-        UseBlockCallback.EVENT.register((player, level, hand, hitResult) -> {
-            if (level.isClientSide) return InteractionResult.PASS;
-            if (hand != InteractionHand.MAIN_HAND) return InteractionResult.PASS;
-            if (!(level instanceof ServerLevel serverLevel)) return InteractionResult.PASS;
+    /** Called when a player right-clicks a block, before the block reacts. Never cancels the interaction. */
+    public static InteractionResult onUseBlock(Player player, Level level, InteractionHand hand, BlockHitResult hitResult) {
+        if (level.isClientSide) return InteractionResult.PASS;
+        if (hand != InteractionHand.MAIN_HAND) return InteractionResult.PASS;
+        if (!(level instanceof ServerLevel serverLevel)) return InteractionResult.PASS;
 
-            BlockPos chestPos = hitResult.getBlockPos();
-            BlockEntity blockEntity = level.getBlockEntity(chestPos);
-            if (!(blockEntity instanceof RandomizableContainerBlockEntity container)) return InteractionResult.PASS;
+        BlockPos chestPos = hitResult.getBlockPos();
+        BlockEntity blockEntity = level.getBlockEntity(chestPos);
+        if (!(blockEntity instanceof RandomizableContainerBlockEntity container)) return InteractionResult.PASS;
 
-            var lootTable = container.getLootTable();
-            if (lootTable == null || !lootTable.location().equals(ANCIENT_CITY_CHEST)) return InteractionResult.PASS;
+        var lootTable = container.getLootTable();
+        if (lootTable == null || !lootTable.location().equals(ANCIENT_CITY_CHEST)) return InteractionResult.PASS;
 
-            BlockPos cityCenter = serverLevel.findNearestMapStructure(ANCIENT_CITY_TAG, chestPos, SEARCH_RADIUS_CHUNKS, false);
-            if (cityCenter == null) return InteractionResult.PASS;
+        BlockPos cityCenter = serverLevel.findNearestMapStructure(ANCIENT_CITY_TAG, chestPos, SEARCH_RADIUS_CHUNKS, false);
+        if (cityCenter == null) return InteractionResult.PASS;
 
-            AncientCityZpcSavedData data = AncientCityZpcSavedData.get(level.getServer());
-            if (data.hasReward(cityCenter)) return InteractionResult.PASS;
+        AncientCityZpcSavedData data = AncientCityZpcSavedData.get(level.getServer());
+        if (data.hasReward(cityCenter)) return InteractionResult.PASS;
 
-            container.unpackLootTable(player);
-            insertGuaranteedZpc(container, level);
-            data.markRewarded(cityCenter);
+        container.unpackLootTable(player);
+        insertGuaranteedZpc(container, level);
+        data.markRewarded(cityCenter);
 
-            UniverseGate.LOGGER.debug("Guaranteed ZPC added to Ancient City chest at {} (city center: {})", chestPos, cityCenter);
-            return InteractionResult.PASS;
-        });
+        UniverseGate.LOGGER.debug("Guaranteed ZPC added to Ancient City chest at {} (city center: {})", chestPos, cityCenter);
+        return InteractionResult.PASS;
     }
 
     private static void insertGuaranteedZpc(RandomizableContainerBlockEntity container, Level level) {

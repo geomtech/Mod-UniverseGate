@@ -1,5 +1,7 @@
 package fr.geomtech.universegate;
 
+import fr.geomtech.universegate.platform.MenuHelper;
+
 import com.mojang.serialization.MapCodec;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
@@ -139,7 +141,7 @@ public class ZpcInterfaceControllerBlock extends BaseEntityBlock {
         }
 
         if (!level.isClientSide && !player.isShiftKeyDown() && player instanceof ServerPlayer sp) {
-            sp.openMenu(controller);
+            MenuHelper.open(sp, controller);
         }
         return ItemInteractionResult.sidedSuccess(level.isClientSide);
     }
@@ -164,7 +166,7 @@ public class ZpcInterfaceControllerBlock extends BaseEntityBlock {
                     }
                 }
             } else if (player instanceof ServerPlayer sp) {
-                sp.openMenu(controller);
+                MenuHelper.open(sp, controller);
             }
         }
 

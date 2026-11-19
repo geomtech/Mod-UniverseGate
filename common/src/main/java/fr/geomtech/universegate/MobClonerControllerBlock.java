@@ -1,5 +1,7 @@
 package fr.geomtech.universegate;
 
+import fr.geomtech.universegate.platform.MenuHelper;
+
 import com.mojang.serialization.MapCodec;
 import net.minecraft.core.BlockPos;
 import net.minecraft.network.chat.Component;
@@ -68,7 +70,7 @@ public class MobClonerControllerBlock extends BaseEntityBlock {
         }
 
         if (!level.isClientSide && player instanceof ServerPlayer sp) {
-            sp.openMenu(controller);
+            MenuHelper.open(sp, controller);
         }
         return ItemInteractionResult.sidedSuccess(level.isClientSide);
     }
@@ -80,7 +82,7 @@ public class MobClonerControllerBlock extends BaseEntityBlock {
                                                Player player,
                                                BlockHitResult hit) {
         if (!level.isClientSide && level.getBlockEntity(pos) instanceof MobClonerControllerBlockEntity controller && player instanceof ServerPlayer sp) {
-            sp.openMenu(controller);
+            MenuHelper.open(sp, controller);
         }
         return InteractionResult.sidedSuccess(level.isClientSide);
     }

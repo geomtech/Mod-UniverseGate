@@ -1,6 +1,5 @@
 package fr.geomtech.universegate;
 
-import net.fabricmc.fabric.api.loot.v3.LootTableEvents;
 import net.minecraft.core.component.DataComponents;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.resources.ResourceLocation;
@@ -18,30 +17,28 @@ public final class ZpcStructureLoot {
 
     private ZpcStructureLoot() {}
 
-    public static void register() {
-        LootTableEvents.MODIFY.register((key, tableBuilder, source, registries) -> {
-            if (!source.isBuiltin()) return;
+    /**
+     * Returns the extra ZPC pool to add to the given (built-in) loot table, or {@code null} if it should not be modified.
+     */
+    public static LootPool.Builder createExtraPool(ResourceLocation location) {
+        if (!"minecraft".equals(location.getNamespace())) return null;
+        if (!location.getPath().startsWith("chests/")) return null;
+        if (location.equals(ANCIENT_CITY_CHEST)) return null;
 
-            ResourceLocation location = key.location();
-            if (!"minecraft".equals(location.getNamespace())) return;
-            if (!location.getPath().startsWith("chests/")) return;
-            if (location.equals(ANCIENT_CITY_CHEST)) return;
+        LootPool.Builder pool = LootPool.lootPool()
+                .setRolls(ConstantValue.exactly(1.0F))
+                .when(LootItemRandomChanceCondition.randomChance(CHEST_CHANCE));
 
-            LootPool.Builder pool = LootPool.lootPool()
-                    .setRolls(ConstantValue.exactly(1.0F))
-                    .when(LootItemRandomChanceCondition.randomChance(CHEST_CHANCE));
+        for (int percent = 1; percent <= 30; percent++) {
+            CompoundTag tag = new CompoundTag();
+            tag.putLong("ZpcEnergy", ZpcItem.energyForPercent(percent));
+            pool.add(
+                    LootItem.lootTableItem(ModItems.ZPC)
+                            .setWeight(1)
+                            .apply(SetComponentsFunction.setComponent(DataComponents.CUSTOM_DATA, CustomData.of(tag)))
+            );
+        }
 
-            for (int percent = 1; percent <= 30; percent++) {
-                CompoundTag tag = new CompoundTag();
-                tag.putLong("ZpcEnergy", ZpcItem.energyForPercent(percent));
-                pool.add(
-                        LootItem.lootTableItem(ModItems.ZPC)
-                                .setWeight(1)
-                                .apply(SetComponentsFunction.setComponent(DataComponents.CUSTOM_DATA, CustomData.of(tag)))
-                );
-            }
-
-            tableBuilder.withPool(pool);
-        });
+        return pool;
     }
 }

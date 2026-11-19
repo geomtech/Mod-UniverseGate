@@ -1,6 +1,6 @@
 package fr.geomtech.universegate;
 
-import net.fabricmc.fabric.api.screenhandler.v1.ExtendedScreenHandlerFactory;
+import fr.geomtech.universegate.platform.PosMenuProvider;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.HolderLookup;
 import net.minecraft.core.particles.ParticleTypes;
@@ -32,7 +32,7 @@ import org.jetbrains.annotations.Nullable;
 import java.util.UUID;
 
 public class MobClonerControllerBlockEntity extends net.minecraft.world.level.block.entity.BlockEntity
-        implements Container, ExtendedScreenHandlerFactory<BlockPos> {
+        implements Container, PosMenuProvider {
 
     public static final long BASE_CLONE_COST = 1_000_000_000L;
 

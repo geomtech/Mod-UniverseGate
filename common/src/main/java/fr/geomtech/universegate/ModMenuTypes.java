@@ -1,122 +1,44 @@
 package fr.geomtech.universegate;
 
-import net.fabricmc.fabric.api.screenhandler.v1.ExtendedScreenHandlerType;
-import net.minecraft.core.BlockPos;
+import fr.geomtech.universegate.platform.PosMenuFactory;
+import fr.geomtech.universegate.platform.Services;
 import net.minecraft.core.Registry;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.resources.ResourceLocation;
+import net.minecraft.world.inventory.AbstractContainerMenu;
+import net.minecraft.world.inventory.MenuType;
 
 public final class ModMenuTypes {
 
-    public static final ExtendedScreenHandlerType<PortalKeyboardMenu, BlockPos> PORTAL_KEYBOARD =
-            Registry.register(
-                    BuiltInRegistries.MENU,
-                    ResourceLocation.fromNamespaceAndPath(UniverseGate.MOD_ID, "portal_keyboard"),
-                    new ExtendedScreenHandlerType<>(
-                            PortalKeyboardMenu::new,
-                            BlockPos.STREAM_CODEC
-                    )
-            );
+    public static final MenuType<PortalKeyboardMenu> PORTAL_KEYBOARD = register("portal_keyboard", PortalKeyboardMenu::new);
 
-    public static final ExtendedScreenHandlerType<PortalNaturalKeyboardMenu, BlockPos> PORTAL_NATURAL_KEYBOARD =
-            Registry.register(
-                    BuiltInRegistries.MENU,
-                    ResourceLocation.fromNamespaceAndPath(UniverseGate.MOD_ID, "portal_natural_keyboard"),
-                    new ExtendedScreenHandlerType<>(
-                            PortalNaturalKeyboardMenu::new,
-                            BlockPos.STREAM_CODEC
-                    )
-            );
+    public static final MenuType<PortalNaturalKeyboardMenu> PORTAL_NATURAL_KEYBOARD = register("portal_natural_keyboard", PortalNaturalKeyboardMenu::new);
 
-    public static final ExtendedScreenHandlerType<PortalMobileKeyboardMenu, BlockPos> PORTAL_MOBILE_KEYBOARD =
-            Registry.register(
-                    BuiltInRegistries.MENU,
-                    ResourceLocation.fromNamespaceAndPath(UniverseGate.MOD_ID, "portal_mobile_keyboard"),
-                    new ExtendedScreenHandlerType<>(
-                            PortalMobileKeyboardMenu::new,
-                            BlockPos.STREAM_CODEC
-                    )
-            );
+    public static final MenuType<PortalMobileKeyboardMenu> PORTAL_MOBILE_KEYBOARD = register("portal_mobile_keyboard", PortalMobileKeyboardMenu::new);
 
-    public static final ExtendedScreenHandlerType<PortalCoreMenu, BlockPos> PORTAL_CORE =
-            Registry.register(
-                    BuiltInRegistries.MENU,
-                    ResourceLocation.fromNamespaceAndPath(UniverseGate.MOD_ID, "portal_core"),
-                    new ExtendedScreenHandlerType<>(
-                            PortalCoreMenu::new,
-                            BlockPos.STREAM_CODEC
-                    )
-            );
+    public static final MenuType<PortalCoreMenu> PORTAL_CORE = register("portal_core", PortalCoreMenu::new);
 
-    public static final ExtendedScreenHandlerType<MeteorologicalControllerMenu, BlockPos> METEOROLOGICAL_CONTROLLER =
-            Registry.register(
-                    BuiltInRegistries.MENU,
-                    ResourceLocation.fromNamespaceAndPath(UniverseGate.MOD_ID, "meteorological_controller"),
-                    new ExtendedScreenHandlerType<>(
-                            MeteorologicalControllerMenu::new,
-                            BlockPos.STREAM_CODEC
-                    )
-            );
+    public static final MenuType<MeteorologicalControllerMenu> METEOROLOGICAL_CONTROLLER = register("meteorological_controller", MeteorologicalControllerMenu::new);
 
-    public static final ExtendedScreenHandlerType<EnergyMonitorMenu, BlockPos> ENERGY_MONITOR =
-            Registry.register(
-                    BuiltInRegistries.MENU,
-                    ResourceLocation.fromNamespaceAndPath(UniverseGate.MOD_ID, "energy_monitor"),
-                    new ExtendedScreenHandlerType<>(
-                            EnergyMonitorMenu::new,
-                            BlockPos.STREAM_CODEC
-                    )
-            );
+    public static final MenuType<EnergyMonitorMenu> ENERGY_MONITOR = register("energy_monitor", EnergyMonitorMenu::new);
 
-    public static final ExtendedScreenHandlerType<ZpcInterfaceControllerMenu, BlockPos> ZPC_INTERFACE_CONTROLLER =
-            Registry.register(
-                    BuiltInRegistries.MENU,
-                    ResourceLocation.fromNamespaceAndPath(UniverseGate.MOD_ID, "zpc_interface_controller"),
-                    new ExtendedScreenHandlerType<>(
-                            ZpcInterfaceControllerMenu::new,
-                            BlockPos.STREAM_CODEC
-                    )
-            );
+    public static final MenuType<ZpcInterfaceControllerMenu> ZPC_INTERFACE_CONTROLLER = register("zpc_interface_controller", ZpcInterfaceControllerMenu::new);
 
-    public static final ExtendedScreenHandlerType<RiftRefinerMenu, BlockPos> RIFT_REFINER =
-            Registry.register(
-                    BuiltInRegistries.MENU,
-                    ResourceLocation.fromNamespaceAndPath(UniverseGate.MOD_ID, "rift_refiner"),
-                    new ExtendedScreenHandlerType<>(
-                            RiftRefinerMenu::new,
-                            BlockPos.STREAM_CODEC
-                    )
-            );
+    public static final MenuType<RiftRefinerMenu> RIFT_REFINER = register("rift_refiner", RiftRefinerMenu::new);
 
-    public static final ExtendedScreenHandlerType<CombustionGeneratorMenu, BlockPos> COMBUSTION_GENERATOR =
-            Registry.register(
-                    BuiltInRegistries.MENU,
-                    ResourceLocation.fromNamespaceAndPath(UniverseGate.MOD_ID, "combustion_generator"),
-                    new ExtendedScreenHandlerType<>(
-                            CombustionGeneratorMenu::new,
-                            BlockPos.STREAM_CODEC
-                    )
-            );
+    public static final MenuType<CombustionGeneratorMenu> COMBUSTION_GENERATOR = register("combustion_generator", CombustionGeneratorMenu::new);
 
-    public static final ExtendedScreenHandlerType<DarkEnergyGeneratorMenu, BlockPos> DARK_ENERGY_GENERATOR =
-            Registry.register(
-                    BuiltInRegistries.MENU,
-                    ResourceLocation.fromNamespaceAndPath(UniverseGate.MOD_ID, "dark_energy_generator"),
-                    new ExtendedScreenHandlerType<>(
-                            DarkEnergyGeneratorMenu::new,
-                            BlockPos.STREAM_CODEC
-                    )
-            );
+    public static final MenuType<DarkEnergyGeneratorMenu> DARK_ENERGY_GENERATOR = register("dark_energy_generator", DarkEnergyGeneratorMenu::new);
 
-    public static final ExtendedScreenHandlerType<MobClonerControllerMenu, BlockPos> MOB_CLONER_CONTROLLER =
-            Registry.register(
-                    BuiltInRegistries.MENU,
-                    ResourceLocation.fromNamespaceAndPath(UniverseGate.MOD_ID, "mob_cloner_controller"),
-                    new ExtendedScreenHandlerType<>(
-                            MobClonerControllerMenu::new,
-                            BlockPos.STREAM_CODEC
-                    )
-            );
+    public static final MenuType<MobClonerControllerMenu> MOB_CLONER_CONTROLLER = register("mob_cloner_controller", MobClonerControllerMenu::new);
+
+    private static <M extends AbstractContainerMenu> MenuType<M> register(String name, PosMenuFactory<M> factory) {
+        return Registry.register(
+                BuiltInRegistries.MENU,
+                ResourceLocation.fromNamespaceAndPath(UniverseGate.MOD_ID, name),
+                Services.PLATFORM.createPosMenuType(factory)
+        );
+    }
 
     public static void register() {}
 

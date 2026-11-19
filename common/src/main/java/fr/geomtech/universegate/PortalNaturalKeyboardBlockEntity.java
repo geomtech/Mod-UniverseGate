@@ -1,6 +1,6 @@
 package fr.geomtech.universegate;
 
-import net.fabricmc.fabric.api.screenhandler.v1.ExtendedScreenHandlerFactory;
+import fr.geomtech.universegate.platform.PosMenuProvider;
 import net.minecraft.core.BlockPos;
 import net.minecraft.network.chat.Component;
 import net.minecraft.server.level.ServerPlayer;
@@ -8,7 +8,7 @@ import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.inventory.AbstractContainerMenu;
 import net.minecraft.world.level.block.state.BlockState;
 
-public class PortalNaturalKeyboardBlockEntity extends PortalKeyboardBlockEntity implements ExtendedScreenHandlerFactory<BlockPos> {
+public class PortalNaturalKeyboardBlockEntity extends PortalKeyboardBlockEntity implements PosMenuProvider {
 
     public PortalNaturalKeyboardBlockEntity(BlockPos pos, BlockState state) {
         super(ModBlockEntities.PORTAL_NATURAL_KEYBOARD, pos, state);

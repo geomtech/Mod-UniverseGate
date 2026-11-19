@@ -1,6 +1,6 @@
 package fr.geomtech.universegate;
 
-import net.fabricmc.fabric.api.itemgroup.v1.FabricItemGroup;
+import fr.geomtech.universegate.platform.Services;
 import net.minecraft.core.Registry;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.network.chat.Component;
@@ -16,7 +16,7 @@ public final class ModItemGroups {
             ResourceLocation.fromNamespaceAndPath(UniverseGate.MOD_ID, "universegate")
     );
 
-    public static final CreativeModeTab UNIVERSEGATE_TAB = FabricItemGroup.builder()
+    public static final CreativeModeTab UNIVERSEGATE_TAB = Services.PLATFORM.creativeTabBuilder()
             .title(Component.translatable("itemGroup.universegate.main"))
             .icon(() -> new ItemStack(ModItems.PORTAL_CORE_ITEM))
             .displayItems((parameters, output) -> {
