@@ -29,6 +29,10 @@ public class ZpcInterfaceControllerBlockEntity extends net.minecraft.world.level
     private static final int NETWORK_SCAN_INTERVAL = 20;
 
     public static final int MAX_ZPCS = 3;
+    /** EU stored in a ZPC for each unit of Dark Energy received from a Dark Energy Generator. */
+    public static final long EU_PER_DARK_ENERGY = 10_000_000L;
+
+    private boolean pendingChargeSync = false;
 
     private final boolean[] slotOccupied = new boolean[MAX_ZPCS];
     private final long[] slotEnergy = new long[MAX_ZPCS];
@@ -107,6 +111,11 @@ public class ZpcInterfaceControllerBlockEntity extends net.minecraft.world.level
                 changed = true;
             }
             outputAccumulator = 0L;
+        }
+
+        if (pendingChargeSync && serverLevel.getGameTime() % 20L == 0L) {
+            pendingChargeSync = false;
+            changed = true;
         }
 
         if (networkScanCooldown > 0) {
@@ -371,6 +380,42 @@ public class ZpcInterfaceControllerBlockEntity extends net.minecraft.world.level
         }
 
         return 0.0F;
+    }
+
+    /**
+     * Recharges the installed ZPCs with Dark Energy, emptiest cell first.
+     *
+     * @return the number of Dark Energy units actually consumed
+     */
+    public int acceptDarkEnergy(int units) {
+        if (units <= 0) return 0;
+
+        int accepted = 0;
+        while (accepted < units) {
+            int slot = findLowestEnergyNonFullSlot();
+            if (slot < 0) break;
+            slotEnergy[slot] = Math.min(ZpcItem.CAPACITY, slotEnergy[slot] + EU_PER_DARK_ENERGY);
+            accepted++;
+        }
+
+        if (accepted > 0) {
+            pendingChargeSync = true;
+            setChanged();
+        }
+        return accepted;
+    }
+
+    private int findLowestEnergyNonFullSlot() {
+        int best = -1;
+        long bestEnergy = Long.MAX_VALUE;
+        for (int slot = 0; slot < MAX_ZPCS; slot++) {
+            if (!slotOccupied[slot] || slotEnergy[slot] >= ZpcItem.CAPACITY) continue;
+            if (slotEnergy[slot] < bestEnergy) {
+                bestEnergy = slotEnergy[slot];
+                best = slot;
+            }
+        }
+        return best;
     }
 
     public boolean canSupplyEnergy() {

@@ -20,6 +20,13 @@ public final class ModTooltips {
         if (!tooltip.getString().equals(key)) {
             lines.add(Component.translatable(key).withStyle(ChatFormatting.GRAY));
         }
+
+        // Optional extra lines: "tooltip.universegate.<item>.2", ".3"...
+        for (int line = 2; line <= 4; line++) {
+            String extraKey = key + "." + line;
+            if (Component.translatable(extraKey).getString().equals(extraKey)) break;
+            lines.add(Component.translatable(extraKey).withStyle(ChatFormatting.GRAY));
+        }
     }
 
     private ModTooltips() {}
