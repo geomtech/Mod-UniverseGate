@@ -82,7 +82,33 @@ final class PortalGateRingLayer implements PortalGateLayer {
             }
         }
         return PortalGateMesh.build(SIZE, SIZE, color, tag, (int) CENTER_H - SIZE / 2, (int) CENTER_V - SIZE / 2,
-                RING_Z0, RING_Z1, CENTER_H, CENTER_V);
+                RING_Z0, RING_Z1, CENTER_H, CENTER_V, PortalGateRingLayer::edgeColor);
+    }
+
+    /**
+     * Tranches de l'anneau, en noir détaillé : biseaux gris sur les bords, rainure centrale, jointures des six
+     * segments ; à l'extérieur des rivets blancs dans la rainure, à l'intérieur une rainure qui s'allume avec la
+     * lèvre (même couleur selon l'état du portail).
+     */
+    private static int edgeColor(float arcPx, int slice, int slices, boolean outer, int tag) {
+        int arc = Math.round(arcPx);
+        boolean bevel = slice == 0 || slice == slices - 1;
+        boolean groove = slice == slices / 2;
+        if (outer) {
+            // Jointures alignées sur celles de la face (tous les 60°, décalées de 30°).
+            float seamSpacing = (float) (OUTER_RADIUS * Math.PI / 3.0D);
+            float seamPos = arcPx - seamSpacing / 2.0F;
+            float toSeam = Math.abs(seamPos - Math.round(seamPos / seamSpacing) * seamSpacing);
+            if (toSeam < 0.6F) return 0x1C1C1C;
+            if (bevel) return 0x262626;
+            if (groove) return Math.floorMod(arc, 10) == 0 ? 0xFFFFFF : 0x000000;
+            if (Math.floorMod(arc, 10) == 0 && (slice == 1 || slice == slices - 2)) return 0x3A3A3A;
+            return 0x0A0A0A;
+        }
+        if (bevel) return 0x262626;
+        if (groove) return tag != 0 ? PortalGateMesh.EDGE_TINT : 0x000000;
+        if (Math.floorMod(arc, 8) == 0) return 0x000000; // encoches
+        return 0x0A0A0A;
     }
 
     /** Trois cristaux de Faille en losange, un peu en relief sur l'anneau (à 90°, 210° et 330°). */
