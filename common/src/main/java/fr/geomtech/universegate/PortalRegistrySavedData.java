@@ -1,5 +1,8 @@
 package fr.geomtech.universegate;
 
+import fr.geomtech.universegate.compat.Compat;
+import fr.geomtech.universegate.compat.Nbt;
+import fr.geomtech.universegate.compat.SavedDataCompat;
 import net.minecraft.core.BlockPos;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.nbt.ListTag;
@@ -28,14 +31,7 @@ public class PortalRegistrySavedData extends SavedData {
     public static PortalRegistrySavedData get(MinecraftServer server) {
         ServerLevel overworld = server.overworld();
 
-        return overworld.getDataStorage().computeIfAbsent(
-                new SavedData.Factory<>(
-                        PortalRegistrySavedData::new,
-                        PortalRegistrySavedData::load,
-                        null
-                ),
-                DATA_NAME
-        );
+        return SavedDataCompat.computeIfAbsent(overworld, DATA_NAME, PortalRegistrySavedData::new, PortalRegistrySavedData::load, PortalRegistrySavedData::save);
     }
 
     public Collection<PortalEntry> listAll() {
@@ -137,13 +133,14 @@ public class PortalRegistrySavedData extends SavedData {
     }
 
     // ---------- Save/Load ----------
+    //? if <1.21.11
     @Override
     public CompoundTag save(CompoundTag tag, HolderLookup.Provider registries) {
         ListTag list = new ListTag();
 
         for (PortalEntry e : portals.values()) {
             CompoundTag p = new CompoundTag();
-            p.putUUID("Id", e.id());
+            Nbt.putUUID(p, "Id", e.id());
             p.putString("Name", e.name());
             p.putBoolean("Hidden", e.hidden());
 
@@ -163,21 +160,20 @@ public class PortalRegistrySavedData extends SavedData {
     public static PortalRegistrySavedData load(CompoundTag tag, HolderLookup.Provider registries) {
         PortalRegistrySavedData data = new PortalRegistrySavedData();
 
-        ListTag list = tag.getList("Portals", Tag.TAG_COMPOUND);
-        for (int i = 0; i < list.size(); i++) {
-            CompoundTag p = list.getCompound(i);
+        for (CompoundTag p : Nbt.getCompoundList(tag, "Portals")) {
 
-            UUID id = p.getUUID("Id");
-            String name = p.getString("Name");
+            UUID id = Nbt.getUUID(p, "Id");
+            if (id == null) continue;
+            String name = Nbt.getString(p, "Name");
 
-            ResourceLocation dimLoc = ResourceLocation.tryParse(p.getString("Dim"));
+            ResourceLocation dimLoc = ResourceLocation.tryParse(Nbt.getString(p, "Dim"));
             if (dimLoc == null) continue;
 
             ResourceKey<Level> dim = ResourceKey.create(net.minecraft.core.registries.Registries.DIMENSION, dimLoc);
 
-            BlockPos pos = new BlockPos(p.getInt("X"), p.getInt("Y"), p.getInt("Z"));
+            BlockPos pos = new BlockPos(Nbt.getInt(p, "X"), Nbt.getInt(p, "Y"), Nbt.getInt(p, "Z"));
 
-            boolean hidden = p.contains("Hidden") && p.getBoolean("Hidden");
+            boolean hidden = p.contains("Hidden") && Nbt.getBoolean(p, "Hidden");
 
             data.portals.put(id, new PortalEntry(id, name, dim, pos, hidden));
         }

@@ -1,5 +1,12 @@
 package fr.geomtech.universegate;
 
+import fr.geomtech.universegate.compat.DataReader;
+import fr.geomtech.universegate.compat.DataWriter;
+//? if >=1.21.11 {
+/*import net.minecraft.world.level.storage.ValueInput;
+import net.minecraft.world.level.storage.ValueOutput;
+*///?}
+import fr.geomtech.universegate.compat.Compat;
 import net.minecraft.core.BlockPos;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.chat.Component;
@@ -95,10 +102,12 @@ public class RiftShadeEntity extends Monster {
         return type != ModEntityTypes.RIFT_SHADE && super.canAttackType(type);
     }
 
+    //? if <1.21.11 {
     @Override
     protected boolean shouldDespawnInPeaceful() {
         return true;
     }
+    //?}
 
     @Override
     public boolean removeWhenFarAway(double distanceToClosestPlayer) {
@@ -150,9 +159,15 @@ public class RiftShadeEntity extends Monster {
         return bossEvent;
     }
 
+    //? if >=1.21.11 {
+    /*@Override
+    protected void customServerAiStep(ServerLevel level) {
+        super.customServerAiStep(level);
+    *///?} else {
     @Override
     protected void customServerAiStep() {
         super.customServerAiStep();
+    //?}
         if (!guardian) return;
 
         bossEvent().setProgress(getHealth() / getMaxHealth());
@@ -170,10 +185,10 @@ public class RiftShadeEntity extends Monster {
         int minions = serverLevel.getEntitiesOfClass(RiftShadeEntity.class, area, shade -> !shade.isGuardian()).size();
         int toSpawn = Math.min(2, GUARDIAN_MAX_MINIONS - minions);
         for (int i = 0; i < toSpawn; i++) {
-            RiftShadeEntity minion = ModEntityTypes.RIFT_SHADE.create(serverLevel);
+            RiftShadeEntity minion = Compat.create(ModEntityTypes.RIFT_SHADE, serverLevel, MobSpawnType.MOB_SUMMONED);
             if (minion == null) return;
             double angle = random.nextDouble() * Math.PI * 2.0D;
-            minion.moveTo(getX() + Math.cos(angle) * 2.5D, getY(), getZ() + Math.sin(angle) * 2.5D, random.nextFloat() * 360.0F, 0.0F);
+            Compat.moveTo(minion, getX() + Math.cos(angle) * 2.5D, getY(), getZ() + Math.sin(angle) * 2.5D, random.nextFloat() * 360.0F, 0.0F);
             if (!serverLevel.noCollision(minion)) continue;
             minion.setTarget(getTarget());
             serverLevel.addFreshEntity(minion);
@@ -181,9 +196,15 @@ public class RiftShadeEntity extends Monster {
         playSound(ModSounds.RIFT_SHADE_SOUND, 2.0F, 0.6F);
     }
 
+    //? if >=1.21.11 {
+    /*@Override
+    public boolean doHurtTarget(ServerLevel level, Entity target) {
+        boolean hit = super.doHurtTarget(level, target);
+    *///?} else {
     @Override
     public boolean doHurtTarget(Entity target) {
         boolean hit = super.doHurtTarget(target);
+    //?}
         if (hit && guardian && target instanceof LivingEntity living) {
             living.addEffect(new MobEffectInstance(MobEffects.DARKNESS, 20 * 4, 0), this);
             living.addEffect(new MobEffectInstance(MobEffects.MOVEMENT_SLOWDOWN, 20 * 2, 1), this);
@@ -207,25 +228,54 @@ public class RiftShadeEntity extends Monster {
     protected void dropCustomDeathLoot(ServerLevel level, DamageSource damageSource, boolean recentlyHit) {
         super.dropCustomDeathLoot(level, damageSource, recentlyHit);
         if (!guardian) return;
-        spawnAtLocation(new ItemStack(ModItems.RIFT_CORE));
-        spawnAtLocation(new ItemStack(ModItems.RIFT_CRYSTAL, 8 + random.nextInt(9)));
-        spawnAtLocation(new ItemStack(ModItems.ENERGY_CRYSTAL, 2 + random.nextInt(3)));
+        Compat.spawnAtLocation(this, new ItemStack(ModItems.RIFT_CORE));
+        Compat.spawnAtLocation(this, new ItemStack(ModItems.RIFT_CRYSTAL, 8 + random.nextInt(9)));
+        Compat.spawnAtLocation(this, new ItemStack(ModItems.ENERGY_CRYSTAL, 2 + random.nextInt(3)));
     }
 
+    //? if >=1.21.11 {
+    /*@Override
+    public boolean canTeleport(net.minecraft.world.level.Level from, net.minecraft.world.level.Level to) {
+        return !guardian && super.canTeleport(from, to);
+    }
+    *///?} else {
     @Override
     public boolean canChangeDimensions(net.minecraft.world.level.Level from, net.minecraft.world.level.Level to) {
         return !guardian && super.canChangeDimensions(from, to);
     }
+    //?}
 
+    //? if >=1.21.11 {
+    /*@Override
+    protected void addAdditionalSaveData(ValueOutput output) {
+        super.addAdditionalSaveData(output);
+        saveShadeData(DataWriter.of(output));
+    }
+
+    @Override
+    protected void readAdditionalSaveData(ValueInput input) {
+        super.readAdditionalSaveData(input);
+        loadShadeData(DataReader.of(input));
+    }
+    *///?} else {
     @Override
     public void addAdditionalSaveData(CompoundTag tag) {
         super.addAdditionalSaveData(tag);
-        if (guardian) tag.putBoolean(TAG_GUARDIAN, true);
+        saveShadeData(DataWriter.of(tag, registryAccess()));
     }
 
     @Override
     public void readAdditionalSaveData(CompoundTag tag) {
         super.readAdditionalSaveData(tag);
+        loadShadeData(DataReader.of(tag, registryAccess()));
+    }
+    //?}
+
+    private void saveShadeData(DataWriter tag) {
+        if (guardian) tag.putBoolean(TAG_GUARDIAN, true);
+    }
+
+    private void loadShadeData(DataReader tag) {
         guardian = tag.getBoolean(TAG_GUARDIAN);
         if (guardian) {
             xpReward = 60;

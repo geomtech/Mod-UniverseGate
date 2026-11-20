@@ -1,5 +1,8 @@
 package fr.geomtech.universegate;
 
+//? if >=1.21.11 {
+/*import net.minecraft.util.RandomSource;
+*///?}
 import com.mojang.blaze3d.vertex.VertexConsumer;
 import net.minecraft.client.Camera;
 import net.minecraft.client.multiplayer.ClientLevel;
@@ -15,6 +18,7 @@ import net.minecraft.core.particles.SimpleParticleType;
  * <p>AsyncParticles (GPU acceleration) only takes over particles whose class does not override
  * {@code render}. Its GPU path draws end rod sparkles as flat cyan squares, so this class overrides
  * {@code render} (behaviour unchanged) to keep UniverseGate's sparkles on the vanilla path.
+ * Since 1.21.9 particles are drawn through particle groups and there is no {@code render} to override.
  */
 public class UniverseGateSparkParticle extends SimpleAnimatedParticle {
 
@@ -40,11 +44,13 @@ public class UniverseGateSparkParticle extends SimpleAnimatedParticle {
         this.setLocationFromBoundingbox();
     }
 
+    //? if <1.21.11 {
     @Override
     public void render(VertexConsumer buffer, Camera camera, float partialTicks) {
         // Intentionally overridden: see class javadoc (AsyncParticles GPU compatibility).
         super.render(buffer, camera, partialTicks);
     }
+    //?}
 
     public static final class Provider implements ParticleProvider<SimpleParticleType> {
         private final SpriteSet sprites;
@@ -54,9 +60,15 @@ public class UniverseGateSparkParticle extends SimpleAnimatedParticle {
         }
 
         @Override
+        //? if >=1.21.11 {
+        /*public Particle createParticle(SimpleParticleType type, ClientLevel level,
+                                       double x, double y, double z,
+                                       double xd, double yd, double zd, RandomSource random) {
+        *///?} else {
         public Particle createParticle(SimpleParticleType type, ClientLevel level,
                                        double x, double y, double z,
                                        double xd, double yd, double zd) {
+        //?}
             return new UniverseGateSparkParticle(level, x, y, z, xd, yd, zd, sprites);
         }
     }

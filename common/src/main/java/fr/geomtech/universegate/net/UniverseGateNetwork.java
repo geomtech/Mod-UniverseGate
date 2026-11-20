@@ -1,5 +1,6 @@
 package fr.geomtech.universegate.net;
 
+import fr.geomtech.universegate.compat.Compat;
 import fr.geomtech.universegate.DarkEnergyNetworkHelper;
 import fr.geomtech.universegate.EnergyNetworkHelper;
 import fr.geomtech.universegate.ModBlocks;
@@ -39,8 +40,8 @@ public final class UniverseGateNetwork {
                         
         // handler C2S (connect)
         Services.PLATFORM.registerServerboundPayload(ConnectPortalPayload.TYPE, ConnectPortalPayload.STREAM_CODEC, (payload, player) -> {
-            player.server.execute(() -> {
-                ServerLevel level = player.serverLevel();
+            Compat.server(player).execute(() -> {
+                ServerLevel level = Compat.serverLevel(player);
 
                 PortalControllerAccess access = resolveControllerAccess(player, payload.keyboardPos());
                 if (access == null) return;
@@ -112,8 +113,8 @@ public final class UniverseGateNetwork {
         });
 
         Services.PLATFORM.registerServerboundPayload(RenamePortalPayload.TYPE, RenamePortalPayload.STREAM_CODEC, (payload, player) -> {
-            player.server.execute(() -> {
-                ServerLevel level = player.serverLevel();
+            Compat.server(player).execute(() -> {
+                ServerLevel level = Compat.serverLevel(player);
 
                 if (!(level.getBlockEntity(payload.corePos()) instanceof PortalCoreBlockEntity core)) return;
 
@@ -122,8 +123,8 @@ public final class UniverseGateNetwork {
         });
 
         Services.PLATFORM.registerServerboundPayload(DisconnectPortalPayload.TYPE, DisconnectPortalPayload.STREAM_CODEC, (payload, player) -> {
-            player.server.execute(() -> {
-                ServerLevel level = player.serverLevel();
+            Compat.server(player).execute(() -> {
+                ServerLevel level = Compat.serverLevel(player);
 
                 PortalControllerAccess access = resolveControllerAccess(player, payload.keyboardPos());
                 if (access == null || access.corePos() == null) return;
@@ -144,9 +145,9 @@ public final class UniverseGateNetwork {
         PortalControllerAccess access = resolveControllerAccess(player, keyboardPos);
         if (access == null) return;
 
-        var reg = PortalRegistrySavedData.get(player.server);
-        reg.pruneMissingPortals(player.server);
-        ServerLevel level = player.serverLevel();
+        var reg = PortalRegistrySavedData.get(Compat.server(player));
+        reg.pruneMissingPortals(Compat.server(player));
+        ServerLevel level = Compat.serverLevel(player);
         boolean freeOpening = EnergyNetworkHelper.isRiftDimension(level) || access.naturalKeyboard();
 
         UUID selfPortalId = null;
@@ -198,7 +199,7 @@ public final class UniverseGateNetwork {
 
         PortalControllerAccess access = resolveControllerAccess(player, keyboardPos);
         BlockPos corePos = access == null ? null : access.corePos();
-        if (corePos != null && player.serverLevel().getBlockEntity(corePos) instanceof PortalCoreBlockEntity core) {
+        if (corePos != null && Compat.serverLevel(player).getBlockEntity(corePos) instanceof PortalCoreBlockEntity core) {
             active = core.isActiveOrOpening();
             disconnectAllowed = canDisconnectFromKeyboard(core);
         }
@@ -212,7 +213,7 @@ public final class UniverseGateNetwork {
     }
 
     public static void sendPortalCoreNameToPlayer(net.minecraft.server.level.ServerPlayer player, BlockPos corePos) {
-        if (!(player.serverLevel().getBlockEntity(corePos) instanceof PortalCoreBlockEntity core)) return;
+        if (!(Compat.serverLevel(player).getBlockEntity(corePos) instanceof PortalCoreBlockEntity core)) return;
         Services.PLATFORM.sendToPlayer(player, new PortalCoreNamePayload(corePos, core.getPortalName()));
     }
 
@@ -224,7 +225,7 @@ public final class UniverseGateNetwork {
 
     private static PortalControllerAccess resolveControllerAccess(net.minecraft.server.level.ServerPlayer player,
                                                                   BlockPos controllerPos) {
-        ServerLevel level = player.serverLevel();
+        ServerLevel level = Compat.serverLevel(player);
 
         if (player.containerMenu instanceof PortalNaturalKeyboardMenu naturalMenu
                 && naturalMenu.getKeyboardPos().equals(controllerPos)) {

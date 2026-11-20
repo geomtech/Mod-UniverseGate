@@ -213,8 +213,13 @@ public final class PortalRiftHelper {
                         return false;
                     }
 
+                    //? if >=1.21.11 {
+                    /*@Override
+                    public float getEntityDamageAmount(net.minecraft.world.level.Explosion explosion, net.minecraft.world.entity.Entity entity, float exposure) {
+                    *///?} else {
                     @Override
                     public float getEntityDamageAmount(net.minecraft.world.level.Explosion explosion, net.minecraft.world.entity.Entity entity) {
+                    //?}
                         return 0.0F;
                     }
 

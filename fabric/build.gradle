@@ -3,15 +3,15 @@ plugins {
 }
 
 dependencies {
-	// To change the versions see the gradle.properties file
-	minecraft "com.mojang:minecraft:${rootProject.minecraft_version}"
+	// To change the versions see versions/<mc>.properties (this script runs once per Minecraft version)
+	minecraft "com.mojang:minecraft:${project.minecraft_version}"
 	mappings loom.officialMojangMappings()
-	modImplementation "net.fabricmc:fabric-loader:${rootProject.loader_version}"
-	modImplementation "net.fabricmc.fabric-api:fabric-api:${rootProject.fabric_api_version}"
+	modImplementation "net.fabricmc:fabric-loader:${project.loader_version}"
+	modImplementation "net.fabricmc.fabric-api:fabric-api:${project.fabric_api_version}"
 
 	// Optional energy compat (Stellaris, Tech Reborn...): compile only, never shipped nor required.
 	// The compat class is only loaded when the team_reborn_energy mod is present at runtime.
-	modCompileOnly "teamreborn:energy:${rootProject.team_reborn_energy_version}"
+	modCompileOnly "teamreborn:energy:${project.team_reborn_energy_version}"
 }
 
 loom {
@@ -30,9 +30,14 @@ loom {
 }
 
 processResources {
-	inputs.property 'version', project.version
+	def props = [
+			'version'             : project.version,
+			'loader_version'      : project.loader_version,
+			'minecraft_dependency': project.fabric_minecraft_dependency
+	]
+	inputs.properties props
 
 	filesMatching('fabric.mod.json') {
-		expand 'version': project.version
+		expand props
 	}
 }

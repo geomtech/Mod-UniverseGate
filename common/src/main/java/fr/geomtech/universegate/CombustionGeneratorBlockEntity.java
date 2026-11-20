@@ -1,11 +1,18 @@
 package fr.geomtech.universegate;
 
+import fr.geomtech.universegate.compat.Compat;
+import fr.geomtech.universegate.compat.DataReader;
+import fr.geomtech.universegate.compat.DataWriter;
+import net.minecraft.core.HolderLookup;
+import net.minecraft.nbt.CompoundTag;
+//? if >=1.21.11 {
+/*import net.minecraft.world.level.storage.ValueInput;
+import net.minecraft.world.level.storage.ValueOutput;
+*///?}
 import fr.geomtech.universegate.platform.PosMenuProvider;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
-import net.minecraft.core.HolderLookup;
 import net.minecraft.core.NonNullList;
-import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.chat.Component;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
@@ -117,7 +124,7 @@ public class CombustionGeneratorBlockEntity extends BlockEntity implements World
     }
 
     public boolean canAcceptFuel(ItemStack stack) {
-        if (!isSupportedFuel(stack)) return false;
+        if (!isSupportedFuel(level, stack)) return false;
 
         ItemStack slotStack = inventory.get(SLOT_FUEL);
         if (slotStack.isEmpty()) return true;
@@ -126,7 +133,7 @@ public class CombustionGeneratorBlockEntity extends BlockEntity implements World
     }
 
     public int insertFuel(ItemStack stack) {
-        if (!isSupportedFuel(stack)) return 0;
+        if (!isSupportedFuel(level, stack)) return 0;
 
         ItemStack slotStack = inventory.get(SLOT_FUEL);
         int maxStackSize = Math.min(stack.getMaxStackSize(), getMaxStackSize());
@@ -158,7 +165,7 @@ public class CombustionGeneratorBlockEntity extends BlockEntity implements World
         ItemStack fuelStack = inventory.get(SLOT_FUEL);
         if (fuelStack.isEmpty()) return false;
 
-        int fuelEnergy = getFuelEnergy(fuelStack);
+        int fuelEnergy = getFuelEnergy(level, fuelStack);
         if (fuelEnergy <= 0) return false;
         if (bufferedEnergy + fuelEnergy > MAX_BUFFERED_ENERGY) return false;
 
@@ -179,7 +186,7 @@ public class CombustionGeneratorBlockEntity extends BlockEntity implements World
     }
 
     private boolean syncLitState(BlockState state) {
-        if (level == null || level.isClientSide) return false;
+        if (level == null || level.isClientSide()) return false;
         if (!state.hasProperty(CombustionGeneratorBlock.LIT)) return false;
 
         boolean shouldBeLit = bufferedEnergy > 0;
@@ -189,17 +196,17 @@ public class CombustionGeneratorBlockEntity extends BlockEntity implements World
         return true;
     }
 
-    public static boolean isSupportedFuel(ItemStack stack) {
+    public static boolean isSupportedFuel(@Nullable Level level, ItemStack stack) {
         return !stack.isEmpty()
-                && (stack.is(ModItems.RIFT_CRYSTAL) || AbstractFurnaceBlockEntity.isFuel(stack));
+                && (stack.is(ModItems.RIFT_CRYSTAL) || Compat.isFuel(level, stack));
     }
 
-    private static int getFuelEnergy(ItemStack stack) {
+    private static int getFuelEnergy(@Nullable Level level, ItemStack stack) {
         if (stack.is(ModItems.RIFT_CRYSTAL)) {
             return RIFT_CRYSTAL_ENERGY;
         }
 
-        int burnDuration = AbstractFurnaceBlockEntity.getFuel().getOrDefault(stack.getItem(), 0);
+        int burnDuration = Compat.burnDuration(level, stack);
         if (burnDuration <= 0) return 0;
 
         return Math.max(1, (int) Math.round(burnDuration * ENERGY_PER_BURN_TICK));
@@ -256,7 +263,7 @@ public class CombustionGeneratorBlockEntity extends BlockEntity implements World
     public void setItem(int slot, ItemStack stack) {
         if (slot != SLOT_FUEL) return;
 
-        if (!stack.isEmpty() && !isSupportedFuel(stack)) {
+        if (!stack.isEmpty() && !isSupportedFuel(level, stack)) {
             return;
         }
 
@@ -269,7 +276,7 @@ public class CombustionGeneratorBlockEntity extends BlockEntity implements World
 
     @Override
     public boolean canPlaceItem(int slot, ItemStack stack) {
-        return slot == SLOT_FUEL && isSupportedFuel(stack);
+        return slot == SLOT_FUEL && isSupportedFuel(level, stack);
     }
 
     @Override
@@ -283,17 +290,40 @@ public class CombustionGeneratorBlockEntity extends BlockEntity implements World
         setChanged();
     }
 
+    //? if >=1.21.11 {
+    /*@Override
+    protected void saveAdditional(ValueOutput output) {
+        super.saveAdditional(output);
+        saveData(DataWriter.of(output));
+    }
+
+    @Override
+    protected void loadAdditional(ValueInput input) {
+        super.loadAdditional(input);
+        loadData(DataReader.of(input));
+    }
+    *///?} else {
     @Override
     protected void saveAdditional(CompoundTag tag, HolderLookup.Provider registries) {
         super.saveAdditional(tag, registries);
-        ContainerHelper.saveAllItems(tag, inventory, registries);
-        tag.putInt("BufferedEnergy", bufferedEnergy);
+        saveData(DataWriter.of(tag, registries));
     }
 
     @Override
     protected void loadAdditional(CompoundTag tag, HolderLookup.Provider registries) {
         super.loadAdditional(tag, registries);
-        ContainerHelper.loadAllItems(tag, inventory, registries);
+        loadData(DataReader.of(tag, registries));
+    }
+    //?}
+
+    private void saveData(DataWriter tag) {
+        tag.saveItems(inventory);
+        tag.putInt("BufferedEnergy", bufferedEnergy);
+    }
+
+    private void loadData(DataReader tag) {
+        tag.loadItems(inventory);
         bufferedEnergy = Math.max(0, Math.min(MAX_BUFFERED_ENERGY, tag.getInt("BufferedEnergy")));
     }
+
 }

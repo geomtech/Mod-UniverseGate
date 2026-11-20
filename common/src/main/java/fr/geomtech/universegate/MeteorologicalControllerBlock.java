@@ -1,5 +1,10 @@
 package fr.geomtech.universegate;
 
+//? if >=1.21.11 {
+/*import net.minecraft.world.level.LevelReader;
+import net.minecraft.world.level.ScheduledTickAccess;
+import net.minecraft.util.RandomSource;
+*///?}
 import fr.geomtech.universegate.platform.MenuHelper;
 
 import com.mojang.serialization.MapCodec;
@@ -69,7 +74,7 @@ public class MeteorologicalControllerBlock extends BaseEntityBlock {
     public @Nullable <T extends BlockEntity> BlockEntityTicker<T> getTicker(Level level,
                                                                              BlockState state,
                                                                              BlockEntityType<T> type) {
-        if (level.isClientSide) return null;
+        if (level.isClientSide()) return null;
         return createTickerHelper(type, ModBlockEntities.METEOROLOGICAL_CONTROLLER,
                 (lvl, pos, blockState, be) -> be.serverTick());
     }
@@ -100,18 +105,23 @@ public class MeteorologicalControllerBlock extends BaseEntityBlock {
         return level.getBlockState(supportPos.below()).is(ModBlocks.METEOROLOGICAL_CONDENSER);
     }
 
+    //? if >=1.21.11 {
+    /*@Override
+    protected BlockState updateShape(BlockState state, LevelReader level, ScheduledTickAccess tickAccess, BlockPos currentPos,
+                                     Direction direction, BlockPos neighborPos, BlockState neighborState, RandomSource random) {
+    *///?} else {
     @Override
-    protected BlockState updateShape(BlockState state,
-                                     Direction direction,
-                                     BlockState neighborState,
-                                     LevelAccessor level,
-                                     BlockPos currentPos,
-                                     BlockPos neighborPos) {
+    protected BlockState updateShape(BlockState state, Direction direction, BlockState neighborState, LevelAccessor level, BlockPos currentPos, BlockPos neighborPos) {
+    //?}
         Direction supportDirection = state.getValue(FACING).getOpposite();
         if (direction == supportDirection && !canSurvive(state, level, currentPos)) {
             return Blocks.AIR.defaultBlockState();
         }
+        //? if >=1.21.11 {
+        /*return super.updateShape(state, level, tickAccess, currentPos, direction, neighborPos, neighborState, random);
+        *///?} else {
         return super.updateShape(state, direction, neighborState, level, currentPos, neighborPos);
+        //?}
     }
 
     @Override
@@ -146,7 +156,7 @@ public class MeteorologicalControllerBlock extends BaseEntityBlock {
                                                BlockPos pos,
                                                Player player,
                                                BlockHitResult hit) {
-        if (level.isClientSide) return InteractionResult.SUCCESS;
+        if (level.isClientSide()) return InteractionResult.SUCCESS;
 
         BlockEntity blockEntity = level.getBlockEntity(pos);
         if (blockEntity instanceof MenuProvider provider && player instanceof ServerPlayer sp) {

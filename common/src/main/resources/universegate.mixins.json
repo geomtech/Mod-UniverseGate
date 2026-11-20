@@ -10,7 +10,7 @@
 		"LightningBoltMixin"
 	],
 	"client": [
-		"LevelRendererMixin"
+		"RiftSkyMixin"
 	],
 	"injectors": {
 		"defaultRequire": 1

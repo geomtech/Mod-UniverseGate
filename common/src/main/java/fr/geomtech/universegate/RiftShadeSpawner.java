@@ -1,5 +1,6 @@
 package fr.geomtech.universegate;
 
+import fr.geomtech.universegate.compat.Compat;
 import net.minecraft.core.BlockPos;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
@@ -85,9 +86,9 @@ public final class RiftShadeSpawner {
         BlockPos spawnPos = findGuardianSpawnNearEmitter(level, emitterPos);
         if (spawnPos == null) return;
 
-        RiftShadeEntity guardian = ModEntityTypes.RIFT_SHADE.create(level);
+        RiftShadeEntity guardian = Compat.create(ModEntityTypes.RIFT_SHADE, level, MobSpawnType.SPAWNER);
         if (guardian == null) return;
-        guardian.moveTo(spawnPos.getX() + 0.5, spawnPos.getY(), spawnPos.getZ() + 0.5, level.random.nextFloat() * 360.0F, 0.0F);
+        Compat.moveTo(guardian, spawnPos.getX() + 0.5, spawnPos.getY(), spawnPos.getZ() + 0.5, level.random.nextFloat() * 360.0F, 0.0F);
         guardian.makeGuardian();
         level.addFreshEntity(guardian);
         data.markGuardianSpawned(emitterPos);
@@ -145,10 +146,10 @@ public final class RiftShadeSpawner {
     }
 
     private static void spawnShade(ServerLevel level, BlockPos spawnPos, MobSpawnType spawnType, String source) {
-        RiftShadeEntity shade = ModEntityTypes.RIFT_SHADE.create(level);
+        RiftShadeEntity shade = Compat.create(ModEntityTypes.RIFT_SHADE, level, spawnType);
         if (shade == null) return;
 
-        shade.moveTo(spawnPos.getX() + 0.5, spawnPos.getY(), spawnPos.getZ() + 0.5, level.random.nextFloat() * 360.0F, 0.0F);
+        Compat.moveTo(shade, spawnPos.getX() + 0.5, spawnPos.getY(), spawnPos.getZ() + 0.5, level.random.nextFloat() * 360.0F, 0.0F);
         if (!RiftShadeEntity.canSpawn(ModEntityTypes.RIFT_SHADE, level, spawnType, spawnPos, level.random)) return;
         shade.setPersistenceRequired();
 

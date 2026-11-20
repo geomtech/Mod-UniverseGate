@@ -1,5 +1,6 @@
 package fr.geomtech.universegate;
 
+import fr.geomtech.universegate.compat.Compat;
 import com.mojang.brigadier.CommandDispatcher;
 import net.minecraft.commands.CommandSourceStack;
 import net.minecraft.commands.Commands;
@@ -20,7 +21,7 @@ public final class WeatherMachineCommand {
     public static void registerCommands(CommandDispatcher<CommandSourceStack> dispatcher) {
         dispatcher.register(
                 Commands.literal("universegate")
-                        .requires(source -> source.hasPermission(2))
+                        .requires(source -> Compat.hasPermission(source, 2))
                         .then(Commands.literal("weather_machine")
                                 .then(Commands.literal("charge")
                                         .executes(context -> chargeNearest(context.getSource()))
@@ -42,7 +43,7 @@ public final class WeatherMachineCommand {
             return 0;
         }
 
-        ServerLevel level = player.serverLevel();
+        ServerLevel level = Compat.serverLevel(player);
         BlockPos center = player.blockPosition();
 
         MeteorologicalControllerBlockEntity bestController = null;

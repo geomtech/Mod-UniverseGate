@@ -1,5 +1,10 @@
 package fr.geomtech.universegate;
 
+//? if >=1.21.11 {
+/*import net.minecraft.world.level.LevelReader;
+import net.minecraft.world.level.ScheduledTickAccess;
+import net.minecraft.util.RandomSource;
+*///?}
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.world.item.context.BlockPlaceContext;
@@ -59,13 +64,14 @@ public class EnergyConduitBlock extends Block {
         return updateConnections(context.getLevel(), context.getClickedPos(), this.defaultBlockState());
     }
 
+    //? if >=1.21.11 {
+    /*@Override
+    protected BlockState updateShape(BlockState state, LevelReader level, ScheduledTickAccess tickAccess, BlockPos currentPos,
+                                     Direction direction, BlockPos neighborPos, BlockState neighborState, RandomSource random) {
+    *///?} else {
     @Override
-    protected BlockState updateShape(BlockState state,
-                                     Direction direction,
-                                     BlockState neighborState,
-                                     LevelAccessor level,
-                                     BlockPos currentPos,
-                                     BlockPos neighborPos) {
+    protected BlockState updateShape(BlockState state, Direction direction, BlockState neighborState, LevelAccessor level, BlockPos currentPos, BlockPos neighborPos) {
+    //?}
         BooleanProperty property = PROPERTY_BY_DIRECTION.get(direction);
         if (property == null) return state;
         return state.setValue(property, canConnectTo(level, neighborPos, direction));

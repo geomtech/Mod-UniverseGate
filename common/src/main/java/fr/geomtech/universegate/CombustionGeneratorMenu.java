@@ -53,7 +53,7 @@ public class CombustionGeneratorMenu extends AbstractContainerMenu {
         addSlot(new Slot(inventory, SLOT_FUEL, 8, 20) {
             @Override
             public boolean mayPlace(ItemStack stack) {
-                return CombustionGeneratorBlockEntity.isSupportedFuel(stack);
+                return CombustionGeneratorBlockEntity.isSupportedFuel(inv.player.level(), stack);
             }
         });
 
@@ -85,7 +85,7 @@ public class CombustionGeneratorMenu extends AbstractContainerMenu {
                 if (!this.moveItemStackTo(originalStack, PLAYER_INV_START, HOTBAR_END, true)) {
                     return ItemStack.EMPTY;
                 }
-            } else if (CombustionGeneratorBlockEntity.isSupportedFuel(originalStack)) {
+            } else if (CombustionGeneratorBlockEntity.isSupportedFuel(player.level(), originalStack)) {
                 if (!this.moveItemStackTo(originalStack, SLOT_FUEL, SLOT_FUEL + 1, false)) {
                     if (index >= PLAYER_INV_START && index < PLAYER_INV_END) {
                         if (!this.moveItemStackTo(originalStack, HOTBAR_START, HOTBAR_END, false)) {

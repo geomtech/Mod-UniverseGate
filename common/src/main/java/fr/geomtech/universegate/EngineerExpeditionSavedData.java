@@ -1,5 +1,8 @@
 package fr.geomtech.universegate;
 
+import fr.geomtech.universegate.compat.Compat;
+import fr.geomtech.universegate.compat.Nbt;
+import fr.geomtech.universegate.compat.SavedDataCompat;
 import net.minecraft.core.HolderLookup;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.server.MinecraftServer;
@@ -14,14 +17,7 @@ public class EngineerExpeditionSavedData extends SavedData {
 
     public static EngineerExpeditionSavedData get(MinecraftServer server) {
         ServerLevel overworld = server.overworld();
-        return overworld.getDataStorage().computeIfAbsent(
-                new SavedData.Factory<>(
-                        EngineerExpeditionSavedData::new,
-                        EngineerExpeditionSavedData::load,
-                        null
-                ),
-                DATA_NAME
-        );
+        return SavedDataCompat.computeIfAbsent(overworld, DATA_NAME, EngineerExpeditionSavedData::new, EngineerExpeditionSavedData::load, EngineerExpeditionSavedData::save);
     }
 
     public long getNextEventTick() {
@@ -34,6 +30,7 @@ public class EngineerExpeditionSavedData extends SavedData {
         setDirty();
     }
 
+    //? if <1.21.11
     @Override
     public CompoundTag save(CompoundTag tag, HolderLookup.Provider registries) {
         tag.putLong("NextEventTick", nextEventTick);
@@ -42,7 +39,7 @@ public class EngineerExpeditionSavedData extends SavedData {
 
     public static EngineerExpeditionSavedData load(CompoundTag tag, HolderLookup.Provider registries) {
         EngineerExpeditionSavedData data = new EngineerExpeditionSavedData();
-        data.nextEventTick = tag.contains("NextEventTick") ? tag.getLong("NextEventTick") : -1L;
+        data.nextEventTick = tag.contains("NextEventTick") ? Nbt.getLong(tag, "NextEventTick") : -1L;
         return data;
     }
 }

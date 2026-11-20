@@ -1,0 +1,11 @@
+{
+  "type": "minecraft:crafting_shapeless",
+  "category": "building",
+  "ingredients": [
+    "universegate:kelo_log"
+  ],
+  "result": {
+    "id": "universegate:kelo_planks",
+    "count": 4
+  }
+}

@@ -56,7 +56,7 @@ public class MobClonerControllerBlock extends BaseEntityBlock {
         }
 
         if (stack.is(ModItems.DNA)) {
-            if (!level.isClientSide) {
+            if (!level.isClientSide()) {
                 if (controller.tryInsertDna(player, stack)) {
                     return ItemInteractionResult.CONSUME;
                 }
@@ -66,13 +66,13 @@ public class MobClonerControllerBlock extends BaseEntityBlock {
                     player.displayClientMessage(Component.translatable("message.universegate.mob_cloner_controller_slot_occupied"), true);
                 }
             }
-            return ItemInteractionResult.sidedSuccess(level.isClientSide);
+            return ItemInteractionResult.sidedSuccess(level.isClientSide());
         }
 
-        if (!level.isClientSide && player instanceof ServerPlayer sp) {
+        if (!level.isClientSide() && player instanceof ServerPlayer sp) {
             MenuHelper.open(sp, controller);
         }
-        return ItemInteractionResult.sidedSuccess(level.isClientSide);
+        return ItemInteractionResult.sidedSuccess(level.isClientSide());
     }
 
     @Override
@@ -81,15 +81,20 @@ public class MobClonerControllerBlock extends BaseEntityBlock {
                                                BlockPos pos,
                                                Player player,
                                                BlockHitResult hit) {
-        if (!level.isClientSide && level.getBlockEntity(pos) instanceof MobClonerControllerBlockEntity controller && player instanceof ServerPlayer sp) {
+        if (!level.isClientSide() && level.getBlockEntity(pos) instanceof MobClonerControllerBlockEntity controller && player instanceof ServerPlayer sp) {
             MenuHelper.open(sp, controller);
         }
-        return InteractionResult.sidedSuccess(level.isClientSide);
+        //? if >=1.21.11 {
+        /*return level.isClientSide() ? InteractionResult.SUCCESS : InteractionResult.CONSUME;
+        *///?} else {
+        return InteractionResult.sidedSuccess(level.isClientSide());
+        //?}
     }
 
+    //? if <1.21.11 {
     @Override
     public void onRemove(BlockState state, Level level, BlockPos pos, BlockState newState, boolean movedByPiston) {
-        if (!level.isClientSide && !state.is(newState.getBlock())) {
+        if (!level.isClientSide() && !state.is(newState.getBlock())) {
             BlockEntity blockEntity = level.getBlockEntity(pos);
             if (blockEntity instanceof MobClonerControllerBlockEntity controller) {
                 controller.dropContents();
@@ -97,12 +102,13 @@ public class MobClonerControllerBlock extends BaseEntityBlock {
         }
         super.onRemove(state, level, pos, newState, movedByPiston);
     }
+    //?}
 
     @Override
     public @Nullable <T extends BlockEntity> BlockEntityTicker<T> getTicker(Level level,
                                                                              BlockState state,
                                                                              BlockEntityType<T> type) {
-        if (level.isClientSide) return null;
+        if (level.isClientSide()) return null;
         return createTickerHelper(type, ModBlockEntities.MOB_CLONER_CONTROLLER, MobClonerControllerBlockEntity::tick);
     }
 }

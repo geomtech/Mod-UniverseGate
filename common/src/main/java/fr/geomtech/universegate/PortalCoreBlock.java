@@ -1,5 +1,9 @@
 package fr.geomtech.universegate;
 
+//? if >=1.21.11 {
+/*import net.minecraft.world.level.redstone.Orientation;
+import org.jetbrains.annotations.Nullable;
+*///?}
 import fr.geomtech.universegate.platform.MenuHelper;
 
 import com.mojang.serialization.MapCodec;
@@ -72,7 +76,7 @@ public class PortalCoreBlock extends BaseEntityBlock {
 
     @Override
     public @Nullable <T extends BlockEntity> BlockEntityTicker<T> getTicker(Level level, BlockState state, BlockEntityType<T> type) {
-        if (level.isClientSide) {
+        if (level.isClientSide()) {
             return (lvl, p, st, be) -> {
                 if (be instanceof PortalCoreBlockEntity core) core.clientTick();
             };
@@ -86,19 +90,19 @@ public class PortalCoreBlock extends BaseEntityBlock {
     @Override
     public ItemInteractionResult useItemOn(ItemStack stack, BlockState state, Level level, BlockPos pos,
                                            Player player, InteractionHand hand, BlockHitResult hit) {
-        if (!level.isClientSide) {
+        if (!level.isClientSide()) {
             BlockEntity be = level.getBlockEntity(pos);
             if (be instanceof MenuProvider provider && player instanceof ServerPlayer sp) {
                 MenuHelper.open(sp, provider);
                 fr.geomtech.universegate.net.UniverseGateNetwork.sendPortalCoreNameToPlayer(sp, pos);
             }
         }
-        return ItemInteractionResult.sidedSuccess(level.isClientSide);
+        return ItemInteractionResult.sidedSuccess(level.isClientSide());
     }
 
     @Override
     protected InteractionResult useWithoutItem(BlockState state, Level level, BlockPos pos, Player player, BlockHitResult hit) {
-        if (level.isClientSide) return InteractionResult.SUCCESS;
+        if (level.isClientSide()) return InteractionResult.SUCCESS;
 
         BlockEntity be = level.getBlockEntity(pos);
         if (be instanceof MenuProvider provider && player instanceof ServerPlayer sp) {
@@ -112,28 +116,34 @@ public class PortalCoreBlock extends BaseEntityBlock {
     public void onPlace(BlockState state, Level level, BlockPos pos, BlockState oldState, boolean movedByPiston) {
         super.onPlace(state, level, pos, oldState, movedByPiston);
         PortalFireGuard.clearFireAbove(level, pos);
-        if (!level.isClientSide && level.getBlockEntity(pos) instanceof PortalCoreBlockEntity be) {
+        if (!level.isClientSide() && level.getBlockEntity(pos) instanceof PortalCoreBlockEntity be) {
             be.onPlaced();
         }
     }
 
+    //? if >=1.21.11 {
+    /*@Override
+    protected void neighborChanged(BlockState state, Level level, BlockPos pos, Block neighborBlock, @Nullable Orientation orientation, boolean movedByPiston) {
+    *///?} else {
     @Override
-    protected void neighborChanged(BlockState state,
-                                   Level level,
-                                   BlockPos pos,
-                                   Block neighborBlock,
-                                   BlockPos neighborPos,
-                                   boolean movedByPiston) {
+    protected void neighborChanged(BlockState state, Level level, BlockPos pos, Block neighborBlock, BlockPos neighborPos, boolean movedByPiston) {
+    //?}
         PortalFireGuard.clearFireAbove(level, pos);
+        //? if >=1.21.11 {
+        /*super.neighborChanged(state, level, pos, neighborBlock, orientation, movedByPiston);
+        *///?} else {
         super.neighborChanged(state, level, pos, neighborBlock, neighborPos, movedByPiston);
+        //?}
     }
 
+    //? if <1.21.11 {
     @Override
     public void onRemove(BlockState state, Level level, BlockPos pos, BlockState newState, boolean movedByPiston) {
-        if (!level.isClientSide && !state.is(newState.getBlock()) && level.getBlockEntity(pos) instanceof PortalCoreBlockEntity be) {
+        if (!level.isClientSide() && !state.is(newState.getBlock()) && level.getBlockEntity(pos) instanceof PortalCoreBlockEntity be) {
             be.onBroken();
         }
         super.onRemove(state, level, pos, newState, movedByPiston);
     }
+    //?}
 
 }

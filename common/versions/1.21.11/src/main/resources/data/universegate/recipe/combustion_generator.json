@@ -1,0 +1,18 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "pattern": [
+    "IRI",
+    "FCF",
+    "IRI"
+  ],
+  "key": {
+    "I": "minecraft:iron_ingot",
+    "R": "minecraft:redstone",
+    "F": "minecraft:furnace",
+    "C": "universegate:energy_crystal"
+  },
+  "result": {
+    "id": "universegate:combustion_generator",
+    "count": 1
+  }
+}

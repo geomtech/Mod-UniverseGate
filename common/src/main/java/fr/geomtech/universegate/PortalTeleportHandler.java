@@ -206,9 +206,17 @@ public final class PortalTeleportHandler {
         ModSounds.playAt(sourceLevel, corePos, ModSounds.PORTAL_ENTITY_GOING_THROUGH, 0.9F, 1.0F);
         boolean teleported;
         if (entity instanceof ServerPlayer player) {
+            //? if >=1.21.11 {
+            /*teleported = player.teleportTo(targetLevel, x, y, z, Set.<RelativeMovement>of(), yaw, pitch, true);
+            *///?} else {
             teleported = player.teleportTo(targetLevel, x, y, z, Set.<RelativeMovement>of(), yaw, pitch);
+            //?}
         } else {
+            //? if >=1.21.11 {
+            /*teleported = entity.teleportTo(targetLevel, x, y, z, Set.<RelativeMovement>of(), yaw, pitch, true);
+            *///?} else {
             teleported = entity.teleportTo(targetLevel, x, y, z, Set.<RelativeMovement>of(), yaw, pitch);
+            //?}
         }
         if (!teleported) return;
 

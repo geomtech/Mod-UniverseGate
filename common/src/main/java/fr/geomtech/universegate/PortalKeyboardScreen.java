@@ -1,5 +1,10 @@
 package fr.geomtech.universegate;
 
+import fr.geomtech.universegate.compat.GuiCompat;
+//? if >=1.21.11 {
+/*import net.minecraft.client.input.CharacterEvent;
+import net.minecraft.client.input.KeyEvent;
+*///?}
 import fr.geomtech.universegate.PortalInfo;
 import fr.geomtech.universegate.PortalKeyboardMenu;
 import fr.geomtech.universegate.net.ConnectPortalPayload;
@@ -27,8 +32,13 @@ public class PortalKeyboardScreen extends AbstractContainerScreen<AbstractContai
 
     private static final ResourceLocation TEXTURE =
             ResourceLocation.fromNamespaceAndPath("universegate", "textures/gui/portal_keyboard.png");
+    //? if >=1.21.11 {
+    /*private static final net.minecraft.network.chat.FontDescription ALT_FONT =
+            new net.minecraft.network.chat.FontDescription.Resource(ResourceLocation.fromNamespaceAndPath("minecraft", "alt"));
+    *///?} else {
     private static final ResourceLocation ALT_FONT =
             ResourceLocation.fromNamespaceAndPath("minecraft", "alt");
+    //?}
 
     private final List<PortalInfo> portals = new ArrayList<>();
     private final List<String> portalSearchIndex = new ArrayList<>();
@@ -320,13 +330,13 @@ public class PortalKeyboardScreen extends AbstractContainerScreen<AbstractContai
 
     @Override
     protected void renderBg(GuiGraphics g, float partialTicks, int mouseX, int mouseY) {
-        g.blit(TEXTURE, leftPos, topPos, 0, 0, imageWidth, 113, 256, 200);
+        GuiCompat.blit(g, TEXTURE, leftPos, topPos, 0, 0, imageWidth, 113, 256, 200);
 
         for (int i = 0; i < 4; i++) {
-            g.blit(TEXTURE, leftPos, topPos + 113 + (i * 13), 0, 100, imageWidth, 13, 256, 200);
+            GuiCompat.blit(g, TEXTURE, leftPos, topPos + 113 + (i * 13), 0, 100, imageWidth, 13, 256, 200);
         }
 
-        g.blit(TEXTURE, leftPos, topPos + 165, 0, 193, imageWidth, 7, 256, 200);
+        GuiCompat.blit(g, TEXTURE, leftPos, topPos + 165, 0, 193, imageWidth, 7, 256, 200);
 
         for (VisiblePortalRow row : visibleRows) {
             int badgeX = leftPos + COST_BADGE_X;
@@ -420,6 +430,23 @@ public class PortalKeyboardScreen extends AbstractContainerScreen<AbstractContai
         }
     }
 
+    //? if >=1.21.11 {
+    /*@Override
+    public boolean keyPressed(KeyEvent event) {
+        if (searchBox != null && searchBox.isFocused() && this.minecraft != null) {
+            if (searchBox.keyPressed(event)) return true;
+            if (searchBox.canConsumeInput()) return true;
+            if (this.minecraft.options.keyInventory.matches(event)) return true;
+        }
+        return super.keyPressed(event);
+    }
+
+    @Override
+    public boolean charTyped(CharacterEvent event) {
+        if (searchBox != null && searchBox.isFocused() && searchBox.charTyped(event)) return true;
+        return super.charTyped(event);
+    }
+    *///?} else {
     @Override
     public boolean keyPressed(int keyCode, int scanCode, int modifiers) {
         if (searchBox != null && searchBox.isFocused() && this.minecraft != null) {
@@ -435,6 +462,7 @@ public class PortalKeyboardScreen extends AbstractContainerScreen<AbstractContai
         if (searchBox != null && searchBox.isFocused() && searchBox.charTyped(codePoint, modifiers)) return true;
         return super.charTyped(codePoint, modifiers);
     }
+    //?}
 
     private void updateDisconnectButton() {
         if (disconnectButton == null) return;

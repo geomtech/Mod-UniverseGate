@@ -30,7 +30,12 @@ import net.fabricmc.api.ClientModInitializer;
 import net.fabricmc.fabric.api.client.particle.v1.ParticleFactoryRegistry;
 import fr.geomtech.universegate.ModParticles;
 import fr.geomtech.universegate.UniverseGateSparkParticle;
+//? if >=1.21.11 {
+/*import net.fabricmc.fabric.api.client.rendering.v1.BlockRenderLayerMap;
+import net.minecraft.client.renderer.chunk.ChunkSectionLayer;
+*///?} else {
 import net.fabricmc.fabric.api.blockrenderlayer.v1.BlockRenderLayerMap;
+//?}
 import net.fabricmc.fabric.api.client.item.v1.ItemTooltipCallback;
 import net.fabricmc.fabric.api.client.render.fluid.v1.FluidRenderHandlerRegistry;
 import net.fabricmc.fabric.api.client.render.fluid.v1.SimpleFluidRenderHandler;
@@ -53,7 +58,11 @@ public class UniverseGateFabricClient implements ClientModInitializer {
 				ModFluids.FLOWING_DARK_MATTER,
 				new SimpleFluidRenderHandler(darkMatterStill, darkMatterFlowing)
 		);
+		//? if >=1.21.11 {
+		/*BlockRenderLayerMap.putFluids(ChunkSectionLayer.TRANSLUCENT, ModFluids.STILL_DARK_MATTER, ModFluids.FLOWING_DARK_MATTER);
+		*///?} else {
 		BlockRenderLayerMap.INSTANCE.putFluids(RenderType.translucent(), ModFluids.STILL_DARK_MATTER, ModFluids.FLOWING_DARK_MATTER);
+		//?}
 		ParticleFactoryRegistry.getInstance().register(ModParticles.SPARK, UniverseGateSparkParticle.Provider::new);
 
 		MenuScreens.<AbstractContainerMenu, PortalKeyboardScreen>register(ModMenuTypes.PORTAL_KEYBOARD, PortalKeyboardScreen::new);
@@ -67,7 +76,11 @@ public class UniverseGateFabricClient implements ClientModInitializer {
 		MenuScreens.register(ModMenuTypes.COMBUSTION_GENERATOR, CombustionGeneratorScreen::new);
 		MenuScreens.register(ModMenuTypes.DARK_ENERGY_GENERATOR, DarkEnergyGeneratorScreen::new);
 		MenuScreens.register(ModMenuTypes.MOB_CLONER_CONTROLLER, MobClonerControllerScreen::new);
+		//? if >=1.21.11 {
+		/*BlockRenderLayerMap.putBlock(ModBlocks.PORTAL_FIELD, ChunkSectionLayer.TRANSLUCENT);
+		*///?} else {
 		BlockRenderLayerMap.INSTANCE.putBlock(ModBlocks.PORTAL_FIELD, RenderType.translucent());
+		//?}
 		EntityModelLayerRegistry.registerModelLayer(RiftShadeModel.LAYER_LOCATION, RiftShadeModel::createBodyLayer);
 		EntityRendererRegistry.register(ModEntityTypes.RIFT_BEAST, RiftBeastRenderer::new);
 		EntityRendererRegistry.register(ModEntityTypes.RIFT_SHADE, RiftShadeRenderer::new);
@@ -76,8 +89,13 @@ public class UniverseGateFabricClient implements ClientModInitializer {
 		BlockEntityRenderers.register(ModBlockEntities.PARABOLA, ParabolaDishRenderer::new);
 		BlockEntityRenderers.register(ModBlockEntities.ZPC_INTERFACE_CONTROLLER, ZpcInterfaceControllerRenderer::new);
 		BlockEntityRenderers.register(ModBlockEntities.FLUID_PIPE, FluidPipeBlockEntityRenderer::new);
+		//? if >=1.21.11 {
+		/*BlockRenderLayerMap.putBlock(ModBlocks.FLUID_PIPE, ChunkSectionLayer.TRANSLUCENT);
+		BlockRenderLayerMap.putBlock(ModBlocks.RIFT_CRYSTAL_CLUSTER, ChunkSectionLayer.CUTOUT);
+		*///?} else {
 		BlockRenderLayerMap.INSTANCE.putBlock(ModBlocks.FLUID_PIPE, RenderType.translucent());
 		BlockRenderLayerMap.INSTANCE.putBlock(ModBlocks.RIFT_CRYSTAL_CLUSTER, RenderType.cutout());
+		//?}
 		UniverseGateClientNetwork.registerClient();
 		ItemTooltipCallback.EVENT.register((stack, context, type, lines) -> ModTooltips.appendTooltip(stack, lines));
 		HudRenderCallback.EVENT.register((guiGraphics, deltaTracker) -> DnaExtractionHudOverlay.render(guiGraphics));

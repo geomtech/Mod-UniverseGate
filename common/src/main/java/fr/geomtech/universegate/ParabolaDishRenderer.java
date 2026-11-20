@@ -4,12 +4,12 @@ import com.mojang.blaze3d.vertex.PoseStack;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.renderer.MultiBufferSource;
 import net.minecraft.client.renderer.block.BlockRenderDispatcher;
-import net.minecraft.client.renderer.blockentity.BlockEntityRenderer;
+import fr.geomtech.universegate.compat.ImmediateBlockEntityRenderer;
 import net.minecraft.client.renderer.blockentity.BlockEntityRendererProvider;
 import net.minecraft.world.level.block.state.BlockState;
 import org.joml.Quaternionf;
 
-public class ParabolaDishRenderer implements BlockEntityRenderer<ParabolaBlockEntity> {
+public class ParabolaDishRenderer extends ImmediateBlockEntityRenderer<ParabolaBlockEntity> {
 
     private static final float SPIN_DEGREES_PER_TICK = 4.0F;
     private static final float PHASE_DEGREES = 9.0F;

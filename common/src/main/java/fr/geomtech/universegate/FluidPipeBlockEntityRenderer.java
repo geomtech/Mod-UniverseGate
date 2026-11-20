@@ -4,7 +4,7 @@ import com.mojang.blaze3d.vertex.PoseStack;
 import com.mojang.blaze3d.vertex.VertexConsumer;
 import net.minecraft.client.renderer.MultiBufferSource;
 import net.minecraft.client.renderer.RenderType;
-import net.minecraft.client.renderer.blockentity.BlockEntityRenderer;
+import fr.geomtech.universegate.compat.ImmediateBlockEntityRenderer;
 import net.minecraft.client.renderer.blockentity.BlockEntityRendererProvider;
 import net.minecraft.client.renderer.texture.TextureAtlasSprite;
 import net.minecraft.client.resources.model.Material;
@@ -13,7 +13,7 @@ import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.inventory.InventoryMenu;
 import net.minecraft.client.Minecraft;
 
-public class FluidPipeBlockEntityRenderer implements BlockEntityRenderer<FluidPipeBlockEntity> {
+public class FluidPipeBlockEntityRenderer extends ImmediateBlockEntityRenderer<FluidPipeBlockEntity> {
 
     public static final ResourceLocation FLUID_TEXTURE = ResourceLocation.fromNamespaceAndPath(UniverseGate.MOD_ID, "block/dark_matter_still");
 
@@ -28,8 +28,17 @@ public class FluidPipeBlockEntityRenderer implements BlockEntityRenderer<FluidPi
         float fill = (float) entity.getFluidAmount() / FluidPipeBlockEntity.CAPACITY;
         
         // Use the fluid texture
+        //? if >=1.21.11 {
+        /*TextureAtlasSprite sprite = Minecraft.getInstance().getAtlasManager()
+                .getAtlasOrThrow(net.minecraft.data.AtlasIds.BLOCKS).getSprite(FLUID_TEXTURE);
+        *///?} else {
         TextureAtlasSprite sprite = Minecraft.getInstance().getTextureAtlas(InventoryMenu.BLOCK_ATLAS).apply(FLUID_TEXTURE);
+        //?}
+        //? if >=1.21.11 {
+        /*VertexConsumer builder = bufferSource.getBuffer(RenderTypes.translucentMovingBlock());
+        *///?} else {
         VertexConsumer builder = bufferSource.getBuffer(RenderType.translucent());
+        //?}
 
         // Draw center "core" of fluid
         // Scale based on fill amount, but clamp minimum to be visible if there's any fluid

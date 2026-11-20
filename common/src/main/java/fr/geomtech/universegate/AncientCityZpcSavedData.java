@@ -1,5 +1,8 @@
 package fr.geomtech.universegate;
 
+import fr.geomtech.universegate.compat.Compat;
+import fr.geomtech.universegate.compat.Nbt;
+import fr.geomtech.universegate.compat.SavedDataCompat;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.HolderLookup;
 import net.minecraft.nbt.CompoundTag;
@@ -17,14 +20,7 @@ public class AncientCityZpcSavedData extends SavedData {
 
     public static AncientCityZpcSavedData get(MinecraftServer server) {
         ServerLevel overworld = server.overworld();
-        return overworld.getDataStorage().computeIfAbsent(
-                new SavedData.Factory<>(
-                        AncientCityZpcSavedData::new,
-                        AncientCityZpcSavedData::load,
-                        null
-                ),
-                DATA_NAME
-        );
+        return SavedDataCompat.computeIfAbsent(overworld, DATA_NAME, AncientCityZpcSavedData::new, AncientCityZpcSavedData::load, AncientCityZpcSavedData::save);
     }
 
     public boolean hasReward(BlockPos cityCenter) {
@@ -37,6 +33,7 @@ public class AncientCityZpcSavedData extends SavedData {
         }
     }
 
+    //? if <1.21.11
     @Override
     public CompoundTag save(CompoundTag tag, HolderLookup.Provider registries) {
         long[] values = new long[rewardedCities.size()];
@@ -50,7 +47,7 @@ public class AncientCityZpcSavedData extends SavedData {
 
     public static AncientCityZpcSavedData load(CompoundTag tag, HolderLookup.Provider registries) {
         AncientCityZpcSavedData data = new AncientCityZpcSavedData();
-        for (long value : tag.getLongArray("RewardedCities")) {
+        for (long value : Nbt.getLongArray(tag, "RewardedCities")) {
             data.rewardedCities.add(value);
         }
         return data;

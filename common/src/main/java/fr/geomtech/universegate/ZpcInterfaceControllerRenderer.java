@@ -1,16 +1,21 @@
 package fr.geomtech.universegate;
 
+//? if >=1.21.11 {
+/*import fr.geomtech.universegate.compat.RecordingBufferSource;
+import net.minecraft.client.Minecraft;
+import net.minecraft.client.renderer.item.ItemStackRenderState;
+*///?}
 import com.mojang.blaze3d.vertex.PoseStack;
 import com.mojang.math.Axis;
 import net.minecraft.client.renderer.MultiBufferSource;
-import net.minecraft.client.renderer.blockentity.BlockEntityRenderer;
+import fr.geomtech.universegate.compat.ImmediateBlockEntityRenderer;
 import net.minecraft.client.renderer.blockentity.BlockEntityRendererProvider;
 import net.minecraft.client.renderer.entity.ItemRenderer;
 import net.minecraft.core.Direction;
 import net.minecraft.world.item.ItemDisplayContext;
 import net.minecraft.world.item.ItemStack;
 
-public class ZpcInterfaceControllerRenderer implements BlockEntityRenderer<ZpcInterfaceControllerBlockEntity> {
+public class ZpcInterfaceControllerRenderer extends ImmediateBlockEntityRenderer<ZpcInterfaceControllerBlockEntity> {
 
     private static final int FULL_BRIGHT = 0x00F000F0;
     private static final float[][] SLOT_OFFSETS = {
@@ -20,10 +25,14 @@ public class ZpcInterfaceControllerRenderer implements BlockEntityRenderer<ZpcIn
     };
     private static final float[] SLOT_YAW = {-30.0F, 180.0F, 30.0F};
 
+    //? if <1.21.11 {
     private final ItemRenderer itemRenderer;
+    //?}
 
     public ZpcInterfaceControllerRenderer(BlockEntityRendererProvider.Context context) {
+        //? if <1.21.11 {
         this.itemRenderer = context.getItemRenderer();
+        //?}
     }
 
     @Override
@@ -66,14 +75,7 @@ public class ZpcInterfaceControllerRenderer implements BlockEntityRenderer<ZpcIn
             float scale = 0.56F;
             poseStack.scale(scale, scale, scale);
 
-            this.itemRenderer.renderStatic(stack,
-                    ItemDisplayContext.FIXED,
-                    light,
-                    packedOverlay,
-                    poseStack,
-                    buffer,
-                    blockEntity.getLevel(),
-                    0);
+            renderItem(stack, light, packedOverlay, poseStack, buffer, blockEntity);
             poseStack.popPose();
         }
 
@@ -88,18 +90,23 @@ public class ZpcInterfaceControllerRenderer implements BlockEntityRenderer<ZpcIn
                 poseStack.mulPose(Axis.YP.rotationDegrees(180.0F));
                 float scale = 0.56F;
                 poseStack.scale(scale, scale, scale);
-                this.itemRenderer.renderStatic(fallback,
-                        ItemDisplayContext.FIXED,
-                        light,
-                        packedOverlay,
-                        poseStack,
-                        buffer,
-                        blockEntity.getLevel(),
-                        0);
+                renderItem(fallback, light, packedOverlay, poseStack, buffer, blockEntity);
                 poseStack.popPose();
             }
         }
 
         poseStack.popPose();
+    }
+
+    private void renderItem(ItemStack stack, int light, int overlay, PoseStack poseStack, MultiBufferSource buffer,
+                            ZpcInterfaceControllerBlockEntity blockEntity) {
+        //? if >=1.21.11 {
+        /*ItemStackRenderState state = new ItemStackRenderState();
+        Minecraft.getInstance().getItemModelResolver()
+                .updateForTopItem(state, stack, ItemDisplayContext.FIXED, blockEntity.getLevel(), null, 0);
+        state.submit(poseStack, ((RecordingBufferSource) buffer).collector(), light, overlay, 0);
+        *///?} else {
+        this.itemRenderer.renderStatic(stack, ItemDisplayContext.FIXED, light, overlay, poseStack, buffer, blockEntity.getLevel(), 0);
+        //?}
     }
 }

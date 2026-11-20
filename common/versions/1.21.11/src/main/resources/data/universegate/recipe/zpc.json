@@ -1,0 +1,17 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "pattern": [
+    "RER",
+    "ECE",
+    "RER"
+  ],
+  "key": {
+    "R": "universegate:rift_crystal",
+    "E": "universegate:energy_crystal",
+    "C": "universegate:rift_core"
+  },
+  "result": {
+    "id": "universegate:zpc",
+    "count": 1
+  }
+}

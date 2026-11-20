@@ -1,0 +1,17 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "pattern": [
+    " G ",
+    "DED",
+    " G "
+  ],
+  "key": {
+    "G": "minecraft:gold_ingot",
+    "D": "minecraft:diamond",
+    "E": "minecraft:emerald"
+  },
+  "result": {
+    "id": "universegate:meteorological_catalyst",
+    "count": 1
+  }
+}

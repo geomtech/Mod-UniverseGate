@@ -1,10 +1,18 @@
 package fr.geomtech.universegate;
 
+import net.minecraft.world.entity.MobSpawnType;
+import fr.geomtech.universegate.compat.Compat;
+import fr.geomtech.universegate.compat.DataReader;
+import fr.geomtech.universegate.compat.DataWriter;
+import net.minecraft.core.HolderLookup;
+import net.minecraft.nbt.CompoundTag;
+//? if >=1.21.11 {
+/*import net.minecraft.world.level.storage.ValueInput;
+import net.minecraft.world.level.storage.ValueOutput;
+*///?}
 import fr.geomtech.universegate.platform.PosMenuProvider;
 import net.minecraft.core.BlockPos;
-import net.minecraft.core.HolderLookup;
 import net.minecraft.core.particles.ParticleTypes;
-import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.chat.Component;
 import net.minecraft.network.protocol.game.ClientboundBlockEntityDataPacket;
 import net.minecraft.server.level.ServerLevel;
@@ -262,9 +270,9 @@ public class MeteorologicalControllerBlockEntity extends BlockEntity implements 
     }
 
     private void strikeCatalystWithLightning(ServerLevel level, BlockPos catalystPos) {
-        LightningBolt lightningBolt = EntityType.LIGHTNING_BOLT.create(level);
+        LightningBolt lightningBolt = Compat.create(EntityType.LIGHTNING_BOLT, level, MobSpawnType.TRIGGERED);
         if (lightningBolt == null) return;
-        lightningBolt.moveTo(catalystPos.getX() + 0.5D, catalystPos.getY() + 1.0D, catalystPos.getZ() + 0.5D);
+        Compat.moveTo(lightningBolt, catalystPos.getX() + 0.5D, catalystPos.getY() + 1.0D, catalystPos.getZ() + 0.5D);
         lightningBolt.setVisualOnly(true);
         level.addFreshEntity(lightningBolt);
     }
@@ -338,9 +346,33 @@ public class MeteorologicalControllerBlockEntity extends BlockEntity implements 
         syncToClient();
     }
 
+    //? if >=1.21.11 {
+    /*@Override
+    protected void saveAdditional(ValueOutput output) {
+        super.saveAdditional(output);
+        saveData(DataWriter.of(output));
+    }
+
+    @Override
+    protected void loadAdditional(ValueInput input) {
+        super.loadAdditional(input);
+        loadData(DataReader.of(input));
+    }
+    *///?} else {
     @Override
     protected void saveAdditional(CompoundTag tag, HolderLookup.Provider registries) {
         super.saveAdditional(tag, registries);
+        saveData(DataWriter.of(tag, registries));
+    }
+
+    @Override
+    protected void loadAdditional(CompoundTag tag, HolderLookup.Provider registries) {
+        super.loadAdditional(tag, registries);
+        loadData(DataReader.of(tag, registries));
+    }
+    //?}
+
+    private void saveData(DataWriter tag) {
         tag.putInt("ChargeTicks", chargeTicks);
         tag.putBoolean("SequenceActive", sequenceActive);
         tag.putBoolean("FinaleTriggered", finaleTriggered);
@@ -353,9 +385,7 @@ public class MeteorologicalControllerBlockEntity extends BlockEntity implements 
         }
     }
 
-    @Override
-    protected void loadAdditional(CompoundTag tag, HolderLookup.Provider registries) {
-        super.loadAdditional(tag, registries);
+    private void loadData(DataReader tag) {
         chargeTicks = Mth.clamp(tag.getInt("ChargeTicks"), 0, CHARGE_FULL_TICKS);
         sequenceActive = tag.getBoolean("SequenceActive");
         finaleTriggered = tag.getBoolean("FinaleTriggered");
@@ -428,7 +458,7 @@ public class MeteorologicalControllerBlockEntity extends BlockEntity implements 
     }
 
     private void syncToClient() {
-        if (level != null && !level.isClientSide) {
+        if (level != null && !level.isClientSide()) {
             level.sendBlockUpdated(worldPosition, getBlockState(), getBlockState(), 3);
         }
     }

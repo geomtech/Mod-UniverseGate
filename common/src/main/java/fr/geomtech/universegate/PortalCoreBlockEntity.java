@@ -1,9 +1,15 @@
 package fr.geomtech.universegate;
 
-import fr.geomtech.universegate.platform.PosMenuProvider;
-import net.minecraft.core.BlockPos;
+import fr.geomtech.universegate.compat.DataReader;
+import fr.geomtech.universegate.compat.DataWriter;
 import net.minecraft.core.HolderLookup;
 import net.minecraft.nbt.CompoundTag;
+//? if >=1.21.11 {
+/*import net.minecraft.world.level.storage.ValueInput;
+import net.minecraft.world.level.storage.ValueOutput;
+*///?}
+import fr.geomtech.universegate.platform.PosMenuProvider;
+import net.minecraft.core.BlockPos;
 import net.minecraft.network.protocol.game.ClientboundBlockEntityDataPacket;
 import net.minecraft.network.chat.Component;
 import net.minecraft.world.level.ChunkPos;
@@ -99,7 +105,7 @@ public class PortalCoreBlockEntity extends BlockEntity implements PosMenuProvide
 
     // ---------- Ticking ----------
     public void clientTick() {
-        if (level == null || !level.isClientSide || !opening) return;
+        if (level == null || !level.isClientSide() || !opening) return;
         PortalOpeningParticles.clientTick(level, worldPosition, this);
     }
 
@@ -238,7 +244,7 @@ public class PortalCoreBlockEntity extends BlockEntity implements PosMenuProvide
 
     private void updateRedstoneSignal(boolean previouslyEmitting) {
         if (previouslyEmitting == emitsRedstoneSignal()) return;
-        if (level == null || level.isClientSide) return;
+        if (level == null || level.isClientSide()) return;
         level.updateNeighborsAt(worldPosition, getBlockState().getBlock());
     }
 
@@ -504,10 +510,42 @@ public class PortalCoreBlockEntity extends BlockEntity implements PosMenuProvide
     }
 
     // ---------- NBT ----------
+    //? if >=1.21.11 {
+    /*// Called before the block entity is removed (replaces Block.onRemove since 1.21.5).
+    @Override
+    public void preRemoveSideEffects(BlockPos pos, BlockState state) {
+        onBroken();
+        super.preRemoveSideEffects(pos, state);
+    }
+    *///?}
+
+    //? if >=1.21.11 {
+    /*@Override
+    protected void saveAdditional(ValueOutput output) {
+        super.saveAdditional(output);
+        saveData(DataWriter.of(output));
+    }
+
+    @Override
+    protected void loadAdditional(ValueInput input) {
+        super.loadAdditional(input);
+        loadData(DataReader.of(input));
+    }
+    *///?} else {
     @Override
     protected void saveAdditional(CompoundTag tag, HolderLookup.Provider registries) {
         super.saveAdditional(tag, registries);
+        saveData(DataWriter.of(tag, registries));
+    }
 
+    @Override
+    protected void loadAdditional(CompoundTag tag, HolderLookup.Provider registries) {
+        super.loadAdditional(tag, registries);
+        loadData(DataReader.of(tag, registries));
+    }
+    //?}
+
+    private void saveData(DataWriter tag) {
         if (portalId != null) tag.putUUID("PortalId", portalId);
         tag.putString("PortalName", portalName);
 
@@ -527,36 +565,7 @@ public class PortalCoreBlockEntity extends BlockEntity implements PosMenuProvide
         tag.putInt("DarkEnergyAmount", darkEnergyAmount);
     }
 
-    // ---------- Client sync ----------
-    // Seul l'état d'ouverture est envoyé aux clients : il leur suffit pour animer la séquence
-    // d'ouverture eux-mêmes (voir PortalOpeningParticles), sans paquet de particules à chaque tick.
-    private static final String CLIENT_SYNC_KEY = "UniverseGateClientSync";
-
-    @Override
-    public CompoundTag getUpdateTag(HolderLookup.Provider registries) {
-        CompoundTag tag = new CompoundTag();
-        tag.putBoolean(CLIENT_SYNC_KEY, true);
-        tag.putBoolean("Opening", opening);
-        tag.putLong("OpeningStart", openingStartedGameTime);
-        tag.putLong("OpeningComplete", openingCompleteGameTime);
-        return tag;
-    }
-
-    @Override
-    public ClientboundBlockEntityDataPacket getUpdatePacket() {
-        return ClientboundBlockEntityDataPacket.create(this);
-    }
-
-    private void syncOpeningToClients() {
-        if (!(level instanceof ServerLevel sl)) return;
-        BlockState state = getBlockState();
-        sl.sendBlockUpdated(worldPosition, state, state, 3);
-    }
-
-    @Override
-    protected void loadAdditional(CompoundTag tag, HolderLookup.Provider registries) {
-        super.loadAdditional(tag, registries);
-
+    private void loadData(DataReader tag) {
         if (tag.getBoolean(CLIENT_SYNC_KEY)) {
             opening = tag.getBoolean("Opening");
             openingStartedGameTime = opening ? tag.getLong("OpeningStart") : 0L;
@@ -564,13 +573,13 @@ public class PortalCoreBlockEntity extends BlockEntity implements PosMenuProvide
             return;
         }
 
-        portalId = tag.hasUUID("PortalId") ? tag.getUUID("PortalId") : null;
+        portalId = tag.getUUID("PortalId");
         portalName = tag.getString("PortalName");
 
         active = tag.getBoolean("Active");
         opening = tag.getBoolean("Opening");
-        connectionId = tag.hasUUID("ConnectionId") ? tag.getUUID("ConnectionId") : null;
-        targetPortalId = tag.hasUUID("TargetPortalId") ? tag.getUUID("TargetPortalId") : null;
+        connectionId = tag.getUUID("ConnectionId");
+        targetPortalId = tag.getUUID("TargetPortalId");
         activeUntilGameTime = tag.getLong("ActiveUntil");
         activeUntilEpochMillis = tag.contains("ActiveUntilEpoch") ? tag.getLong("ActiveUntilEpoch") : 0L;
         activeStartedGameTime = tag.contains("ActiveStarted") ? tag.getLong("ActiveStarted") : 0L;
@@ -599,6 +608,32 @@ public class PortalCoreBlockEntity extends BlockEntity implements PosMenuProvide
         if (level instanceof ServerLevel sl && portalId != null) {
             PortalRegistrySavedData.get(sl.getServer()).upsertPortal(sl, portalId, portalName, worldPosition);
         }
+    }
+
+    // ---------- Client sync ----------
+    // Seul l'état d'ouverture est envoyé aux clients : il leur suffit pour animer la séquence
+    // d'ouverture eux-mêmes (voir PortalOpeningParticles), sans paquet de particules à chaque tick.
+    private static final String CLIENT_SYNC_KEY = "UniverseGateClientSync";
+
+    @Override
+    public CompoundTag getUpdateTag(HolderLookup.Provider registries) {
+        CompoundTag tag = new CompoundTag();
+        tag.putBoolean(CLIENT_SYNC_KEY, true);
+        tag.putBoolean("Opening", opening);
+        tag.putLong("OpeningStart", openingStartedGameTime);
+        tag.putLong("OpeningComplete", openingCompleteGameTime);
+        return tag;
+    }
+
+    @Override
+    public ClientboundBlockEntityDataPacket getUpdatePacket() {
+        return ClientboundBlockEntityDataPacket.create(this);
+    }
+
+    private void syncOpeningToClients() {
+        if (!(level instanceof ServerLevel sl)) return;
+        BlockState state = getBlockState();
+        sl.sendBlockUpdated(worldPosition, state, state, 3);
     }
 
     @Override

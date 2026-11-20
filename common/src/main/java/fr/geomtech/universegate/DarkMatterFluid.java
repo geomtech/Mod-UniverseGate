@@ -1,5 +1,6 @@
 package fr.geomtech.universegate;
 
+import net.minecraft.server.level.ServerLevel;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.world.item.Item;
@@ -49,8 +50,13 @@ public abstract class DarkMatterFluid extends FlowingFluid {
         return fluid == ModFluids.STILL_DARK_MATTER || fluid == ModFluids.FLOWING_DARK_MATTER;
     }
 
+    //? if >=1.21.11 {
+    /*@Override
+    protected boolean canConvertToSource(ServerLevel level) {
+    *///?} else {
     @Override
     protected boolean canConvertToSource(Level level) {
+    //?}
         return false;
     }
 

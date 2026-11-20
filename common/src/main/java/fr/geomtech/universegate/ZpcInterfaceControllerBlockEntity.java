@@ -1,10 +1,16 @@
 package fr.geomtech.universegate;
 
+import fr.geomtech.universegate.compat.DataReader;
+import fr.geomtech.universegate.compat.DataWriter;
+import net.minecraft.core.HolderLookup;
+import net.minecraft.nbt.CompoundTag;
+//? if >=1.21.11 {
+/*import net.minecraft.world.level.storage.ValueInput;
+import net.minecraft.world.level.storage.ValueOutput;
+*///?}
 import fr.geomtech.universegate.platform.PosMenuProvider;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
-import net.minecraft.core.HolderLookup;
-import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.chat.Component;
 import net.minecraft.network.protocol.Packet;
 import net.minecraft.network.protocol.game.ClientGamePacketListener;
@@ -502,7 +508,7 @@ public class ZpcInterfaceControllerBlockEntity extends net.minecraft.world.level
     }
 
     private boolean syncBlockStateVisuals() {
-        if (level == null || level.isClientSide) return false;
+        if (level == null || level.isClientSide()) return false;
 
         BlockState state = getBlockState();
         if (!state.hasProperty(ZpcInterfaceControllerBlock.HAS_ZPC)
@@ -539,14 +545,47 @@ public class ZpcInterfaceControllerBlockEntity extends net.minecraft.world.level
     }
 
     private void syncClient() {
-        if (level != null && !level.isClientSide) {
+        if (level != null && !level.isClientSide()) {
             level.sendBlockUpdated(worldPosition, getBlockState(), getBlockState(), 3);
         }
     }
 
+    //? if >=1.21.11 {
+    /*// Called before the block entity is removed (replaces Block.onRemove since 1.21.5).
+    @Override
+    public void preRemoveSideEffects(BlockPos pos, BlockState state) {
+        dropInstalledZpc();
+        super.preRemoveSideEffects(pos, state);
+    }
+    *///?}
+
+    //? if >=1.21.11 {
+    /*@Override
+    protected void saveAdditional(ValueOutput output) {
+        super.saveAdditional(output);
+        saveData(DataWriter.of(output));
+    }
+
+    @Override
+    protected void loadAdditional(ValueInput input) {
+        super.loadAdditional(input);
+        loadData(DataReader.of(input));
+    }
+    *///?} else {
     @Override
     protected void saveAdditional(CompoundTag tag, HolderLookup.Provider registries) {
         super.saveAdditional(tag, registries);
+        saveData(DataWriter.of(tag, registries));
+    }
+
+    @Override
+    protected void loadAdditional(CompoundTag tag, HolderLookup.Provider registries) {
+        super.loadAdditional(tag, registries);
+        loadData(DataReader.of(tag, registries));
+    }
+    //?}
+
+    private void saveData(DataWriter tag) {
         tag.putLongArray("SlotEnergy", slotEnergy);
         tag.putIntArray("SlotProgress", slotProgress);
         tag.putByteArray("SlotOccupied", boolArrayToByteArray(slotOccupied));
@@ -557,10 +596,7 @@ public class ZpcInterfaceControllerBlockEntity extends net.minecraft.world.level
         tag.putBoolean("NetworkLinked", networkLinked);
     }
 
-    @Override
-    protected void loadAdditional(CompoundTag tag, HolderLookup.Provider registries) {
-        super.loadAdditional(tag, registries);
-
+    private void loadData(DataReader tag) {
         resetSlots();
 
         if (tag.contains("SlotEnergy") || tag.contains("SlotOccupied")) {
@@ -608,9 +644,13 @@ public class ZpcInterfaceControllerBlockEntity extends net.minecraft.world.level
 
     @Override
     public CompoundTag getUpdateTag(HolderLookup.Provider registries) {
+        //? if >=1.21.11 {
+        /*return saveWithoutMetadata(registries);
+        *///?} else {
         CompoundTag tag = new CompoundTag();
         saveAdditional(tag, registries);
         return tag;
+        //?}
     }
 
     @Nullable

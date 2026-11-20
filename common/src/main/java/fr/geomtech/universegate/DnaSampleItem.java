@@ -1,5 +1,11 @@
 package fr.geomtech.universegate;
 
+import fr.geomtech.universegate.compat.Nbt;
+//? if >=1.21.11 {
+/*import net.minecraft.world.item.component.TooltipDisplay;
+import java.util.ArrayList;
+import java.util.function.Consumer;
+*///?}
 import net.minecraft.ChatFormatting;
 import net.minecraft.core.component.DataComponents;
 import net.minecraft.core.registries.BuiltInRegistries;
@@ -60,7 +66,7 @@ public class DnaSampleItem extends Item {
             return Optional.empty();
         }
 
-        ResourceLocation location = ResourceLocation.tryParse(tag.getString(TAG_ENTITY_TYPE));
+        ResourceLocation location = ResourceLocation.tryParse(Nbt.getString(tag, TAG_ENTITY_TYPE));
         return Optional.ofNullable(location);
     }
 
@@ -74,7 +80,7 @@ public class DnaSampleItem extends Item {
             return Optional.empty();
         }
 
-        String name = tag.getString(TAG_CUSTOM_NAME);
+        String name = Nbt.getString(tag, TAG_CUSTOM_NAME);
         if (name == null || name.isBlank()) {
             return Optional.empty();
         }
@@ -108,17 +114,31 @@ public class DnaSampleItem extends Item {
         stack.set(DataComponents.CUSTOM_DATA, CustomData.of(tag));
     }
 
+    //? if <1.21.11 {
     @Override
     public boolean isEnchantable(ItemStack stack) {
         return false;
     }
+    //?}
 
+    //? if >=1.21.11 {
+    /*@Override
+    public void appendHoverText(ItemStack stack, TooltipContext context, TooltipDisplay tooltipDisplay,
+                                Consumer<Component> tooltipAdder, TooltipFlag tooltipFlag) {
+        super.appendHoverText(stack, context, tooltipDisplay, tooltipAdder, tooltipFlag);
+        List<Component> tooltipComponents = new ArrayList<>();
+        appendTooltipLines(stack, context, tooltipComponents, tooltipFlag);
+        tooltipComponents.forEach(tooltipAdder);
+    }
+    *///?} else {
     @Override
-    public void appendHoverText(ItemStack stack,
-                                TooltipContext context,
-                                List<Component> tooltipComponents,
-                                TooltipFlag tooltipFlag) {
+    public void appendHoverText(ItemStack stack, TooltipContext context, List<Component> tooltipComponents, TooltipFlag tooltipFlag) {
         super.appendHoverText(stack, context, tooltipComponents, tooltipFlag);
+        appendTooltipLines(stack, context, tooltipComponents, tooltipFlag);
+    }
+    //?}
+
+    private void appendTooltipLines(ItemStack stack, TooltipContext context, List<Component> tooltipComponents, TooltipFlag tooltipFlag) {
 
         Optional<EntityType<?>> storedType = getEntityType(stack);
         if (storedType.isPresent()) {
@@ -151,11 +171,11 @@ public class DnaSampleItem extends Item {
 
         CompoundTag tag = readTag(stack);
         int remainingUses = tag.contains(TAG_REMAINING_USES)
-                ? Mth.clamp(tag.getInt(TAG_REMAINING_USES), 0, maxUses)
+                ? Mth.clamp(Nbt.getInt(tag, TAG_REMAINING_USES), 0, maxUses)
                 : maxUses;
 
         int lastMaxUses = tag.contains(TAG_LAST_MAX_USES)
-                ? Math.max(0, tag.getInt(TAG_LAST_MAX_USES))
+                ? Math.max(0, Nbt.getInt(tag, TAG_LAST_MAX_USES))
                 : maxUses;
 
         if (maxUses > lastMaxUses) {
@@ -164,8 +184,8 @@ public class DnaSampleItem extends Item {
 
         boolean changed = !tag.contains(TAG_REMAINING_USES)
                 || !tag.contains(TAG_LAST_MAX_USES)
-                || tag.getInt(TAG_REMAINING_USES) != remainingUses
-                || tag.getInt(TAG_LAST_MAX_USES) != maxUses;
+                || Nbt.getInt(tag, TAG_REMAINING_USES) != remainingUses
+                || Nbt.getInt(tag, TAG_LAST_MAX_USES) != maxUses;
 
         if (changed) {
             tag.putInt(TAG_REMAINING_USES, remainingUses);

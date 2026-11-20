@@ -61,7 +61,7 @@ public class PortalNaturalKeyboardMenu extends AbstractContainerMenu {
     @Override
     public void broadcastChanges() {
         super.broadcastChanges();
-        if (keyboard != null && keyboard.getLevel() != null && !keyboard.getLevel().isClientSide) {
+        if (keyboard != null && keyboard.getLevel() != null && !keyboard.getLevel().isClientSide()) {
             ServerLevel serverLevel = (ServerLevel) keyboard.getLevel();
             long now = serverLevel.getGameTime();
             if (now < nextPowerRefreshTick) {

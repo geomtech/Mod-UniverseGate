@@ -1,5 +1,8 @@
 package fr.geomtech.universegate;
 
+import net.minecraft.core.Registry;
+import net.minecraft.core.registries.BuiltInRegistries;
+import net.minecraft.resources.ResourceLocation;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.server.level.ServerLevel;
@@ -58,10 +61,27 @@ public final class OverworldVillagePortalGenerator {
     private static final long BOOTSTRAP_EVERY_TICKS = 20L * 60L * 2L;
     /** How many bootstrap cycles we wait for an asynchronously loaded village before giving up. */
     private static final int BOOTSTRAP_MAX_WAIT_CYCLES = 5;
+    private static final long VILLAGE_TICKET_TIMEOUT = BOOTSTRAP_EVERY_TICKS * (BOOTSTRAP_MAX_WAIT_CYCLES + 1);
+    //? if >=1.21.11 {
+    /*// Since 1.21.5 ticket types are registry entries, see registerTicketType().
+    private static TicketType VILLAGE_TICKET;
+    *///?} else {
     private static final TicketType<ChunkPos> VILLAGE_TICKET = TicketType.create(
             UniverseGate.MOD_ID + ":village_portal",
             Comparator.comparingLong(ChunkPos::toLong),
-            (int) (BOOTSTRAP_EVERY_TICKS * (BOOTSTRAP_MAX_WAIT_CYCLES + 1)));
+            (int) VILLAGE_TICKET_TIMEOUT);
+    //?}
+
+    /** Registers the chunk ticket type; must run while the registries are unfrozen. */
+    public static void registerTicketType() {
+        //? if >=1.21.11 {
+        /*VILLAGE_TICKET = Registry.register(
+                BuiltInRegistries.TICKET_TYPE,
+                ResourceLocation.fromNamespaceAndPath(UniverseGate.MOD_ID, "village_portal"),
+                new TicketType(VILLAGE_TICKET_TIMEOUT, TicketType.FLAG_LOADING | TicketType.FLAG_SIMULATION)
+        );
+        *///?}
+    }
 
     private record PlayerSearch(ChunkPos origin, long searchedAt, @Nullable BlockPos village) {}
 
@@ -210,12 +230,20 @@ public final class OverworldVillagePortalGenerator {
 
     private static void requestVillageChunks(ServerLevel level, BlockPos villageCenter) {
         ChunkPos center = new ChunkPos(villageCenter);
+        //? if >=1.21.11 {
+        /*level.getChunkSource().addTicketWithRadius(VILLAGE_TICKET, center, VILLAGE_PRELOAD_RADIUS_CHUNKS);
+        *///?} else {
         level.getChunkSource().addRegionTicket(VILLAGE_TICKET, center, VILLAGE_PRELOAD_RADIUS_CHUNKS, center);
+        //?}
     }
 
     private static void releaseVillageChunks(ServerLevel level, BlockPos villageCenter) {
         ChunkPos center = new ChunkPos(villageCenter);
+        //? if >=1.21.11 {
+        /*level.getChunkSource().removeTicketWithRadius(VILLAGE_TICKET, center, VILLAGE_PRELOAD_RADIUS_CHUNKS);
+        *///?} else {
         level.getChunkSource().removeRegionTicket(VILLAGE_TICKET, center, VILLAGE_PRELOAD_RADIUS_CHUNKS, center);
+        //?}
     }
 
     private static void bootstrapUndiscoveredVillagePortals(ServerLevel level,
@@ -242,7 +270,11 @@ public final class OverworldVillagePortalGenerator {
         if (!hasAnyOverworldPortal(level)) return;
         if (data.getBootstrapGeneratedPortals() >= BOOTSTRAP_TARGET_PORTALS) return;
 
+        //? if >=1.21.11 {
+        /*BlockPos spawnPos = level.getRespawnData().pos();
+        *///?} else {
         BlockPos spawnPos = level.getSharedSpawnPos();
+        //?}
         long minDistanceSqr = (long) BOOTSTRAP_MIN_DISTANCE_FROM_SPAWN * (long) BOOTSTRAP_MIN_DISTANCE_FROM_SPAWN;
 
         long index = data.nextBootstrapIndex();

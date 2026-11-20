@@ -5,10 +5,13 @@ plugins {
 // Loader-independent code: compiled against plain vanilla Minecraft (Mojang mappings) so that
 // nothing Fabric- or NeoForge-specific can sneak in. Loader specifics go through
 // fr.geomtech.universegate.platform.Services.
+// This script runs once per Minecraft version (:common:<mc>, in common/versions/<mc>/).
 neoForge {
 	neoFormVersion = project.neo_form_version
 	// Same visibility as Fabric API's transitive access wideners / NeoForge's own access transformer.
-	accessTransformers.from(file('accesstransformer.cfg'))
+	// A version can override it with common/versions/<mc>/accesstransformer.cfg.
+	def versionAt = file('accesstransformer.cfg')
+	accessTransformers.from(versionAt.exists() ? versionAt : project.parent.file('accesstransformer.cfg'))
 }
 
 dependencies {
@@ -16,7 +19,7 @@ dependencies {
 }
 
 dependencies {
-	testImplementation platform("org.junit:junit-bom:${project.junit_version}")
+	testImplementation platform("org.junit:junit-bom:${rootProject.junit_version}")
 	testImplementation 'org.junit.jupiter:junit-jupiter'
 	testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
 }

@@ -1,5 +1,11 @@
 package fr.geomtech.universegate.platform;
 
+//? if >=1.21.11 {
+/*import net.minecraft.world.level.block.Block;
+import net.minecraft.world.level.block.entity.BlockEntity;
+import net.minecraft.world.level.block.entity.BlockEntityType;
+import net.minecraft.world.level.block.state.BlockState;
+*///?}
 import net.minecraft.core.BlockPos;
 import net.minecraft.network.RegistryFriendlyByteBuf;
 import net.minecraft.network.codec.StreamCodec;
@@ -47,6 +53,20 @@ public interface PlatformHelper {
                                                 SpawnPlacementType placementType,
                                                 Heightmap.Types heightmap,
                                                 SpawnPlacements.SpawnPredicate<T> predicate);
+
+    //? if >=1.21.11 {
+    /*/^* Block entity constructor, as {@code PortalCoreBlockEntity::new}. ^/
+    @FunctionalInterface
+    interface BlockEntityFactory<T extends BlockEntity> {
+        T create(BlockPos pos, BlockState state);
+    }
+
+    /^*
+     * A block entity type for one block. Since 1.21.2 there is no BlockEntityType.Builder and the
+     * constructor is only opened by the loaders (NeoForge access transformer, Fabric API builder).
+     ^/
+    <T extends BlockEntity> BlockEntityType<T> createBlockEntityType(BlockEntityFactory<T> factory, Block block);
+    *///?}
 
     FlowingFluid createDarkMatterSource();
 

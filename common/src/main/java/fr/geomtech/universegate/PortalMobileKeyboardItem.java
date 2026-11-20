@@ -1,5 +1,6 @@
 package fr.geomtech.universegate;
 
+import net.minecraft.world.InteractionResult;
 import fr.geomtech.universegate.net.UniverseGateNetwork;
 import fr.geomtech.universegate.platform.MenuHelper;
 import fr.geomtech.universegate.platform.PosMenuProvider;
@@ -26,7 +27,7 @@ public class PortalMobileKeyboardItem extends Item {
     @Override
     public InteractionResultHolder<ItemStack> use(Level level, Player player, InteractionHand hand) {
         ItemStack stack = player.getItemInHand(hand);
-        if (level.isClientSide) {
+        if (level.isClientSide()) {
             return InteractionResultHolder.success(stack);
         }
         if (!(player instanceof ServerPlayer serverPlayer)) {

@@ -28,7 +28,7 @@ public final class PortalOpeningParticles {
     private PortalOpeningParticles() {}
 
     static void clientTick(Level level, BlockPos corePos, PortalCoreBlockEntity core) {
-        if (!level.isClientSide || !core.isOpening()) return;
+        if (!level.isClientSide() || !core.isOpening()) return;
 
         Optional<PortalFrameDetector.FrameMatch> frame = PortalFrameDetector.find(level, corePos);
         if (frame.isEmpty()) return;

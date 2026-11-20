@@ -1,0 +1,16 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "pattern": [
+    "I I",
+    " I ",
+    "BBB"
+  ],
+  "key": {
+    "I": "minecraft:iron_bars",
+    "B": "minecraft:iron_block"
+  },
+  "result": {
+    "id": "universegate:parabola_block",
+    "count": 1
+  }
+}

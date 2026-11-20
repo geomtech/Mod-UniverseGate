@@ -1,0 +1,17 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "pattern": [
+    "SSS",
+    "SES",
+    "SRS"
+  ],
+  "key": {
+    "S": "universegate:void_block",
+    "E": "universegate:light_beam_emitter",
+    "R": "minecraft:stone_button"
+  },
+  "result": {
+    "count": 1,
+    "id": "universegate:portal_keyboard"
+  }
+}

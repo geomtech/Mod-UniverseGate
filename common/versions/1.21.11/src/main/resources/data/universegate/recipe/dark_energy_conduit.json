@@ -1,0 +1,17 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "pattern": [
+    "VVV",
+    "RDR",
+    "VVV"
+  ],
+  "key": {
+    "V": "universegate:void_block",
+    "R": "minecraft:redstone",
+    "D": "minecraft:diamond"
+  },
+  "result": {
+    "id": "universegate:dark_energy_conduit",
+    "count": 4
+  }
+}

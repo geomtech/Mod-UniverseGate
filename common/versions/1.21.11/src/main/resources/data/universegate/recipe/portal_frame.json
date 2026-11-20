@@ -1,0 +1,16 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "pattern": [
+    "SSS",
+    "SCS",
+    "SSS"
+  ],
+  "key": {
+    "S": "minecraft:stone",
+    "C": "minecraft:chorus_fruit"
+  },
+  "result": {
+    "count": 1,
+    "id": "universegate:portal_frame"
+  }
+}

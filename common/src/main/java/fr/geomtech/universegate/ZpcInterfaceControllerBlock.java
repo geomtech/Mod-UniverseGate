@@ -125,13 +125,13 @@ public class ZpcInterfaceControllerBlock extends BaseEntityBlock {
         }
 
         if (stack.is(ModItems.ZPC)) {
-            if (!level.isClientSide) {
+            if (!level.isClientSide()) {
                 controller.tryInsertZpc(player, stack);
             }
-            return ItemInteractionResult.sidedSuccess(level.isClientSide);
+            return ItemInteractionResult.sidedSuccess(level.isClientSide());
         }
 
-        if (!level.isClientSide && player.isShiftKeyDown() && controller.hasZpcInstalled()) {
+        if (!level.isClientSide() && player.isShiftKeyDown() && controller.hasZpcInstalled()) {
             if (controller.hasUnengagedZpc()) {
                 controller.startEngageAnimation();
             } else {
@@ -140,10 +140,10 @@ public class ZpcInterfaceControllerBlock extends BaseEntityBlock {
             return ItemInteractionResult.sidedSuccess(false);
         }
 
-        if (!level.isClientSide && !player.isShiftKeyDown() && player instanceof ServerPlayer sp) {
+        if (!level.isClientSide() && !player.isShiftKeyDown() && player instanceof ServerPlayer sp) {
             MenuHelper.open(sp, controller);
         }
-        return ItemInteractionResult.sidedSuccess(level.isClientSide);
+        return ItemInteractionResult.sidedSuccess(level.isClientSide());
     }
 
     @Override
@@ -156,7 +156,7 @@ public class ZpcInterfaceControllerBlock extends BaseEntityBlock {
             return InteractionResult.PASS;
         }
 
-        if (!level.isClientSide) {
+        if (!level.isClientSide()) {
             if (player.isShiftKeyDown()) {
                 if (controller.hasZpcInstalled()) {
                     if (controller.hasUnengagedZpc()) {
@@ -170,12 +170,17 @@ public class ZpcInterfaceControllerBlock extends BaseEntityBlock {
             }
         }
 
-        return InteractionResult.sidedSuccess(level.isClientSide);
+        //? if >=1.21.11 {
+        /*return level.isClientSide() ? InteractionResult.SUCCESS : InteractionResult.CONSUME;
+        *///?} else {
+        return InteractionResult.sidedSuccess(level.isClientSide());
+        //?}
     }
 
+    //? if <1.21.11 {
     @Override
     public void onRemove(BlockState state, Level level, BlockPos pos, BlockState newState, boolean movedByPiston) {
-        if (!level.isClientSide && !state.is(newState.getBlock())) {
+        if (!level.isClientSide() && !state.is(newState.getBlock())) {
             BlockEntity blockEntity = level.getBlockEntity(pos);
             if (blockEntity instanceof ZpcInterfaceControllerBlockEntity controller) {
                 controller.dropInstalledZpc();
@@ -183,12 +188,13 @@ public class ZpcInterfaceControllerBlock extends BaseEntityBlock {
         }
         super.onRemove(state, level, pos, newState, movedByPiston);
     }
+    //?}
 
     @Override
     public @Nullable <T extends BlockEntity> BlockEntityTicker<T> getTicker(Level level,
                                                                              BlockState state,
                                                                              BlockEntityType<T> type) {
-        if (level.isClientSide) return null;
+        if (level.isClientSide()) return null;
         return createTickerHelper(type, ModBlockEntities.ZPC_INTERFACE_CONTROLLER,
                 (lvl, pos, blockState, be) -> be.serverTick());
     }

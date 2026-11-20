@@ -5,9 +5,17 @@ import com.mojang.blaze3d.vertex.VertexConsumer;
 import com.mojang.blaze3d.vertex.DefaultVertexFormat;
 import com.mojang.blaze3d.vertex.VertexFormat;
 import net.minecraft.client.renderer.MultiBufferSource;
+//? if >=1.21.11 {
+/*import com.mojang.blaze3d.pipeline.BlendFunction;
+import com.mojang.blaze3d.pipeline.RenderPipeline;
+import com.mojang.blaze3d.shaders.UniformType;
+import net.minecraft.client.renderer.rendertype.RenderSetup;
+import net.minecraft.resources.ResourceLocation;
+*///?} else {
 import net.minecraft.client.renderer.RenderStateShard;
+//?}
 import net.minecraft.client.renderer.RenderType;
-import net.minecraft.client.renderer.blockentity.BlockEntityRenderer;
+import fr.geomtech.universegate.compat.ImmediateBlockEntityRenderer;
 import net.minecraft.client.renderer.blockentity.BlockEntityRendererProvider;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
@@ -19,7 +27,7 @@ import org.joml.Matrix4f;
 
 import java.util.Optional;
 
-public class PortalFieldBlinkRenderer implements BlockEntityRenderer<PortalFieldBlockEntity> {
+public class PortalFieldBlinkRenderer extends ImmediateBlockEntityRenderer<PortalFieldBlockEntity> {
 
     private static final float CENTER = 0.5F;
     private static final float PORTAL_WIDTH = PortalFrameDetector.INNER_WIDTH;
@@ -34,7 +42,43 @@ public class PortalFieldBlinkRenderer implements BlockEntityRenderer<PortalField
     private static final float MIN_VERTICAL = -EXTEND;
     private static final float MAX_VERTICAL = PORTAL_HEIGHT + EXTEND;
 
+    //? if >=1.21.11 {
+    /*// Same states as the 1.21.1 composite states below, expressed as render pipelines.
+    private static final RenderPipeline PORTAL_OCCLUSION_PIPELINE = RenderPipeline.builder()
+            .withLocation(ResourceLocation.fromNamespaceAndPath(UniverseGate.MOD_ID, "pipeline/portal_field_occlusion"))
+            .withUniform("DynamicTransforms", UniformType.UNIFORM_BUFFER)
+            .withUniform("Projection", UniformType.UNIFORM_BUFFER)
+            .withVertexShader("core/position_color")
+            .withFragmentShader("core/position_color")
+            .withBlend(BlendFunction.TRANSLUCENT)
+            .withCull(false)
+            .withDepthWrite(true)
+            .withVertexFormat(DefaultVertexFormat.POSITION_COLOR, VertexFormat.Mode.QUADS)
+            .build();
+
+    private static final RenderPipeline SINGULARITY_PIPELINE = RenderPipeline.builder()
+            .withLocation(ResourceLocation.fromNamespaceAndPath(UniverseGate.MOD_ID, "pipeline/portal_field_singularity"))
+            .withUniform("DynamicTransforms", UniformType.UNIFORM_BUFFER)
+            .withUniform("Projection", UniformType.UNIFORM_BUFFER)
+            .withVertexShader("core/position_color")
+            .withFragmentShader("core/position_color")
+            .withBlend(BlendFunction.LIGHTNING)
+            .withCull(false)
+            .withDepthWrite(false)
+            .withVertexFormat(DefaultVertexFormat.POSITION_COLOR, VertexFormat.Mode.QUADS)
+            .build();
+
     private static final RenderType PORTAL_OCCLUSION_RENDER_TYPE = RenderType.create(
+            "universegate_portal_field_occlusion",
+            RenderSetup.builder(PORTAL_OCCLUSION_PIPELINE).bufferSize(512).sortOnUpload().createRenderSetup()
+    );
+
+    private static final RenderType SINGULARITY_RENDER_TYPE = RenderType.create(
+            "universegate_portal_field_singularity",
+            RenderSetup.builder(SINGULARITY_PIPELINE).bufferSize(1536).createRenderSetup()
+    );
+    *///?} else {
+        private static final RenderType PORTAL_OCCLUSION_RENDER_TYPE = RenderType.create(
             "universegate_portal_field_occlusion",
             DefaultVertexFormat.POSITION_COLOR,
             VertexFormat.Mode.QUADS,
@@ -67,6 +111,7 @@ public class PortalFieldBlinkRenderer implements BlockEntityRenderer<PortalField
                     .setWriteMaskState(RenderStateShard.COLOR_WRITE)
                     .createCompositeState(false)
     );
+    //?}
 
     public PortalFieldBlinkRenderer(BlockEntityRendererProvider.Context context) {}
 

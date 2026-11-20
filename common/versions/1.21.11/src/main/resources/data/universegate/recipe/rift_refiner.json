@@ -1,0 +1,17 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "pattern": [
+    "WWW",
+    "PFP",
+    "WWW"
+  ],
+  "key": {
+    "W": "minecraft:iron_ingot",
+    "P": "minecraft:piston",
+    "F": "minecraft:furnace"
+  },
+  "result": {
+    "id": "universegate:rift_refiner",
+    "count": 1
+  }
+}

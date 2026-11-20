@@ -1,5 +1,7 @@
 package fr.geomtech.universegate;
 
+import net.minecraft.world.entity.MobSpawnType;
+import fr.geomtech.universegate.compat.Compat;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.server.MinecraftServer;
@@ -239,11 +241,11 @@ public final class PortalConnectionManager {
     private static void triggerRiftOpeningLightning(ServerLevel level, BlockPos corePos) {
         if (!EnergyNetworkHelper.isRiftDimension(level)) return;
 
-        LightningBolt lightningBolt = EntityType.LIGHTNING_BOLT.create(level);
+        LightningBolt lightningBolt = Compat.create(EntityType.LIGHTNING_BOLT, level, MobSpawnType.TRIGGERED);
         if (lightningBolt == null) return;
 
         BlockPos strikePos = corePos.above();
-        lightningBolt.moveTo(strikePos.getX() + 0.5D, strikePos.getY(), strikePos.getZ() + 0.5D);
+        Compat.moveTo(lightningBolt, strikePos.getX() + 0.5D, strikePos.getY(), strikePos.getZ() + 0.5D);
         lightningBolt.setVisualOnly(true);
         level.addFreshEntity(lightningBolt);
     }

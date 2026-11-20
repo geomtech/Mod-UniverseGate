@@ -1,12 +1,18 @@
 package fr.geomtech.universegate;
 
+import fr.geomtech.universegate.compat.DataReader;
+import fr.geomtech.universegate.compat.DataWriter;
+import net.minecraft.core.HolderLookup;
+import net.minecraft.nbt.CompoundTag;
+//? if >=1.21.11 {
+/*import net.minecraft.world.level.storage.ValueInput;
+import net.minecraft.world.level.storage.ValueOutput;
+*///?}
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
-import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.protocol.Packet;
 import net.minecraft.network.protocol.game.ClientGamePacketListener;
 import net.minecraft.network.protocol.game.ClientboundBlockEntityDataPacket;
-import net.minecraft.core.HolderLookup;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.block.state.BlockState;
@@ -32,7 +38,7 @@ public class FluidPipeBlockEntity extends BlockEntity {
     private long lastSyncGameTime = Long.MIN_VALUE;
 
     public static void tick(Level level, BlockPos pos, BlockState state, FluidPipeBlockEntity entity) {
-        if (level.isClientSide) return;
+        if (level.isClientSide()) return;
 
         if (entity.syncPending) {
             entity.flushSync();
@@ -133,14 +139,14 @@ public class FluidPipeBlockEntity extends BlockEntity {
 
     // Syncing
     public void sync() {
-        if (level != null && !level.isClientSide) {
+        if (level != null && !level.isClientSide()) {
             syncPending = true;
             flushSync();
         }
     }
 
     private void flushSync() {
-        if (level == null || level.isClientSide) return;
+        if (level == null || level.isClientSide()) return;
         long now = level.getGameTime();
         if (lastSyncGameTime != Long.MIN_VALUE && now - lastSyncGameTime < SYNC_INTERVAL_TICKS) return;
         lastSyncGameTime = now;
@@ -150,9 +156,13 @@ public class FluidPipeBlockEntity extends BlockEntity {
 
     @Override
     public CompoundTag getUpdateTag(HolderLookup.Provider registries) {
+        //? if >=1.21.11 {
+        /*return saveWithoutMetadata(registries);
+        *///?} else {
         CompoundTag tag = new CompoundTag();
         saveAdditional(tag, registries);
         return tag;
+        //?}
     }
 
     @Nullable
@@ -161,15 +171,38 @@ public class FluidPipeBlockEntity extends BlockEntity {
         return ClientboundBlockEntityDataPacket.create(this);
     }
 
+    //? if >=1.21.11 {
+    /*@Override
+    protected void saveAdditional(ValueOutput output) {
+        super.saveAdditional(output);
+        saveData(DataWriter.of(output));
+    }
+
+    @Override
+    protected void loadAdditional(ValueInput input) {
+        super.loadAdditional(input);
+        loadData(DataReader.of(input));
+    }
+    *///?} else {
     @Override
     protected void saveAdditional(CompoundTag tag, HolderLookup.Provider registries) {
         super.saveAdditional(tag, registries);
-        tag.putInt("FluidAmount", fluidAmount);
+        saveData(DataWriter.of(tag, registries));
     }
 
     @Override
     protected void loadAdditional(CompoundTag tag, HolderLookup.Provider registries) {
         super.loadAdditional(tag, registries);
+        loadData(DataReader.of(tag, registries));
+    }
+    //?}
+
+    private void saveData(DataWriter tag) {
+        tag.putInt("FluidAmount", fluidAmount);
+    }
+
+    private void loadData(DataReader tag) {
         fluidAmount = tag.getInt("FluidAmount");
     }
+
 }

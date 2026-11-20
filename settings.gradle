@@ -8,16 +8,39 @@ pluginManagement {
 			name = 'NeoForged'
 			url = 'https://maven.neoforged.net/releases'
 		}
+		maven {
+			name = 'KikuGie'
+			url = 'https://maven.kikugie.dev/releases'
+		}
 		mavenCentral()
 		gradlePluginPortal()
 	}
 }
 
+plugins {
+	// Builds the mod for several Minecraft versions from one codebase.
+	// See versions/README.md for how versions and `//?` conditions work.
+	id 'dev.kikugie.stonecutter' version '0.9.8'
+}
+
 rootProject.name = 'universegate'
 
+// Supported Minecraft versions. Each one needs a versions/<mc>.properties file.
+// The first one (1.21.1) is the "VCS version": the code committed to git is always written for it.
+def minecraftVersions = ['1.21.1', '1.21.11']
+
 // common   : loader-independent code and resources (compiled against vanilla Minecraft)
-// fabric   : Fabric entrypoints + Fabric API glue  -> universegate-fabric-<version>.jar
-// neoforge : NeoForge entrypoints + NeoForge glue  -> universegate-neoforge-<version>.jar
-include('common')
-include('fabric')
-include('neoforge')
+// fabric   : Fabric entrypoints + Fabric API glue  -> universegate-fabric-<version>+<mc>.jar
+// neoforge : NeoForge entrypoints + NeoForge glue  -> universegate-neoforge-<version>+<mc>.jar
+// Stonecutter creates one Gradle project per branch and Minecraft version, e.g. :fabric:1.21.1,
+// in <branch>/versions/<mc>/, all built by the branch's build.gradle.
+stonecutter {
+	create(rootProject) {
+		['common', 'fabric', 'neoforge'].each { loader ->
+			branch(loader) {
+				minecraftVersions.each { mc -> version(mc) }
+			}
+		}
+		vcsVersion = '1.21.1'
+	}
+}

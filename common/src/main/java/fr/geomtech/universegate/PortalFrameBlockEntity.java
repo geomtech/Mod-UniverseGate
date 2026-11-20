@@ -40,7 +40,7 @@ public class PortalFrameBlockEntity extends BlockEntity {
     }
 
     public static void tick(Level level, BlockPos pos, BlockState state, PortalFrameBlockEntity blockEntity) {
-        if (level.isClientSide) return;
+        if (level.isClientSide()) return;
         if (!state.hasProperty(PortalFrameBlock.ACTIVE)
                 || !state.hasProperty(PortalFrameBlock.UNSTABLE)
                 || !state.hasProperty(PortalFrameBlock.BLINK_ON)) {

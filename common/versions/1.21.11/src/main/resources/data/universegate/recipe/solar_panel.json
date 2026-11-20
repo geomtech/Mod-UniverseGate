@@ -1,0 +1,17 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "pattern": [
+    "GGG",
+    "LLL",
+    "III"
+  ],
+  "key": {
+    "G": "minecraft:glass_pane",
+    "L": "minecraft:lapis_lazuli",
+    "I": "minecraft:iron_ingot"
+  },
+  "result": {
+    "id": "universegate:solar_panel",
+    "count": 1
+  }
+}

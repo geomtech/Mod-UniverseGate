@@ -1,5 +1,10 @@
 package fr.geomtech.universegate;
 
+import fr.geomtech.universegate.compat.GuiCompat;
+//? if >=1.21.11 {
+/*import net.minecraft.client.input.CharacterEvent;
+import net.minecraft.client.input.KeyEvent;
+*///?}
 import fr.geomtech.universegate.net.RenamePortalPayload;
 import fr.geomtech.universegate.platform.ClientServices;
 import net.minecraft.client.gui.GuiGraphics;
@@ -59,6 +64,28 @@ public class PortalCoreScreen extends AbstractContainerScreen<PortalCoreMenu> {
         this.minecraft.player.closeContainer();
     }
 
+    //? if >=1.21.11 {
+    /*@Override
+    public boolean keyPressed(KeyEvent event) {
+        int keyCode = event.key();
+        if (nameBox != null && nameBox.isFocused() && this.minecraft != null) {
+            if (nameBox.keyPressed(event)) return true;
+            if (nameBox.canConsumeInput()) return true;
+            if (this.minecraft.options.keyInventory.matches(event)) return true;
+        }
+        if (keyCode == 257 || keyCode == 335) {
+            submitRename();
+            return true;
+        }
+        return super.keyPressed(event);
+    }
+
+    @Override
+    public boolean charTyped(CharacterEvent event) {
+        if (nameBox != null && nameBox.isFocused() && nameBox.charTyped(event)) return true;
+        return super.charTyped(event);
+    }
+    *///?} else {
     @Override
     public boolean keyPressed(int keyCode, int scanCode, int modifiers) {
         if (nameBox != null && nameBox.isFocused() && this.minecraft != null) {
@@ -78,10 +105,11 @@ public class PortalCoreScreen extends AbstractContainerScreen<PortalCoreMenu> {
         if (nameBox != null && nameBox.isFocused() && nameBox.charTyped(codePoint, modifiers)) return true;
         return super.charTyped(codePoint, modifiers);
     }
+    //?}
 
     @Override
     protected void renderBg(GuiGraphics g, float partialTicks, int mouseX, int mouseY) {
-        g.blit(TEXTURE, leftPos, topPos, 0, 0, imageWidth, imageHeight, 176, 80);
+        GuiCompat.blit(g, TEXTURE, leftPos, topPos, 0, 0, imageWidth, imageHeight, 176, 80);
         g.drawString(this.font, Component.translatable("gui.universegate.portal_name"), leftPos + 8, topPos + 8, 0xC0C0C0, false);
     }
 

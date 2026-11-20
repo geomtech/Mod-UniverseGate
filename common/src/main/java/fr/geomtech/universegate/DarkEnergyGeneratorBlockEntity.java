@@ -1,9 +1,15 @@
 package fr.geomtech.universegate;
 
-import fr.geomtech.universegate.platform.PosMenuProvider;
-import net.minecraft.core.BlockPos;
+import fr.geomtech.universegate.compat.DataReader;
+import fr.geomtech.universegate.compat.DataWriter;
 import net.minecraft.core.HolderLookup;
 import net.minecraft.nbt.CompoundTag;
+//? if >=1.21.11 {
+/*import net.minecraft.world.level.storage.ValueInput;
+import net.minecraft.world.level.storage.ValueOutput;
+*///?}
+import fr.geomtech.universegate.platform.PosMenuProvider;
+import net.minecraft.core.BlockPos;
 import net.minecraft.network.chat.Component;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.entity.player.Player;
@@ -57,7 +63,7 @@ public class DarkEnergyGeneratorBlockEntity extends BlockEntity implements PosMe
     }
 
     public static void tick(Level level, BlockPos pos, BlockState state, DarkEnergyGeneratorBlockEntity entity) {
-        if (level.isClientSide) return;
+        if (level.isClientSide()) return;
 
         boolean wasRunning = entity.isRunning;
         boolean dirty = false;
@@ -234,19 +240,42 @@ public class DarkEnergyGeneratorBlockEntity extends BlockEntity implements PosMe
         return worldPosition;
     }
 
+    //? if >=1.21.11 {
+    /*@Override
+    protected void saveAdditional(ValueOutput output) {
+        super.saveAdditional(output);
+        saveData(DataWriter.of(output));
+    }
+
+    @Override
+    protected void loadAdditional(ValueInput input) {
+        super.loadAdditional(input);
+        loadData(DataReader.of(input));
+    }
+    *///?} else {
     @Override
     protected void saveAdditional(CompoundTag tag, HolderLookup.Provider registries) {
         super.saveAdditional(tag, registries);
-        tag.putInt("DarkMatter", darkMatterAmount);
-        tag.putInt("Energy", energyAmount);
-        tag.putBoolean("Running", isRunning);
+        saveData(DataWriter.of(tag, registries));
     }
 
     @Override
     protected void loadAdditional(CompoundTag tag, HolderLookup.Provider registries) {
         super.loadAdditional(tag, registries);
+        loadData(DataReader.of(tag, registries));
+    }
+    //?}
+
+    private void saveData(DataWriter tag) {
+        tag.putInt("DarkMatter", darkMatterAmount);
+        tag.putInt("Energy", energyAmount);
+        tag.putBoolean("Running", isRunning);
+    }
+
+    private void loadData(DataReader tag) {
         darkMatterAmount = Math.max(0, Math.min(tag.getInt("DarkMatter"), MAX_DARK_MATTER));
         energyAmount = Math.max(0, Math.min(tag.getInt("Energy"), MAX_ENERGY));
         isRunning = tag.getBoolean("Running");
     }
+
 }

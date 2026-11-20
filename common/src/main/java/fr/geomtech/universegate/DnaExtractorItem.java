@@ -1,5 +1,10 @@
 package fr.geomtech.universegate;
 
+//? if >=1.21.11 {
+/*import net.minecraft.world.item.component.TooltipDisplay;
+import java.util.ArrayList;
+import java.util.function.Consumer;
+*///?}
 import net.minecraft.ChatFormatting;
 import net.minecraft.network.chat.Component;
 import net.minecraft.server.level.ServerLevel;
@@ -55,7 +60,7 @@ public class DnaExtractorItem extends Item {
             return InteractionResultHolder.consume(stack);
         }
 
-        if (!level.isClientSide) {
+        if (!level.isClientSide()) {
             if (startResult == StartResult.NOT_ENOUGH_CRYSTALS) {
                 sendNotEnoughCrystalsMessage(player);
             } else {
@@ -79,7 +84,7 @@ public class DnaExtractorItem extends Item {
             return InteractionResult.CONSUME;
         }
 
-        if (!player.level().isClientSide) {
+        if (!player.level().isClientSide()) {
             if (startResult == StartResult.NOT_ENOUGH_CRYSTALS) {
                 sendNotEnoughCrystalsMessage(player);
             } else {
@@ -101,7 +106,7 @@ public class DnaExtractorItem extends Item {
 
     @Override
     public void onUseTick(Level level, LivingEntity livingEntity, ItemStack stack, int remainingUseDuration) {
-        if (level.isClientSide || !(livingEntity instanceof ServerPlayer serverPlayer)) {
+        if (level.isClientSide() || !(livingEntity instanceof ServerPlayer serverPlayer)) {
             return;
         }
 
@@ -133,7 +138,7 @@ public class DnaExtractorItem extends Item {
 
     @Override
     public ItemStack finishUsingItem(ItemStack stack, Level level, LivingEntity livingEntity) {
-        if (level.isClientSide || !(livingEntity instanceof ServerPlayer serverPlayer) || !(level instanceof ServerLevel serverLevel)) {
+        if (level.isClientSide() || !(livingEntity instanceof ServerPlayer serverPlayer) || !(level instanceof ServerLevel serverLevel)) {
             return stack;
         }
 
@@ -171,9 +176,21 @@ public class DnaExtractorItem extends Item {
         return stack;
     }
 
+    //? if >=1.21.11 {
+    /*@Override
+    public boolean releaseUsing(ItemStack stack, Level level, LivingEntity livingEntity, int timeLeft) {
+        onReleaseUsing(stack, level, livingEntity, timeLeft);
+        return false;
+    }
+    *///?} else {
     @Override
     public void releaseUsing(ItemStack stack, Level level, LivingEntity livingEntity, int timeLeft) {
-        if (level.isClientSide || !(livingEntity instanceof ServerPlayer serverPlayer)) {
+        onReleaseUsing(stack, level, livingEntity, timeLeft);
+    }
+    //?}
+
+    private void onReleaseUsing(ItemStack stack, Level level, LivingEntity livingEntity, int timeLeft) {
+        if (level.isClientSide() || !(livingEntity instanceof ServerPlayer serverPlayer)) {
             return;
         }
 
@@ -188,12 +205,24 @@ public class DnaExtractorItem extends Item {
         }
     }
 
+    //? if >=1.21.11 {
+    /*@Override
+    public void appendHoverText(ItemStack stack, TooltipContext context, TooltipDisplay tooltipDisplay,
+                                Consumer<Component> tooltipAdder, TooltipFlag tooltipFlag) {
+        super.appendHoverText(stack, context, tooltipDisplay, tooltipAdder, tooltipFlag);
+        List<Component> tooltipComponents = new ArrayList<>();
+        appendTooltipLines(stack, context, tooltipComponents, tooltipFlag);
+        tooltipComponents.forEach(tooltipAdder);
+    }
+    *///?} else {
     @Override
-    public void appendHoverText(ItemStack stack,
-                                TooltipContext context,
-                                List<Component> tooltipComponents,
-                                TooltipFlag tooltipFlag) {
+    public void appendHoverText(ItemStack stack, TooltipContext context, List<Component> tooltipComponents, TooltipFlag tooltipFlag) {
         super.appendHoverText(stack, context, tooltipComponents, tooltipFlag);
+        appendTooltipLines(stack, context, tooltipComponents, tooltipFlag);
+    }
+    //?}
+
+    private void appendTooltipLines(ItemStack stack, TooltipContext context, List<Component> tooltipComponents, TooltipFlag tooltipFlag) {
         tooltipComponents.add(
                 Component.translatable("tooltip.universegate.dna_extractor_cost", REQUIRED_CRYSTALS)
                         .withStyle(ChatFormatting.AQUA)
@@ -218,7 +247,7 @@ public class DnaExtractorItem extends Item {
             return StartResult.NO_TARGET;
         }
 
-        if (!level.isClientSide) {
+        if (!level.isClientSide()) {
             ACTIVE_EXTRACTIONS.put(player.getUUID(), new ExtractionState(target.getUUID(), target.getHealth()));
         }
 

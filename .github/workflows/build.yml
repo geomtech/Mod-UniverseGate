@@ -28,12 +28,12 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: test-report
-          path: common/build/reports/tests/test/
+          path: common/versions/*/build/reports/tests/test/
           if-no-files-found: ignore
       - name: capture build artifacts
         uses: actions/upload-artifact@v4
         with:
           name: Artifacts
           path: |
-            fabric/build/libs/
-            neoforge/build/libs/
+            fabric/versions/*/build/libs/
+            neoforge/versions/*/build/libs/

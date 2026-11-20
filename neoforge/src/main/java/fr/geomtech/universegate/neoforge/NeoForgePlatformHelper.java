@@ -1,5 +1,11 @@
 package fr.geomtech.universegate.neoforge;
 
+//? if >=1.21.11 {
+/*import java.util.Set;
+import net.minecraft.world.level.block.Block;
+import net.minecraft.world.level.block.entity.BlockEntity;
+import net.minecraft.world.level.block.entity.BlockEntityType;
+*///?}
 import fr.geomtech.universegate.UniverseGate;
 import fr.geomtech.universegate.platform.PlatformHelper;
 import fr.geomtech.universegate.platform.PosMenuFactory;
@@ -87,6 +93,14 @@ public final class NeoForgePlatformHelper implements PlatformHelper {
         SPAWN_PLACEMENTS.add(event -> event.register(type, placementType, heightmap, predicate,
                 RegisterSpawnPlacementsEvent.Operation.REPLACE));
     }
+
+    //? if >=1.21.11 {
+    /*@Override
+    public <T extends BlockEntity> BlockEntityType<T> createBlockEntityType(BlockEntityFactory<T> factory, Block block) {
+        // Public through NeoForge's access transformer
+        return new BlockEntityType<>(factory::create, Set.of(block));
+    }
+    *///?}
 
     @Override
     public FlowingFluid createDarkMatterSource() {

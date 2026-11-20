@@ -1,5 +1,8 @@
 package fr.geomtech.universegate;
 
+//? if >=1.21.11 {
+/*import net.minecraft.world.item.component.TypedEntityData;
+*///?}
 import com.mojang.serialization.MapCodec;
 import net.minecraft.core.BlockPos;
 import net.minecraft.world.level.Level;
@@ -45,7 +48,7 @@ public class EnergyCondenserBlock extends BaseEntityBlock {
     public @Nullable <T extends BlockEntity> BlockEntityTicker<T> getTicker(Level level,
                                                                              BlockState state,
                                                                              BlockEntityType<T> type) {
-        if (level.isClientSide) return null;
+        if (level.isClientSide()) return null;
         return createTickerHelper(type, ModBlockEntities.ENERGY_CONDENSER,
                 (lvl, pos, blockState, be) -> be.serverTick());
     }
@@ -55,8 +58,13 @@ public class EnergyCondenserBlock extends BaseEntityBlock {
         List<ItemStack> drops = super.getDrops(state, builder);
         BlockEntity blockEntity = builder.getOptionalParameter(LootContextParams.BLOCK_ENTITY);
         if (blockEntity instanceof EnergyCondenserBlockEntity condenser) {
+            //? if >=1.21.11 {
+            /*TypedEntityData<BlockEntityType<?>> data = TypedEntityData.of(condenser.getType(),
+                    condenser.saveCustomOnly(builder.getLevel().registryAccess()));
+            *///?} else {
             CompoundTag tag = condenser.saveWithId(builder.getLevel().registryAccess());
             CustomData data = CustomData.of(tag);
+            //?}
             for (ItemStack stack : drops) {
                 if (stack.getItem() == this.asItem()) {
                     stack.set(DataComponents.BLOCK_ENTITY_DATA, data);

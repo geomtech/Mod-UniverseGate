@@ -2,8 +2,9 @@ plugins {
 	id 'net.neoforged.moddev'
 }
 
+// This script runs once per Minecraft version (:neoforge:<mc>, in neoforge/versions/<mc>/).
 neoForge {
-	version = rootProject.neoforge_version
+	version = project.neoforge_version
 
 	runs {
 		client {
@@ -25,8 +26,9 @@ neoForge {
 
 processResources {
 	def props = [
-			'version'         : project.version,
-			'neoforge_version': rootProject.neoforge_version
+			'version'          : project.version,
+			'neoforge_version' : project.neoforge_version,
+			'minecraft_range'  : project.neoforge_minecraft_range
 	]
 	inputs.properties props
 

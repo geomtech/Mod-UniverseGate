@@ -1,5 +1,8 @@
 package fr.geomtech.universegate;
 
+import fr.geomtech.universegate.compat.Compat;
+import fr.geomtech.universegate.compat.Nbt;
+import fr.geomtech.universegate.compat.SavedDataCompat;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.HolderLookup;
 import net.minecraft.nbt.CompoundTag;
@@ -19,14 +22,7 @@ public class VillagePortalSavedData extends SavedData {
 
     public static VillagePortalSavedData get(MinecraftServer server) {
         ServerLevel overworld = server.overworld();
-        return overworld.getDataStorage().computeIfAbsent(
-                new SavedData.Factory<>(
-                        VillagePortalSavedData::new,
-                        VillagePortalSavedData::load,
-                        null
-                ),
-                DATA_NAME
-        );
+        return SavedDataCompat.computeIfAbsent(overworld, DATA_NAME, VillagePortalSavedData::new, VillagePortalSavedData::load, VillagePortalSavedData::save);
     }
 
     public boolean isProcessed(BlockPos villageCenter) {
@@ -55,6 +51,7 @@ public class VillagePortalSavedData extends SavedData {
         setDirty();
     }
 
+    //? if <1.21.11
     @Override
     public CompoundTag save(CompoundTag tag, HolderLookup.Provider registries) {
         long[] values = new long[processedVillages.size()];
@@ -70,12 +67,12 @@ public class VillagePortalSavedData extends SavedData {
 
     public static VillagePortalSavedData load(CompoundTag tag, HolderLookup.Provider registries) {
         VillagePortalSavedData data = new VillagePortalSavedData();
-        for (long value : tag.getLongArray("Villages")) {
+        for (long value : Nbt.getLongArray(tag, "Villages")) {
             data.processedVillages.add(value);
         }
-        data.bootstrapIndex = tag.contains("BootstrapIndex") ? tag.getLong("BootstrapIndex") : 0L;
+        data.bootstrapIndex = tag.contains("BootstrapIndex") ? Nbt.getLong(tag, "BootstrapIndex") : 0L;
         data.bootstrapGeneratedPortals = tag.contains("BootstrapGeneratedPortals")
-                ? tag.getInt("BootstrapGeneratedPortals")
+                ? Nbt.getInt(tag, "BootstrapGeneratedPortals")
                 : 0;
         return data;
     }
