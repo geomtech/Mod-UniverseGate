@@ -15,8 +15,12 @@ final class PortalGateRingLayer implements PortalGateLayer {
     /** Centre de l'anneau, en pixels depuis le coin du Core : milieu de l'ouverture 3x4. */
     static final float CENTER_H = 8.0F;
     static final float CENTER_V = 48.0F;
-    static final float OUTER_RADIUS = 47.0F;
+    static final float OUTER_RADIUS = 45.0F;
     static final float INNER_RADIUS = 35.0F;
+
+    /** Épaisseur de l'anneau : 7 px, centrée dans le bloc. */
+    static final float RING_Z0 = 4.5F;
+    static final float RING_Z1 = 11.5F;
 
     static final int TAG_LIP = 1;
 
@@ -78,7 +82,7 @@ final class PortalGateRingLayer implements PortalGateLayer {
             }
         }
         return PortalGateMesh.build(SIZE, SIZE, color, tag, (int) CENTER_H - SIZE / 2, (int) CENTER_V - SIZE / 2,
-                3.0F, 13.0F, CENTER_H, CENTER_V);
+                RING_Z0, RING_Z1, CENTER_H, CENTER_V);
     }
 
     /** Trois cristaux de Faille en losange, un peu en relief sur l'anneau (à 90°, 210° et 330°). */
@@ -99,6 +103,6 @@ final class PortalGateRingLayer implements PortalGateLayer {
             }
         }
         return PortalGateMesh.build(SIZE, SIZE, color, tag, (int) CENTER_H - SIZE / 2, (int) CENTER_V - SIZE / 2,
-                1.5F, 14.5F, CENTER_H, CENTER_V);
+                RING_Z0 - 1.5F, RING_Z1 + 1.5F, CENTER_H, CENTER_V);
     }
 }

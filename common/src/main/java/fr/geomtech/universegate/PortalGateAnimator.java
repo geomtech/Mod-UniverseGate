@@ -123,7 +123,9 @@ public final class PortalGateAnimator {
             double[] p = toWorld(core, vent[0], vent[1], 0.5D + (random.nextDouble() - 0.5D) * 0.5D);
             double out = vent[2];
             if (jet) {
-                double[] v = toVelocity(out * (0.12D + random.nextDouble() * 0.08D), 0.02D + random.nextDouble() * 0.04D);
+                // En diagonale, un peu plus vers le haut que vers l'extérieur.
+                double speed = 0.10D + random.nextDouble() * 0.05D;
+                double[] v = toVelocity(out * speed * 0.8D, speed);
                 level.addParticle(ParticleTypes.CLOUD, p[0], p[1], p[2], v[0], v[1], v[2]);
             } else if (random.nextInt(4) == 0) {
                 double[] v = toVelocity(out * 0.02D, 0.05D + random.nextDouble() * 0.03D);

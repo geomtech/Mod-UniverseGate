@@ -105,7 +105,9 @@ public final class PortalCinematics {
         if (frame == null) return;
 
         if (core.isOpening()) {
-            tickOpening(level, core, state, frame, now);
+            // L'ouverture est montrée par l'anneau 3D (lèvre qui se remplit, rotation, arcs) :
+            // plus de traînées de particules le long du cadre ni de fissures dans l'ouverture.
+            state.entitiesInside.clear();
         } else if (core.isActive()) {
             tickActive(level, core, state, frame, now);
         } else {
@@ -253,18 +255,6 @@ public final class PortalCinematics {
 
         tickCrossings(level, state, frame);
 
-        // Effondrement : avertissement 10 s avant la fin, puis l'énergie redescend le cadre.
-        if (until > 0L && remaining <= COLLAPSE_WARNING_TICKS && remaining > 0L) {
-            List<BlockPos> path = frame.path();
-            int steps = (path.size() + 1) / 2;
-            if (now % 3L == 0L) {
-                int k = steps - 1 - (int) (((COLLAPSE_WARNING_TICKS - remaining) / 3L) % steps);
-                for (BlockPos p : chargePair(path, k)) {
-                    double[] f = frame.innerFace(p);
-                    level.addParticle(ModParticles.SPARK, f[0], f[1], f[2], 0.0D, -0.05D, 0.0D);
-                }
-            }
-        }
     }
 
     /** Une onde d'étincelles part du point d'entrée de chaque entité qui traverse la membrane. */

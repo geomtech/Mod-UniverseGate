@@ -166,4 +166,27 @@ final class PortalGateMesh {
             consumer.addVertex(matrix, d, rv, rh).setColor(r, g, b, 255);
         }
     }
+
+    /** Pavé fixe (sans rotation), en pixels depuis le coin du Core : dessus {@code top}, côtés {@code side}. */
+    static void box(VertexConsumer consumer, Matrix4f matrix, boolean xAxis,
+                    float h0, float h1, float v0, float v1, float z0, float z1, int top, int side) {
+        boxQuad(consumer, matrix, xAxis, h0, v1, z0, h1, v1, z0, h1, v1, z1, h0, v1, z1, top);
+        boxQuad(consumer, matrix, xAxis, h0, v0, z0, h1, v0, z0, h1, v0, z1, h0, v0, z1, side);
+        boxQuad(consumer, matrix, xAxis, h0, v0, z0, h1, v0, z0, h1, v1, z0, h0, v1, z0, side);
+        boxQuad(consumer, matrix, xAxis, h0, v0, z1, h1, v0, z1, h1, v1, z1, h0, v1, z1, side);
+        boxQuad(consumer, matrix, xAxis, h0, v0, z0, h0, v0, z1, h0, v1, z1, h0, v1, z0, side);
+        boxQuad(consumer, matrix, xAxis, h1, v0, z0, h1, v0, z1, h1, v1, z1, h1, v1, z0, side);
+    }
+
+    private static void boxQuad(VertexConsumer consumer, Matrix4f matrix, boolean xAxis,
+                                float ha, float va, float za, float hb, float vb, float zb,
+                                float hc, float vc, float zc, float hd, float vd, float zd, int rgb) {
+        int r = (rgb >> 16) & 0xFF, g = (rgb >> 8) & 0xFF, b = rgb & 0xFF;
+        float[][] pts = {{ha, va, za}, {hb, vb, zb}, {hc, vc, zc}, {hd, vd, zd}};
+        for (float[] p : pts) {
+            float h = p[0] / 16.0F, v = p[1] / 16.0F, z = p[2] / 16.0F;
+            if (xAxis) consumer.addVertex(matrix, h, v, z).setColor(r, g, b, 255);
+            else consumer.addVertex(matrix, z, v, h).setColor(r, g, b, 255);
+        }
+    }
 }

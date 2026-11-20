@@ -64,10 +64,45 @@ final class PortalGateBaseLayer implements PortalGateLayer {
                     level.getBrightness(LightLayer.SKY, lightPos));
             poseStack.pushPose();
             poseStack.translate(right.getStepX() * dx, 0.0D, right.getStepZ() * dx);
+            // Légèrement réduit : les faces du vrai sol voisin passent devant, sans scintillement.
+            poseStack.translate(0.5D, 0.5D, 0.5D);
+            poseStack.scale(GROUND_SCALE, GROUND_SCALE, GROUND_SCALE);
+            poseStack.translate(-0.5D, -0.5D, -0.5D);
             blockRenderer.renderSingleBlock(ground, poseStack, buffer, light, OverlayTexture.NO_OVERLAY);
             poseStack.popPose();
         }
+        renderSockets(ctx, poseStack, buffer);
         return true;
+    }
+
+    private static final float GROUND_SCALE = 0.996F;
+
+    /**
+     * Les deux fourreaux d'où l'anneau sort du sol : un rebord sombre en relief autour de chaque passage, avec un
+     * fond noir. Ils cachent la jonction entre l'anneau et le terrain.
+     */
+    private static void renderSockets(PortalGateRenderContext ctx, PoseStack poseStack, MultiBufferSource buffer) {
+        VertexConsumer consumer = buffer.getBuffer(PortalGateRenderTypes.GATE_SOLID);
+        var matrix = poseStack.last().pose();
+        boolean xAxis = ctx.xAxis();
+        float groundV = 16.0F;
+        float dy = PortalGateRingLayer.CENTER_V - groundV;
+        float outer = (float) Math.sqrt(PortalGateRingLayer.OUTER_RADIUS * PortalGateRingLayer.OUTER_RADIUS - dy * dy);
+        float inner = (float) Math.sqrt(Math.max(0.0F, PortalGateRingLayer.INNER_RADIUS * PortalGateRingLayer.INNER_RADIUS - dy * dy));
+        float cx = PortalGateRingLayer.CENTER_H;
+        float[][] slots = {{cx - outer, cx - inner}, {cx + inner, cx + outer}};
+        int rimTop = 0x2B2B2B, rimSide = 0x141414;
+        float top = groundV + 1.5F;
+        for (float[] slot : slots) {
+            float a = slot[0] - 1.0F, b = slot[1] + 1.0F; // ouverture, un peu plus large que l'anneau
+            // Fond noir du passage, juste au-dessus du sol.
+            PortalGateMesh.box(consumer, matrix, xAxis, a, b, groundV, groundV + 0.1F, 2.0F, 14.0F, 0x000000, 0x000000);
+            // Rebords : devant, derrière et aux deux bouts.
+            PortalGateMesh.box(consumer, matrix, xAxis, a - 2.0F, b + 2.0F, groundV, top, 0.0F, 2.0F, rimTop, rimSide);
+            PortalGateMesh.box(consumer, matrix, xAxis, a - 2.0F, b + 2.0F, groundV, top, 14.0F, 16.0F, rimTop, rimSide);
+            PortalGateMesh.box(consumer, matrix, xAxis, a - 2.0F, a, groundV, top, 2.0F, 14.0F, rimTop, rimSide);
+            PortalGateMesh.box(consumer, matrix, xAxis, b, b + 2.0F, groundV, top, 2.0F, 14.0F, rimTop, rimSide);
+        }
     }
 
     /** Bloc de terrain plein (herbe, terre, pierre...), ou null. */

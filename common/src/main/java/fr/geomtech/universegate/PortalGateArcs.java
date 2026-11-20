@@ -13,7 +13,7 @@ import java.util.List;
 
 /**
  * Arcs électriques du portail 3D (côté client) : tant que le portail s'ouvre ou est ouvert, de brefs arcs
- * blancs jaillissent des cristaux de l'anneau vers le sol et les blocs voisins. Plus fréquents s'il est instable.
+ * blancs jaillissent des cristaux de l'anneau vers le sol et les blocs voisins, dans le plan du portail. Plus fréquents s'il est instable.
  *
  * <p>Positions en blocs depuis le coin du Core (x, y, z du monde), dessinées par {@link PortalArcLayer}.</p>
  */
@@ -21,7 +21,7 @@ public final class PortalGateArcs {
 
     static final int POINTS = 10;
     private static final float[] CRYSTAL_ANGLES = {90.0F, 210.0F, 330.0F};
-    private static final float CRYSTAL_RADIUS = 44.0F; // px, bord extérieur des cristaux
+    private static final float CRYSTAL_RADIUS = 42.0F; // px, bord extérieur des cristaux
     private static final int MAX_ARCS = 3;
     private static final double MIN_REACH = 0.8D;
     private static final double MAX_REACH = 4.5D;
@@ -120,7 +120,7 @@ public final class PortalGateArcs {
         BlockPos.MutableBlockPos pos = new BlockPos.MutableBlockPos();
         for (int dh = -6; dh <= 7; dh++) {
             for (int dv = -2; dv <= 8; dv++) {
-                for (int dd = -4; dd <= 4; dd++) {
+                for (int dd = 0; dd <= 0; dd++) { // seulement dans le plan du portail, ni devant ni derrière
                     pos.set(core.getX() + right.getStepX() * dh + depth.getStepX() * dd,
                             core.getY() + dv,
                             core.getZ() + right.getStepZ() * dh + depth.getStepZ() * dd);
