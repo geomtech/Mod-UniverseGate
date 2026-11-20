@@ -72,7 +72,7 @@ public class EnergyMonitorBlock extends BaseEntityBlock {
     public @Nullable <T extends BlockEntity> BlockEntityTicker<T> getTicker(Level level,
                                                                              BlockState state,
                                                                              BlockEntityType<T> type) {
-        if (level.isClientSide) return null;
+        if (level.isClientSide()) return null;
         return createTickerHelper(type, ModBlockEntities.ENERGY_MONITOR,
                 (lvl, pos, blockState, be) -> be.serverTick());
     }
@@ -141,7 +141,7 @@ public class EnergyMonitorBlock extends BaseEntityBlock {
                                                BlockPos pos,
                                                Player player,
                                                BlockHitResult hit) {
-        if (level.isClientSide) return InteractionResult.SUCCESS;
+        if (level.isClientSide()) return InteractionResult.SUCCESS;
 
         BlockEntity blockEntity = level.getBlockEntity(pos);
         if (blockEntity instanceof MenuProvider provider && player instanceof ServerPlayer sp) {

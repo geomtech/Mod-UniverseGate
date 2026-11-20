@@ -20,7 +20,7 @@ public class LightBeamEmitterBlockEntity extends BlockEntity {
      */
     public void clientTick() {
         Level level = this.level;
-        if (level == null || !level.isClientSide) return;
+        if (level == null || !level.isClientSide()) return;
 
         double x = worldPosition.getX() + 0.5;
         double y = worldPosition.getY() + 1.0;

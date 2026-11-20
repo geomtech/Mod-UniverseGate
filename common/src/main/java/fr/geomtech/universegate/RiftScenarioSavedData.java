@@ -1,5 +1,7 @@
 package fr.geomtech.universegate;
 
+import fr.geomtech.universegate.compat.Nbt;
+import fr.geomtech.universegate.compat.SavedDataCompat;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.HolderLookup;
 import net.minecraft.nbt.CompoundTag;
@@ -18,14 +20,7 @@ public class RiftScenarioSavedData extends SavedData {
 
     public static RiftScenarioSavedData get(MinecraftServer server) {
         ServerLevel overworld = server.overworld();
-        return overworld.getDataStorage().computeIfAbsent(
-                new SavedData.Factory<>(
-                        RiftScenarioSavedData::new,
-                        RiftScenarioSavedData::load,
-                        null
-                ),
-                DATA_NAME
-        );
+        return SavedDataCompat.computeIfAbsent(overworld, DATA_NAME, RiftScenarioSavedData::new, RiftScenarioSavedData::load, RiftScenarioSavedData::save);
     }
 
     public boolean isGenerated() {
@@ -56,6 +51,7 @@ public class RiftScenarioSavedData extends SavedData {
         setDirty();
     }
 
+    //? if <1.21.11
     @Override
     public CompoundTag save(CompoundTag tag, HolderLookup.Provider registries) {
         tag.putBoolean("Generated", generated);
@@ -77,12 +73,12 @@ public class RiftScenarioSavedData extends SavedData {
 
     public static RiftScenarioSavedData load(CompoundTag tag, HolderLookup.Provider registries) {
         RiftScenarioSavedData data = new RiftScenarioSavedData();
-        data.generated = tag.getBoolean("Generated");
+        data.generated = Nbt.getBoolean(tag, "Generated");
         if (data.generated) {
-            data.outpostPos = new BlockPos(tag.getInt("OutpostX"), tag.getInt("OutpostY"), tag.getInt("OutpostZ"));
-            data.workingPortalPos = new BlockPos(tag.getInt("PortalX"), tag.getInt("PortalY"), tag.getInt("PortalZ"));
+            data.outpostPos = new BlockPos(Nbt.getInt(tag, "OutpostX"), Nbt.getInt(tag, "OutpostY"), Nbt.getInt(tag, "OutpostZ"));
+            data.workingPortalPos = new BlockPos(Nbt.getInt(tag, "PortalX"), Nbt.getInt(tag, "PortalY"), Nbt.getInt(tag, "PortalZ"));
             if (tag.contains("BedX")) {
-                data.outpostBedPos = new BlockPos(tag.getInt("BedX"), tag.getInt("BedY"), tag.getInt("BedZ"));
+                data.outpostBedPos = new BlockPos(Nbt.getInt(tag, "BedX"), Nbt.getInt(tag, "BedY"), Nbt.getInt(tag, "BedZ"));
             } else {
                 data.outpostBedPos = data.outpostPos;
             }

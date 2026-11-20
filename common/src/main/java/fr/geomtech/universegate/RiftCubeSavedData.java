@@ -1,5 +1,7 @@
 package fr.geomtech.universegate;
 
+import fr.geomtech.universegate.compat.Nbt;
+import fr.geomtech.universegate.compat.SavedDataCompat;
 import net.minecraft.core.HolderLookup;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.server.MinecraftServer;
@@ -17,14 +19,7 @@ public class RiftCubeSavedData extends SavedData {
 
     public static RiftCubeSavedData get(MinecraftServer server) {
         ServerLevel overworld = server.overworld();
-        return overworld.getDataStorage().computeIfAbsent(
-                new SavedData.Factory<>(
-                        RiftCubeSavedData::new,
-                        RiftCubeSavedData::load,
-                        null
-                ),
-                DATA_NAME
-        );
+        return SavedDataCompat.computeIfAbsent(overworld, DATA_NAME, RiftCubeSavedData::new, RiftCubeSavedData::load, RiftCubeSavedData::save);
     }
 
     public boolean isGenerated(int cellX, int cellZ) {
@@ -47,6 +42,7 @@ public class RiftCubeSavedData extends SavedData {
         }
     }
 
+    //? if <1.21.11
     @Override
     public CompoundTag save(CompoundTag tag, HolderLookup.Provider registries) {
         long[] values = new long[generatedCells.size()];
@@ -61,11 +57,11 @@ public class RiftCubeSavedData extends SavedData {
 
     public static RiftCubeSavedData load(CompoundTag tag, HolderLookup.Provider registries) {
         RiftCubeSavedData data = new RiftCubeSavedData();
-        long[] arr = tag.getLongArray("Cells");
+        long[] arr = Nbt.getLongArray(tag, "Cells");
         for (long v : arr) {
             data.generatedCells.add(v);
         }
-        for (long v : tag.getLongArray("GuardianEmitters")) {
+        for (long v : Nbt.getLongArray(tag, "GuardianEmitters")) {
             data.guardianEmitters.add(v);
         }
         return data;

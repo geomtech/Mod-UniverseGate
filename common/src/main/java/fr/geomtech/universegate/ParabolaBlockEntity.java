@@ -1,8 +1,14 @@
 package fr.geomtech.universegate;
 
-import net.minecraft.core.BlockPos;
+import fr.geomtech.universegate.compat.DataReader;
+import fr.geomtech.universegate.compat.DataWriter;
 import net.minecraft.core.HolderLookup;
 import net.minecraft.nbt.CompoundTag;
+//? if >=1.21.11 {
+/*import net.minecraft.world.level.storage.ValueInput;
+import net.minecraft.world.level.storage.ValueOutput;
+*///?}
+import net.minecraft.core.BlockPos;
 import net.minecraft.network.protocol.game.ClientboundBlockEntityDataPacket;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.level.Level;
@@ -37,20 +43,42 @@ public class ParabolaBlockEntity extends BlockEntity {
     }
 
     private void syncToClient() {
-        if (level != null && !level.isClientSide) {
+        if (level != null && !level.isClientSide()) {
             level.sendBlockUpdated(worldPosition, getBlockState(), getBlockState(), 3);
         }
     }
 
+    //? if >=1.21.11 {
+    /*@Override
+    protected void saveAdditional(ValueOutput output) {
+        super.saveAdditional(output);
+        saveData(DataWriter.of(output));
+    }
+
+    @Override
+    protected void loadAdditional(ValueInput input) {
+        super.loadAdditional(input);
+        loadData(DataReader.of(input));
+    }
+    *///?} else {
     @Override
     protected void saveAdditional(CompoundTag tag, HolderLookup.Provider registries) {
         super.saveAdditional(tag, registries);
-        tag.putBoolean("IsPowered", isPowered);
+        saveData(DataWriter.of(tag, registries));
     }
 
     @Override
     protected void loadAdditional(CompoundTag tag, HolderLookup.Provider registries) {
         super.loadAdditional(tag, registries);
+        loadData(DataReader.of(tag, registries));
+    }
+    //?}
+
+    private void saveData(DataWriter tag) {
+        tag.putBoolean("IsPowered", isPowered);
+    }
+
+    private void loadData(DataReader tag) {
         isPowered = tag.getBoolean("IsPowered");
     }
 

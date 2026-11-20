@@ -22,7 +22,7 @@ public class ChargedLightningRodBlock extends LightningRodBlock implements Entit
     @Override
     public void onLightningStrike(BlockState state, Level level, BlockPos pos) {
         super.onLightningStrike(state, level, pos);
-        if (level.isClientSide) return;
+        if (level.isClientSide()) return;
         if (!(level.getBlockEntity(pos) instanceof ChargedLightningRodBlockEntity be)) return;
 
         be.addCharge(1);

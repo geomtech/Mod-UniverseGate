@@ -144,7 +144,7 @@ public class PortalNaturalKeyboardBlock extends BaseEntityBlock {
     public void onPlace(BlockState state, Level level, BlockPos pos, BlockState oldState, boolean movedByPiston) {
         super.onPlace(state, level, pos, oldState, movedByPiston);
         PortalFireGuard.clearFireAbove(level, pos);
-        if (!level.isClientSide && level instanceof ServerLevel sl) {
+        if (!level.isClientSide() && level instanceof ServerLevel sl) {
             PortalConnectionManager.syncKeyboardLitFromNearbyCore(sl, pos);
         }
     }
@@ -162,7 +162,7 @@ public class PortalNaturalKeyboardBlock extends BaseEntityBlock {
 
     @Override
     public void onRemove(BlockState state, Level level, BlockPos pos, BlockState newState, boolean movedByPiston) {
-        if (!level.isClientSide && !state.is(newState.getBlock())) {
+        if (!level.isClientSide() && !state.is(newState.getBlock())) {
             if (level instanceof ServerLevel sl) {
                 PortalConnectionManager.forceCloseFromKeyboard(sl, pos);
             }
@@ -176,7 +176,7 @@ public class PortalNaturalKeyboardBlock extends BaseEntityBlock {
 
     @Override
     protected InteractionResult useWithoutItem(BlockState state, Level level, BlockPos pos, Player player, BlockHitResult hit) {
-        if (level.isClientSide) return InteractionResult.SUCCESS;
+        if (level.isClientSide()) return InteractionResult.SUCCESS;
 
         BlockEntity be = level.getBlockEntity(pos);
         if (be instanceof MenuProvider provider && player instanceof ServerPlayer sp) {

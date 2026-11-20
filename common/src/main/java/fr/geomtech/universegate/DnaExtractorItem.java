@@ -55,7 +55,7 @@ public class DnaExtractorItem extends Item {
             return InteractionResultHolder.consume(stack);
         }
 
-        if (!level.isClientSide) {
+        if (!level.isClientSide()) {
             if (startResult == StartResult.NOT_ENOUGH_CRYSTALS) {
                 sendNotEnoughCrystalsMessage(player);
             } else {
@@ -79,7 +79,7 @@ public class DnaExtractorItem extends Item {
             return InteractionResult.CONSUME;
         }
 
-        if (!player.level().isClientSide) {
+        if (!player.level().isClientSide()) {
             if (startResult == StartResult.NOT_ENOUGH_CRYSTALS) {
                 sendNotEnoughCrystalsMessage(player);
             } else {
@@ -101,7 +101,7 @@ public class DnaExtractorItem extends Item {
 
     @Override
     public void onUseTick(Level level, LivingEntity livingEntity, ItemStack stack, int remainingUseDuration) {
-        if (level.isClientSide || !(livingEntity instanceof ServerPlayer serverPlayer)) {
+        if (level.isClientSide() || !(livingEntity instanceof ServerPlayer serverPlayer)) {
             return;
         }
 
@@ -133,7 +133,7 @@ public class DnaExtractorItem extends Item {
 
     @Override
     public ItemStack finishUsingItem(ItemStack stack, Level level, LivingEntity livingEntity) {
-        if (level.isClientSide || !(livingEntity instanceof ServerPlayer serverPlayer) || !(level instanceof ServerLevel serverLevel)) {
+        if (level.isClientSide() || !(livingEntity instanceof ServerPlayer serverPlayer) || !(level instanceof ServerLevel serverLevel)) {
             return stack;
         }
 
@@ -173,7 +173,7 @@ public class DnaExtractorItem extends Item {
 
     @Override
     public void releaseUsing(ItemStack stack, Level level, LivingEntity livingEntity, int timeLeft) {
-        if (level.isClientSide || !(livingEntity instanceof ServerPlayer serverPlayer)) {
+        if (level.isClientSide() || !(livingEntity instanceof ServerPlayer serverPlayer)) {
             return;
         }
 
@@ -218,7 +218,7 @@ public class DnaExtractorItem extends Item {
             return StartResult.NO_TARGET;
         }
 
-        if (!level.isClientSide) {
+        if (!level.isClientSide()) {
             ACTIVE_EXTRACTIONS.put(player.getUUID(), new ExtractionState(target.getUUID(), target.getHealth()));
         }
 

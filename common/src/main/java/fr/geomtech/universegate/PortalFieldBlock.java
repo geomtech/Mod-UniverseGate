@@ -67,14 +67,14 @@ public class PortalFieldBlock extends Block implements EntityBlock, SimpleWaterl
 
     @Override
     public void entityInside(BlockState state, Level level, BlockPos pos, Entity entity) {
-        if (level.isClientSide) return;
+        if (level.isClientSide()) return;
 
         PortalTeleportHandler.tryTeleport(entity, pos);
     }
 
     @Override
     public void wasExploded(Level level, BlockPos pos, Explosion explosion) {
-        if (!level.isClientSide && level instanceof ServerLevel sl) {
+        if (!level.isClientSide() && level instanceof ServerLevel sl) {
             BlockPos corePos = findCoreNear(sl, pos, 4, 5);
             if (corePos != null && sl.getBlockEntity(corePos) instanceof PortalCoreBlockEntity core && core.isActive()) {
                 PortalConnectionManager.forceCloseOneSide(sl, corePos);
@@ -91,7 +91,7 @@ public class PortalFieldBlock extends Block implements EntityBlock, SimpleWaterl
 
     @Override
     public BlockState playerWillDestroy(Level level, BlockPos pos, BlockState state, Player player) {
-        if (!level.isClientSide
+        if (!level.isClientSide()
                 && player.getAbilities().instabuild
                 && level instanceof ServerLevel sl) {
             BlockPos corePos = findCoreNear(sl, pos, 4, 5);

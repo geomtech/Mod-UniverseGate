@@ -10,6 +10,22 @@ plugins {
 // (`./gradlew "Reset active project"`).
 stonecutter.active '1.21.1'
 
+// Plain renames between Minecraft versions (Mojang mappings), applied to the sources when switching
+// the active version. Anything that is more than a rename uses `//?` conditions in the code instead.
+stonecutter.parameters {
+	replacements.string(eval(current.version, '>=1.21.11')) {
+		replace('ResourceLocation', 'Identifier')
+		replace('net.minecraft.client.model.CowModel', 'net.minecraft.client.model.animal.cow.CowModel')
+		replace('net.minecraft.world.entity.npc.Villager;', 'net.minecraft.world.entity.npc.villager.Villager;')
+		replace('net.minecraft.world.entity.npc.VillagerProfession;', 'net.minecraft.world.entity.npc.villager.VillagerProfession;')
+		replace('net.minecraft.world.entity.projectile.AbstractArrow', 'net.minecraft.world.entity.projectile.arrow.AbstractArrow')
+		replace('net.minecraft.world.entity.projectile.ThrownEnderpearl', 'net.minecraft.world.entity.projectile.throwableitemprojectile.ThrownEnderpearl')
+		replace('net.minecraft.world.entity.vehicle.AbstractMinecart', 'net.minecraft.world.entity.vehicle.minecart.AbstractMinecart')
+		replace('MobSpawnType', 'EntitySpawnReason')
+		replace('UseAnim', 'ItemUseAnimation')
+	}
+}
+
 // Stonecutter nodes: one project per branch and Minecraft version (:common:1.21.1, :fabric:1.21.1, ...).
 def nodes = subprojects.findAll { it.parent != rootProject }
 def nodeOf = { String branch, String mc -> project(":${branch}:${mc}") }

@@ -79,14 +79,14 @@ public class CrystalCondenserBlock extends BaseEntityBlock {
                                            InteractionHand hand,
                                            BlockHitResult hit) {
         if (!state.getValue(HAS_CRYSTAL) && stack.is(ModItems.ENERGY_CRYSTAL)) {
-            if (!level.isClientSide) {
+            if (!level.isClientSide()) {
                 level.setBlock(pos, state.setValue(HAS_CRYSTAL, true), 3);
                 if (!player.getAbilities().instabuild) {
                     stack.shrink(1);
                 }
                 level.playSound(null, pos, SoundEvents.STONE_PLACE, SoundSource.BLOCKS, 1.0F, 1.2F);
             }
-            return ItemInteractionResult.sidedSuccess(level.isClientSide);
+            return ItemInteractionResult.sidedSuccess(level.isClientSide());
         }
         return super.useItemOn(stack, state, level, pos, player, hand, hit);
     }

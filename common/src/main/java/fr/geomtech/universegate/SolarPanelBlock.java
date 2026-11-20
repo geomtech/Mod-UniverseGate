@@ -122,7 +122,7 @@ public class SolarPanelBlock extends Block {
                             BlockState state,
                             @Nullable LivingEntity placer,
                             ItemStack stack) {
-        if (level.isClientSide || state.getValue(PART) != PanelPart.BASE) {
+        if (level.isClientSide() || state.getValue(PART) != PanelPart.BASE) {
             super.setPlacedBy(level, pos, state, placer, stack);
             return;
         }
@@ -141,7 +141,7 @@ public class SolarPanelBlock extends Block {
             return;
         }
 
-        if (!level.isClientSide) {
+        if (!level.isClientSide()) {
             BlockPos basePos = getBasePos(pos, state);
             for (int i = 0; i < 4; i++) {
                 BlockPos partPos = basePos.above(i);

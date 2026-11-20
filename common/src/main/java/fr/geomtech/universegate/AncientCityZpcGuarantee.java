@@ -28,7 +28,7 @@ public final class AncientCityZpcGuarantee {
 
     /** Called when a player right-clicks a block, before the block reacts. Never cancels the interaction. */
     public static InteractionResult onUseBlock(Player player, Level level, InteractionHand hand, BlockHitResult hitResult) {
-        if (level.isClientSide) return InteractionResult.PASS;
+        if (level.isClientSide()) return InteractionResult.PASS;
         if (hand != InteractionHand.MAIN_HAND) return InteractionResult.PASS;
         if (!(level instanceof ServerLevel serverLevel)) return InteractionResult.PASS;
 

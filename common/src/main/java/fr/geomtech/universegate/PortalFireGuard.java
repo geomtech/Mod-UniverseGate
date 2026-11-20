@@ -10,7 +10,7 @@ final class PortalFireGuard {
     private PortalFireGuard() {}
 
     static void clearFireAbove(Level level, BlockPos pos) {
-        if (level.isClientSide) return;
+        if (level.isClientSide()) return;
 
         BlockPos above = pos.above();
         if (level.getBlockState(above).getBlock() instanceof BaseFireBlock) {

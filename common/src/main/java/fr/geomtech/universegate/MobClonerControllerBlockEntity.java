@@ -1,8 +1,15 @@
 package fr.geomtech.universegate;
 
+import fr.geomtech.universegate.compat.DataReader;
+import fr.geomtech.universegate.compat.DataWriter;
+import net.minecraft.core.HolderLookup;
+import net.minecraft.nbt.CompoundTag;
+//? if >=1.21.11 {
+/*import net.minecraft.world.level.storage.ValueInput;
+import net.minecraft.world.level.storage.ValueOutput;
+*///?}
 import fr.geomtech.universegate.platform.PosMenuProvider;
 import net.minecraft.core.BlockPos;
-import net.minecraft.core.HolderLookup;
 import net.minecraft.core.particles.ParticleTypes;
 import net.minecraft.core.NonNullList;
 import net.minecraft.core.registries.BuiltInRegistries;
@@ -98,7 +105,7 @@ public class MobClonerControllerBlockEntity extends net.minecraft.world.level.bl
     }
 
     public static void tick(Level level, BlockPos pos, BlockState state, MobClonerControllerBlockEntity entity) {
-        if (level.isClientSide) return;
+        if (level.isClientSide()) return;
         entity.serverTick();
     }
 
@@ -622,7 +629,7 @@ public class MobClonerControllerBlockEntity extends net.minecraft.world.level.bl
     }
 
     private void syncClient() {
-        if (level != null && !level.isClientSide) {
+        if (level != null && !level.isClientSide()) {
             level.sendBlockUpdated(worldPosition, getBlockState(), getBlockState(), 3);
         }
     }
@@ -718,10 +725,34 @@ public class MobClonerControllerBlockEntity extends net.minecraft.world.level.bl
         syncClient();
     }
 
+    //? if >=1.21.11 {
+    /*@Override
+    protected void saveAdditional(ValueOutput output) {
+        super.saveAdditional(output);
+        saveData(DataWriter.of(output));
+    }
+
     @Override
-    protected void saveAdditional(net.minecraft.nbt.CompoundTag tag, HolderLookup.Provider registries) {
+    protected void loadAdditional(ValueInput input) {
+        super.loadAdditional(input);
+        loadData(DataReader.of(input));
+    }
+    *///?} else {
+    @Override
+    protected void saveAdditional(CompoundTag tag, HolderLookup.Provider registries) {
         super.saveAdditional(tag, registries);
-        ContainerHelper.saveAllItems(tag, inventory, registries);
+        saveData(DataWriter.of(tag, registries));
+    }
+
+    @Override
+    protected void loadAdditional(CompoundTag tag, HolderLookup.Provider registries) {
+        super.loadAdditional(tag, registries);
+        loadData(DataReader.of(tag, registries));
+    }
+    //?}
+
+    private void saveData(DataWriter tag) {
+        tag.saveItems(inventory);
 
         tag.putBoolean("ChargeActive", chargeActive);
         tag.putInt("ChargeTicks", chargeTicks);
@@ -741,10 +772,8 @@ public class MobClonerControllerBlockEntity extends net.minecraft.world.level.bl
         }
     }
 
-    @Override
-    protected void loadAdditional(net.minecraft.nbt.CompoundTag tag, HolderLookup.Provider registries) {
-        super.loadAdditional(tag, registries);
-        ContainerHelper.loadAllItems(tag, inventory, registries);
+    private void loadData(DataReader tag) {
+        tag.loadItems(inventory);
         cachedCost = 0;
         cachedFlags = 0;
         cachedClonerDistance = -1;
@@ -758,7 +787,7 @@ public class MobClonerControllerBlockEntity extends net.minecraft.world.level.bl
         pendingEntityTypeId = tag.contains("PendingEntityType") ? tag.getString("PendingEntityType") : null;
         pendingCustomName = tag.contains("PendingCustomName") ? tag.getString("PendingCustomName") : null;
         pendingClonerPos = tag.contains("PendingClonerPos") ? BlockPos.of(tag.getLong("PendingClonerPos")) : null;
-        chargingPlayerId = tag.hasUUID("ChargingPlayer") ? tag.getUUID("ChargingPlayer") : null;
+        chargingPlayerId = tag.getUUID("ChargingPlayer");
 
         if (!chargeActive) {
             clearPendingCloneData();

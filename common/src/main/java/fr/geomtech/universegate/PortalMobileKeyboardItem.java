@@ -26,7 +26,7 @@ public class PortalMobileKeyboardItem extends Item {
     @Override
     public InteractionResultHolder<ItemStack> use(Level level, Player player, InteractionHand hand) {
         ItemStack stack = player.getItemInHand(hand);
-        if (level.isClientSide) {
+        if (level.isClientSide()) {
             return InteractionResultHolder.success(stack);
         }
         if (!(player instanceof ServerPlayer serverPlayer)) {

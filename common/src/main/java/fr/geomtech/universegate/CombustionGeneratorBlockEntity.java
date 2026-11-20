@@ -1,11 +1,17 @@
 package fr.geomtech.universegate;
 
+import fr.geomtech.universegate.compat.DataReader;
+import fr.geomtech.universegate.compat.DataWriter;
+import net.minecraft.core.HolderLookup;
+import net.minecraft.nbt.CompoundTag;
+//? if >=1.21.11 {
+/*import net.minecraft.world.level.storage.ValueInput;
+import net.minecraft.world.level.storage.ValueOutput;
+*///?}
 import fr.geomtech.universegate.platform.PosMenuProvider;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
-import net.minecraft.core.HolderLookup;
 import net.minecraft.core.NonNullList;
-import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.chat.Component;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
@@ -179,7 +185,7 @@ public class CombustionGeneratorBlockEntity extends BlockEntity implements World
     }
 
     private boolean syncLitState(BlockState state) {
-        if (level == null || level.isClientSide) return false;
+        if (level == null || level.isClientSide()) return false;
         if (!state.hasProperty(CombustionGeneratorBlock.LIT)) return false;
 
         boolean shouldBeLit = bufferedEnergy > 0;
@@ -283,17 +289,40 @@ public class CombustionGeneratorBlockEntity extends BlockEntity implements World
         setChanged();
     }
 
+    //? if >=1.21.11 {
+    /*@Override
+    protected void saveAdditional(ValueOutput output) {
+        super.saveAdditional(output);
+        saveData(DataWriter.of(output));
+    }
+
+    @Override
+    protected void loadAdditional(ValueInput input) {
+        super.loadAdditional(input);
+        loadData(DataReader.of(input));
+    }
+    *///?} else {
     @Override
     protected void saveAdditional(CompoundTag tag, HolderLookup.Provider registries) {
         super.saveAdditional(tag, registries);
-        ContainerHelper.saveAllItems(tag, inventory, registries);
-        tag.putInt("BufferedEnergy", bufferedEnergy);
+        saveData(DataWriter.of(tag, registries));
     }
 
     @Override
     protected void loadAdditional(CompoundTag tag, HolderLookup.Provider registries) {
         super.loadAdditional(tag, registries);
-        ContainerHelper.loadAllItems(tag, inventory, registries);
+        loadData(DataReader.of(tag, registries));
+    }
+    //?}
+
+    private void saveData(DataWriter tag) {
+        tag.saveItems(inventory);
+        tag.putInt("BufferedEnergy", bufferedEnergy);
+    }
+
+    private void loadData(DataReader tag) {
+        tag.loadItems(inventory);
         bufferedEnergy = Math.max(0, Math.min(MAX_BUFFERED_ENERGY, tag.getInt("BufferedEnergy")));
     }
+
 }

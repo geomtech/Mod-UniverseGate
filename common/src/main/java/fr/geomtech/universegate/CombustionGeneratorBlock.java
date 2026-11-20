@@ -92,13 +92,13 @@ public class CombustionGeneratorBlock extends BaseEntityBlock {
                                            Player player,
                                            InteractionHand hand,
                                            BlockHitResult hit) {
-        if (!level.isClientSide) {
+        if (!level.isClientSide()) {
             BlockEntity blockEntity = level.getBlockEntity(pos);
             if (blockEntity instanceof MenuProvider provider && player instanceof ServerPlayer sp) {
                 MenuHelper.open(sp, provider);
             }
         }
-        return ItemInteractionResult.sidedSuccess(level.isClientSide);
+        return ItemInteractionResult.sidedSuccess(level.isClientSide());
     }
 
     @Override
@@ -107,18 +107,18 @@ public class CombustionGeneratorBlock extends BaseEntityBlock {
                                                BlockPos pos,
                                                Player player,
                                                BlockHitResult hit) {
-        if (!level.isClientSide) {
+        if (!level.isClientSide()) {
             BlockEntity blockEntity = level.getBlockEntity(pos);
             if (blockEntity instanceof MenuProvider provider && player instanceof ServerPlayer sp) {
                 MenuHelper.open(sp, provider);
             }
         }
-        return InteractionResult.sidedSuccess(level.isClientSide);
+        return InteractionResult.sidedSuccess(level.isClientSide());
     }
 
     @Override
     public void onRemove(BlockState state, Level level, BlockPos pos, BlockState newState, boolean movedByPiston) {
-        if (!level.isClientSide && !state.is(newState.getBlock())) {
+        if (!level.isClientSide() && !state.is(newState.getBlock())) {
             BlockEntity blockEntity = level.getBlockEntity(pos);
             if (blockEntity instanceof CombustionGeneratorBlockEntity generator) {
                 Containers.dropContents(level, pos, generator);
@@ -131,7 +131,7 @@ public class CombustionGeneratorBlock extends BaseEntityBlock {
     public @Nullable <T extends BlockEntity> BlockEntityTicker<T> getTicker(Level level,
                                                                              BlockState state,
                                                                              BlockEntityType<T> type) {
-        if (level.isClientSide) return null;
+        if (level.isClientSide()) return null;
         return createTickerHelper(type, ModBlockEntities.COMBUSTION_GENERATOR, CombustionGeneratorBlockEntity::tick);
     }
 }

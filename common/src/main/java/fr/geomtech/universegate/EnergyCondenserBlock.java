@@ -45,7 +45,7 @@ public class EnergyCondenserBlock extends BaseEntityBlock {
     public @Nullable <T extends BlockEntity> BlockEntityTicker<T> getTicker(Level level,
                                                                              BlockState state,
                                                                              BlockEntityType<T> type) {
-        if (level.isClientSide) return null;
+        if (level.isClientSide()) return null;
         return createTickerHelper(type, ModBlockEntities.ENERGY_CONDENSER,
                 (lvl, pos, blockState, be) -> be.serverTick());
     }

@@ -1,10 +1,16 @@
 package fr.geomtech.universegate;
 
+import fr.geomtech.universegate.compat.DataReader;
+import fr.geomtech.universegate.compat.DataWriter;
+import net.minecraft.core.HolderLookup;
+import net.minecraft.nbt.CompoundTag;
+//? if >=1.21.11 {
+/*import net.minecraft.world.level.storage.ValueInput;
+import net.minecraft.world.level.storage.ValueOutput;
+*///?}
 import fr.geomtech.universegate.platform.PosMenuProvider;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
-import net.minecraft.core.HolderLookup;
-import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.chat.Component;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.ContainerHelper;
@@ -109,16 +115,38 @@ public class PortalKeyboardBlockEntity extends BlockEntity implements WorldlyCon
     }
 
     // --- NBT (1.21+) ---
+    //? if >=1.21.11 {
+    /*@Override
+    protected void saveAdditional(ValueOutput output) {
+        super.saveAdditional(output);
+        saveData(DataWriter.of(output));
+    }
+
+    @Override
+    protected void loadAdditional(ValueInput input) {
+        super.loadAdditional(input);
+        loadData(DataReader.of(input));
+    }
+    *///?} else {
     @Override
     protected void saveAdditional(CompoundTag tag, HolderLookup.Provider registries) {
         super.saveAdditional(tag, registries);
-        ContainerHelper.saveAllItems(tag, items, registries);
+        saveData(DataWriter.of(tag, registries));
     }
 
     @Override
     protected void loadAdditional(CompoundTag tag, HolderLookup.Provider registries) {
         super.loadAdditional(tag, registries);
-        ContainerHelper.loadAllItems(tag, items, registries);
+        loadData(DataReader.of(tag, registries));
+    }
+    //?}
+
+    private void saveData(DataWriter tag) {
+        tag.saveItems(items);
+    }
+
+    private void loadData(DataReader tag) {
+        tag.loadItems(items);
         items.set(SLOT_FUEL, ItemStack.EMPTY);
     }
 

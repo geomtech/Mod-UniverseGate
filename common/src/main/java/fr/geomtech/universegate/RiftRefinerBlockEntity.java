@@ -1,9 +1,16 @@
 package fr.geomtech.universegate;
 
+import fr.geomtech.universegate.compat.DataReader;
+import fr.geomtech.universegate.compat.DataWriter;
+import net.minecraft.core.HolderLookup;
+import net.minecraft.nbt.CompoundTag;
+//? if >=1.21.11 {
+/*import net.minecraft.world.level.storage.ValueInput;
+import net.minecraft.world.level.storage.ValueOutput;
+*///?}
 import fr.geomtech.universegate.platform.PosMenuProvider;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.NonNullList;
-import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.chat.Component;
 import net.minecraft.network.protocol.game.ClientboundBlockEntityDataPacket;
 import net.minecraft.server.level.ServerPlayer;
@@ -86,7 +93,7 @@ public class RiftRefinerBlockEntity extends BlockEntity implements PosMenuProvid
     }
 
     public static void tick(Level level, BlockPos pos, BlockState state, RiftRefinerBlockEntity entity) {
-        if (level.isClientSide) return;
+        if (level.isClientSide()) return;
 
         boolean dirty = false;
 
@@ -156,18 +163,40 @@ public class RiftRefinerBlockEntity extends BlockEntity implements PosMenuProvid
         return fluidAmount != before;
     }
 
+    //? if >=1.21.11 {
+    /*@Override
+    protected void saveAdditional(ValueOutput output) {
+        super.saveAdditional(output);
+        saveData(DataWriter.of(output));
+    }
+
     @Override
-    protected void saveAdditional(CompoundTag tag, net.minecraft.core.HolderLookup.Provider registries) {
+    protected void loadAdditional(ValueInput input) {
+        super.loadAdditional(input);
+        loadData(DataReader.of(input));
+    }
+    *///?} else {
+    @Override
+    protected void saveAdditional(CompoundTag tag, HolderLookup.Provider registries) {
         super.saveAdditional(tag, registries);
-        ContainerHelper.saveAllItems(tag, inventory, registries);
+        saveData(DataWriter.of(tag, registries));
+    }
+
+    @Override
+    protected void loadAdditional(CompoundTag tag, HolderLookup.Provider registries) {
+        super.loadAdditional(tag, registries);
+        loadData(DataReader.of(tag, registries));
+    }
+    //?}
+
+    private void saveData(DataWriter tag) {
+        tag.saveItems(inventory);
         tag.putInt("rift_refiner.progress", progress);
         tag.putInt("rift_refiner.fluid", fluidAmount);
     }
 
-    @Override
-    protected void loadAdditional(CompoundTag tag, net.minecraft.core.HolderLookup.Provider registries) {
-        super.loadAdditional(tag, registries);
-        ContainerHelper.loadAllItems(tag, inventory, registries);
+    private void loadData(DataReader tag) {
+        tag.loadItems(inventory);
         progress = tag.getInt("rift_refiner.progress");
         fluidAmount = Math.max(0, Math.min(tag.getInt("rift_refiner.fluid"), MAX_FLUID));
     }

@@ -107,7 +107,7 @@ public class ParabolaBlock extends BaseEntityBlock {
 
     @Override
     public void setPlacedBy(Level level, BlockPos pos, BlockState state, @Nullable LivingEntity placer, ItemStack stack) {
-        if (level.isClientSide || state.getValue(PART) != Part.BASE) {
+        if (level.isClientSide() || state.getValue(PART) != Part.BASE) {
             super.setPlacedBy(level, pos, state, placer, stack);
             return;
         }
@@ -121,7 +121,7 @@ public class ParabolaBlock extends BaseEntityBlock {
 
     @Override
     public <T extends BlockEntity> BlockEntityTicker<T> getTicker(Level level, BlockState state, BlockEntityType<T> type) {
-        if (level.isClientSide || state.getValue(PART) != Part.BASE) {
+        if (level.isClientSide() || state.getValue(PART) != Part.BASE) {
             return null;
         }
         return createTickerHelper(type, ModBlockEntities.PARABOLA, ParabolaBlockEntity::serverTick);
@@ -134,7 +134,7 @@ public class ParabolaBlock extends BaseEntityBlock {
             return;
         }
 
-        if (!level.isClientSide) {
+        if (!level.isClientSide()) {
             BlockPos basePos = getBasePos(pos, state);
             for (int i = 0; i < 4; i++) {
                 BlockPos partPos = basePos.above(i);
