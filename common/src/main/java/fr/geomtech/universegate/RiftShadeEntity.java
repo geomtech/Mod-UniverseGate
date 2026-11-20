@@ -1,6 +1,19 @@
 package fr.geomtech.universegate;
 
 import net.minecraft.core.BlockPos;
+import net.minecraft.nbt.CompoundTag;
+import net.minecraft.network.chat.Component;
+import net.minecraft.server.level.ServerBossEvent;
+import net.minecraft.server.level.ServerLevel;
+import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.world.BossEvent;
+import net.minecraft.world.damagesource.DamageSource;
+import net.minecraft.world.effect.MobEffectInstance;
+import net.minecraft.world.effect.MobEffects;
+import net.minecraft.world.entity.Entity;
+import net.minecraft.world.entity.LivingEntity;
+import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.phys.AABB;
 import net.minecraft.sounds.SoundEvent;
 import net.minecraft.util.RandomSource;
 import net.minecraft.world.entity.EntityType;
@@ -19,6 +32,15 @@ import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.level.ServerLevelAccessor;
 
 public class RiftShadeEntity extends Monster {
+
+    private static final String TAG_GUARDIAN = "RiftGuardian";
+    private static final int GUARDIAN_SUMMON_INTERVAL_TICKS = 20 * 9;
+    private static final int GUARDIAN_MAX_MINIONS = 6;
+
+    /** True for the Rift Guardian, the boss that protects each Rift cube. */
+    private boolean guardian = false;
+    private ServerBossEvent bossEvent;
+    private int summonCooldown = GUARDIAN_SUMMON_INTERVAL_TICKS;
 
     public RiftShadeEntity(EntityType<? extends Monster> type, net.minecraft.world.level.Level level) {
         super(type, level);
@@ -86,6 +108,129 @@ public class RiftShadeEntity extends Monster {
     @Override
     public boolean isSensitiveToWater() {
         return false;
+    }
+
+    // ------------------------------------------------------------------
+    // Rift Guardian (boss variant)
+    // ------------------------------------------------------------------
+
+    /** Turns a freshly created shade into the Rift Guardian boss. */
+    public void makeGuardian() {
+        guardian = true;
+        setAttributeBase(Attributes.MAX_HEALTH, 220.0D);
+        setAttributeBase(Attributes.ATTACK_DAMAGE, 11.0D);
+        setAttributeBase(Attributes.ARMOR, 8.0D);
+        setAttributeBase(Attributes.KNOCKBACK_RESISTANCE, 0.9D);
+        setAttributeBase(Attributes.MOVEMENT_SPEED, 0.27D);
+        setAttributeBase(Attributes.SCALE, 1.75D);
+        setHealth(getMaxHealth());
+        setCustomName(Component.translatable("entity.universegate.rift_guardian"));
+        setCustomNameVisible(true);
+        setPersistenceRequired();
+        xpReward = 60;
+    }
+
+    public boolean isGuardian() {
+        return guardian;
+    }
+
+    private void setAttributeBase(net.minecraft.core.Holder<net.minecraft.world.entity.ai.attributes.Attribute> attribute, double value) {
+        var instance = getAttribute(attribute);
+        if (instance != null) instance.setBaseValue(value);
+    }
+
+    private ServerBossEvent bossEvent() {
+        if (bossEvent == null) {
+            bossEvent = new ServerBossEvent(
+                    Component.translatable("entity.universegate.rift_guardian"),
+                    BossEvent.BossBarColor.PURPLE,
+                    BossEvent.BossBarOverlay.NOTCHED_10);
+            bossEvent.setDarkenScreen(true);
+        }
+        return bossEvent;
+    }
+
+    @Override
+    protected void customServerAiStep() {
+        super.customServerAiStep();
+        if (!guardian) return;
+
+        bossEvent().setProgress(getHealth() / getMaxHealth());
+
+        if (summonCooldown > 0) {
+            summonCooldown--;
+            return;
+        }
+        summonCooldown = GUARDIAN_SUMMON_INTERVAL_TICKS;
+
+        if (getTarget() == null || getHealth() > getMaxHealth() * 0.6F) return;
+        if (!(level() instanceof ServerLevel serverLevel)) return;
+
+        AABB area = getBoundingBox().inflate(16.0D, 6.0D, 16.0D);
+        int minions = serverLevel.getEntitiesOfClass(RiftShadeEntity.class, area, shade -> !shade.isGuardian()).size();
+        int toSpawn = Math.min(2, GUARDIAN_MAX_MINIONS - minions);
+        for (int i = 0; i < toSpawn; i++) {
+            RiftShadeEntity minion = ModEntityTypes.RIFT_SHADE.create(serverLevel);
+            if (minion == null) return;
+            double angle = random.nextDouble() * Math.PI * 2.0D;
+            minion.moveTo(getX() + Math.cos(angle) * 2.5D, getY(), getZ() + Math.sin(angle) * 2.5D, random.nextFloat() * 360.0F, 0.0F);
+            if (!serverLevel.noCollision(minion)) continue;
+            minion.setTarget(getTarget());
+            serverLevel.addFreshEntity(minion);
+        }
+        playSound(ModSounds.RIFT_SHADE_SOUND, 2.0F, 0.6F);
+    }
+
+    @Override
+    public boolean doHurtTarget(Entity target) {
+        boolean hit = super.doHurtTarget(target);
+        if (hit && guardian && target instanceof LivingEntity living) {
+            living.addEffect(new MobEffectInstance(MobEffects.DARKNESS, 20 * 4, 0), this);
+            living.addEffect(new MobEffectInstance(MobEffects.MOVEMENT_SLOWDOWN, 20 * 2, 1), this);
+        }
+        return hit;
+    }
+
+    @Override
+    public void startSeenByPlayer(ServerPlayer player) {
+        super.startSeenByPlayer(player);
+        if (guardian) bossEvent().addPlayer(player);
+    }
+
+    @Override
+    public void stopSeenByPlayer(ServerPlayer player) {
+        super.stopSeenByPlayer(player);
+        if (bossEvent != null) bossEvent.removePlayer(player);
+    }
+
+    @Override
+    protected void dropCustomDeathLoot(ServerLevel level, DamageSource damageSource, boolean recentlyHit) {
+        super.dropCustomDeathLoot(level, damageSource, recentlyHit);
+        if (!guardian) return;
+        spawnAtLocation(new ItemStack(ModItems.RIFT_CORE));
+        spawnAtLocation(new ItemStack(ModItems.RIFT_CRYSTAL, 8 + random.nextInt(9)));
+        spawnAtLocation(new ItemStack(ModItems.ENERGY_CRYSTAL, 2 + random.nextInt(3)));
+    }
+
+    @Override
+    public boolean canChangeDimensions(net.minecraft.world.level.Level from, net.minecraft.world.level.Level to) {
+        return !guardian && super.canChangeDimensions(from, to);
+    }
+
+    @Override
+    public void addAdditionalSaveData(CompoundTag tag) {
+        super.addAdditionalSaveData(tag);
+        if (guardian) tag.putBoolean(TAG_GUARDIAN, true);
+    }
+
+    @Override
+    public void readAdditionalSaveData(CompoundTag tag) {
+        super.readAdditionalSaveData(tag);
+        guardian = tag.getBoolean(TAG_GUARDIAN);
+        if (guardian) {
+            xpReward = 60;
+            if (hasCustomName()) bossEvent().setName(getCustomName());
+        }
     }
 
 }

@@ -1,5 +1,5 @@
 {
-  "parent": "universegate:portal_core_placed",
+  "parent": "universegate:find_rift_cube",
   "criteria": {
     "placed_portal_keyboard": {
       "conditions": {

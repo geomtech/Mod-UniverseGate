@@ -1,0 +1,40 @@
+{
+  "parent": "universegate:slay_rift_guardian",
+  "criteria": {
+    "has_zpc": {
+      "trigger": "minecraft:inventory_changed",
+      "conditions": {
+        "items": [
+          {
+            "items": "universegate:zpc"
+          }
+        ]
+      }
+    }
+  },
+  "display": {
+    "announce_to_chat": true,
+    "description": {
+      "translate": "advancement.universegate.obtain_zpc.description"
+    },
+    "frame": "goal",
+    "hidden": false,
+    "icon": {
+      "count": 1,
+      "id": "universegate:zpc"
+    },
+    "show_toast": true,
+    "title": {
+      "translate": "advancement.universegate.obtain_zpc.title"
+    }
+  },
+  "requirements": [
+    [
+      "has_zpc"
+    ]
+  ],
+  "rewards": {
+    "experience": 100
+  },
+  "sends_telemetry_event": true
+}

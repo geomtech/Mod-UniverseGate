@@ -22,6 +22,7 @@ public final class RiftShadeSpawner {
     private static final int EMITTER_MAX_SHADES = 10;
     private static final int EMITTER_SPAWN_BURST = 2;
     private static final int EMITTER_SPAWN_RADIUS = 8;
+    private static final double GUARDIAN_WAKE_DISTANCE = 24.0D;
 
     private RiftShadeSpawner() {}
 
@@ -50,6 +51,7 @@ public final class RiftShadeSpawner {
     private static void spawnAroundEmitters(ServerLevel level) {
         Set<BlockPos> emitters = collectLoadedEmittersNearPlayers(level);
         for (BlockPos emitterPos : emitters) {
+            trySpawnGuardian(level, emitterPos);
             AABB area = new AABB(emitterPos).inflate(EMITTER_SPAWN_RADIUS, 6.0, EMITTER_SPAWN_RADIUS);
             int count = level.getEntitiesOfClass(RiftShadeEntity.class, area).size();
             if (count >= EMITTER_MAX_SHADES) continue;
@@ -61,6 +63,46 @@ public final class RiftShadeSpawner {
                 spawnShade(level, spawnPos, MobSpawnType.SPAWNER, "emitter");
             }
         }
+    }
+
+    /** Each Rift cube emitter is guarded once by a Rift Guardian, woken up when a player comes close. */
+    private static void trySpawnGuardian(ServerLevel level, BlockPos emitterPos) {
+        if (level.getDifficulty() == net.minecraft.world.Difficulty.PEACEFUL) return;
+
+        RiftCubeSavedData data = RiftCubeSavedData.get(level.getServer());
+        if (data.isGuardianSpawned(emitterPos)) return;
+
+        boolean playerClose = false;
+        for (ServerPlayer player : level.players()) {
+            if (player.isSpectator() || player.isCreative()) continue;
+            if (player.blockPosition().closerThan(emitterPos, GUARDIAN_WAKE_DISTANCE)) {
+                playerClose = true;
+                break;
+            }
+        }
+        if (!playerClose) return;
+
+        BlockPos spawnPos = findGuardianSpawnNearEmitter(level, emitterPos);
+        if (spawnPos == null) return;
+
+        RiftShadeEntity guardian = ModEntityTypes.RIFT_SHADE.create(level);
+        if (guardian == null) return;
+        guardian.moveTo(spawnPos.getX() + 0.5, spawnPos.getY(), spawnPos.getZ() + 0.5, level.random.nextFloat() * 360.0F, 0.0F);
+        guardian.makeGuardian();
+        level.addFreshEntity(guardian);
+        data.markGuardianSpawned(emitterPos);
+
+        level.playSound(null, spawnPos, net.minecraft.sounds.SoundEvents.WITHER_SPAWN, net.minecraft.sounds.SoundSource.HOSTILE, 0.6F, 1.4F);
+        UniverseGate.LOGGER.debug("Spawned Rift Guardian near emitter {} at {}", emitterPos, spawnPos);
+    }
+
+    private static BlockPos findGuardianSpawnNearEmitter(ServerLevel level, BlockPos emitterPos) {
+        for (int i = 0; i < 24; i++) {
+            BlockPos pos = findSpawnNearEmitter(level, emitterPos, EMITTER_SPAWN_RADIUS);
+            if (pos == null) continue;
+            if (level.getBlockState(pos.above(2)).isAir() && level.getBlockState(pos.above(3)).isAir()) return pos;
+        }
+        return null;
     }
 
     private static Set<BlockPos> collectLoadedEmittersNearPlayers(ServerLevel level) {

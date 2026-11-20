@@ -1,0 +1,37 @@
+{
+  "parent": "universegate:rift_crystal",
+  "criteria": {
+    "has_dna": {
+      "trigger": "minecraft:inventory_changed",
+      "conditions": {
+        "items": [
+          {
+            "items": "universegate:dna"
+          }
+        ]
+      }
+    }
+  },
+  "display": {
+    "announce_to_chat": false,
+    "description": {
+      "translate": "advancement.universegate.dna_sample.description"
+    },
+    "frame": "task",
+    "hidden": false,
+    "icon": {
+      "count": 1,
+      "id": "universegate:dna"
+    },
+    "show_toast": true,
+    "title": {
+      "translate": "advancement.universegate.dna_sample.title"
+    }
+  },
+  "requirements": [
+    [
+      "has_dna"
+    ]
+  ],
+  "sends_telemetry_event": true
+}

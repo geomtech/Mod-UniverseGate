@@ -1,0 +1,41 @@
+{
+  "parent": "universegate:rift_refiner",
+  "criteria": {
+    "placed_dark_energy_generator": {
+      "trigger": "minecraft:placed_block",
+      "conditions": {
+        "location": [
+          {
+            "condition": "minecraft:block_state_property",
+            "block": "universegate:dark_energy_generator"
+          }
+        ]
+      }
+    }
+  },
+  "display": {
+    "announce_to_chat": true,
+    "description": {
+      "translate": "advancement.universegate.dark_energy_generator.description"
+    },
+    "frame": "goal",
+    "hidden": false,
+    "icon": {
+      "count": 1,
+      "id": "universegate:dark_energy_generator"
+    },
+    "show_toast": true,
+    "title": {
+      "translate": "advancement.universegate.dark_energy_generator.title"
+    }
+  },
+  "requirements": [
+    [
+      "placed_dark_energy_generator"
+    ]
+  ],
+  "rewards": {
+    "experience": 50
+  },
+  "sends_telemetry_event": true
+}

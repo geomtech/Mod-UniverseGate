@@ -166,6 +166,16 @@ public final class ModItems {
             new DnaSampleItem(new Item.Properties())
     );
 
+    public static final Item RIFT_CORE = register(
+            "rift_core",
+            new Item(new Item.Properties().stacksTo(16).rarity(net.minecraft.world.item.Rarity.EPIC))
+    );
+
+    public static final Item RIFT_CRYSTAL_CLUSTER_ITEM = register(
+            "rift_crystal_cluster",
+            new BlockItem(ModBlocks.RIFT_CRYSTAL_CLUSTER, new Item.Properties())
+    );
+
     public static final Item ZPC = register(
             "zpc",
             new ZpcItem(new Item.Properties())

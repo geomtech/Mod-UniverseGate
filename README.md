@@ -68,9 +68,15 @@ Build the Meteorological Machine to change the weather.
 ## The Rift
 
 The Rift is a dark, void-based dimension.
-- **Resources**: Gather **Kelo Logs**, **Rift Crystals**, and **Rift Meat**.
+- **Resources**: Gather **Kelo Logs**, **Rift Meat** and **Rift Crystals**. Crystals drop from Rift Shades and grow as **Rift Crystal Clusters** on the void ground (mine them with a pickaxe, Fortune works, Silk Touch keeps the cluster).
+- **Rift Cubes**: Huge white temples with a Subspatial Emitter. Their chests hold Rift Crystals, Energy Crystals, conduits, Dark Matter and, rarely, a charged ZPC.
+- **Rift Guardian**: The first time a player comes near a cube's emitter, its Guardian wakes up: a giant Rift Shade with a boss bar, that blinds and slows on hit and calls Shades for help when wounded. It drops a **Rift Core**, the key ingredient of the ZPC.
 - **Dangers**: Watch out for **Rift Shades** and **Rift Beasts**.
 - **Return**: Portals in the Rift are **auto-powered** by the ambient energy of the dimension, allowing for an easy return trip if you have a frame.
+
+## Advancements
+
+The UniverseGate advancement tab follows the whole progression, from your first Solar Panel to the Rift Guardian, the ZPC and the Mob Cloner. Use it as a guide.
 
 ## Advanced Tech
 
@@ -81,7 +87,7 @@ The Rift is a dark, void-based dimension.
 4.  **Dark Energy Conduits**: Link the generator to a portal (core or frame) or to other dark-energy machines.
 
 ### The Dark Dimension
-Once a Portal Core has stored **4000 units of Dark Energy** and stays linked to a running Dark Energy Generator, the **Dark Dimension** entry unlocks in its Portal Controller. It opens a link to the Rift without waiting for a lightning strike. Until then, it shows as `???` and cannot be dialed.
+Once a Portal Core has stored **400 units of Dark Energy** and stays linked to a running Dark Energy Generator, the **Dark Dimension** entry unlocks in its Portal Controller. It opens a link to the Rift without waiting for a lightning strike. Until then, it shows as `???` and cannot be dialed.
 
 ### ZPC (Zero Point Cell)
 A **ZPC** stores up to **40,000,000,000 EU**.
@@ -89,7 +95,8 @@ A **ZPC** stores up to **40,000,000,000 EU**.
     *   Each **Ancient City** holds one guaranteed ZPC, placed in the first loot chest you open there.
     *   Any vanilla loot chest has a very small chance (0.35%) to contain one.
     *   Found ZPCs are charged between 1% and 30%.
-    *   A ZPC can also be crafted, but it comes out **empty**.
+    *   A ZPC can also be crafted (Rift Crystals, Energy Crystals and a **Rift Core**), but it comes out **empty**.
+- **Recharging**: Link a running **Dark Energy Generator** to the ZPC Interface Controller (adjacent or through Dark Energy Conduits). Each unit of Dark Energy adds **10,000,000 EU** to the emptiest installed ZPC.
 - **ZPC Interface Controller**: Holds up to **3 ZPCs** and feeds them into the energy network it is connected to.
     *   Right-click with a ZPC to insert it.
     *   Sneak + right-click to engage the inserted ZPCs (short insertion animation). Only engaged ZPCs supply energy.
@@ -98,7 +105,7 @@ A **ZPC** stores up to **40,000,000,000 EU**.
 
 ### DNA Extraction & Mob Cloning
 1.  **DNA Extractor**: Aim at a mob (up to 14 blocks away) and hold right-click for **20 seconds**.
-    *   Each extraction costs **640 Rift Crystals** (10 stacks) from your inventory.
+    *   Each extraction costs **64 Rift Crystals** from your inventory.
     *   The extraction is cancelled if the mob takes damage or leaves your sight.
 2.  **DNA Sample**: Stores the mob type (and its custom name). A sample has **100 uses**, plus **50 per level of Unbreaking** (apply it with an anvil, max Unbreaking III).
 3.  **Mob Cloner**: Place the **Mob Cloner** and a **Mob Cloner Controller** on the same energy network (Energy Conduits). The Cloner must also be linked to a running **Dark Energy Generator** with Dark Energy Conduits, and needs free space above it.

@@ -1,0 +1,37 @@
+{
+  "parent": "universegate:discover_rift_dimension",
+  "criteria": {
+    "has_rift_crystal": {
+      "trigger": "minecraft:inventory_changed",
+      "conditions": {
+        "items": [
+          {
+            "items": "universegate:rift_crystal"
+          }
+        ]
+      }
+    }
+  },
+  "display": {
+    "announce_to_chat": false,
+    "description": {
+      "translate": "advancement.universegate.rift_crystal.description"
+    },
+    "frame": "task",
+    "hidden": false,
+    "icon": {
+      "count": 1,
+      "id": "universegate:rift_crystal"
+    },
+    "show_toast": true,
+    "title": {
+      "translate": "advancement.universegate.rift_crystal.title"
+    }
+  },
+  "requirements": [
+    [
+      "has_rift_crystal"
+    ]
+  ],
+  "sends_telemetry_event": true
+}

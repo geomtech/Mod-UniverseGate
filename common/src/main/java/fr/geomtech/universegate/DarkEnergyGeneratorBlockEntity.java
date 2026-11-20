@@ -106,6 +106,10 @@ public class DarkEnergyGeneratorBlockEntity extends BlockEntity implements PosMe
                 int accepted = core.addDarkEnergy(Math.min(Math.min(energyAmount, budget[0]), OUTPUT_PER_TICK));
                 energyAmount -= accepted;
                 budget[0] -= accepted;
+            } else if (neighborBe instanceof ZpcInterfaceControllerBlockEntity zpc) {
+                int accepted = zpc.acceptDarkEnergy(Math.min(Math.min(energyAmount, budget[0]), OUTPUT_PER_TICK));
+                energyAmount -= accepted;
+                budget[0] -= accepted;
             } else if (neighborState.is(ModBlocks.DARK_ENERGY_CONDUIT)) {
                 distributeThroughConduits(level, neighborPos, new java.util.HashSet<>(), budget);
             }
@@ -142,6 +146,12 @@ public class DarkEnergyGeneratorBlockEntity extends BlockEntity implements PosMe
                 
                 if (be instanceof PortalCoreBlockEntity core) {
                     int accepted = core.addDarkEnergy(Math.min(Math.min(energyAmount, budget[0]), OUTPUT_PER_TICK));
+                    energyAmount -= accepted;
+                    budget[0] -= accepted;
+                    visited.add(next);
+                    if (energyAmount <= 0 || budget[0] <= 0) return;
+                } else if (be instanceof ZpcInterfaceControllerBlockEntity zpc) {
+                    int accepted = zpc.acceptDarkEnergy(Math.min(Math.min(energyAmount, budget[0]), OUTPUT_PER_TICK));
                     energyAmount -= accepted;
                     budget[0] -= accepted;
                     visited.add(next);

@@ -1,0 +1,38 @@
+{
+  "parent": "universegate:obtain_zpc",
+  "criteria": {
+    "placed_zpc_interface_controller": {
+      "trigger": "minecraft:placed_block",
+      "conditions": {
+        "location": [
+          {
+            "condition": "minecraft:block_state_property",
+            "block": "universegate:zpc_interface_controller"
+          }
+        ]
+      }
+    }
+  },
+  "display": {
+    "announce_to_chat": false,
+    "description": {
+      "translate": "advancement.universegate.zpc_interface.description"
+    },
+    "frame": "task",
+    "hidden": false,
+    "icon": {
+      "count": 1,
+      "id": "universegate:zpc_interface_controller"
+    },
+    "show_toast": true,
+    "title": {
+      "translate": "advancement.universegate.zpc_interface.title"
+    }
+  },
+  "requirements": [
+    [
+      "placed_zpc_interface_controller"
+    ]
+  ],
+  "sends_telemetry_event": true
+}

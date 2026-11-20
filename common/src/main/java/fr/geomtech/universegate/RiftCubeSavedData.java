@@ -13,6 +13,7 @@ public class RiftCubeSavedData extends SavedData {
 
     private static final String DATA_NAME = UniverseGate.MOD_ID + "_rift_cubes";
     private final Set<Long> generatedCells = new HashSet<>();
+    private final Set<Long> guardianEmitters = new HashSet<>();
 
     public static RiftCubeSavedData get(MinecraftServer server) {
         ServerLevel overworld = server.overworld();
@@ -36,6 +37,16 @@ public class RiftCubeSavedData extends SavedData {
         }
     }
 
+    public boolean isGuardianSpawned(net.minecraft.core.BlockPos emitterPos) {
+        return guardianEmitters.contains(emitterPos.asLong());
+    }
+
+    public void markGuardianSpawned(net.minecraft.core.BlockPos emitterPos) {
+        if (guardianEmitters.add(emitterPos.asLong())) {
+            setDirty();
+        }
+    }
+
     @Override
     public CompoundTag save(CompoundTag tag, HolderLookup.Provider registries) {
         long[] values = new long[generatedCells.size()];
@@ -44,6 +55,7 @@ public class RiftCubeSavedData extends SavedData {
             values[i++] = v;
         }
         tag.putLongArray("Cells", values);
+        tag.putLongArray("GuardianEmitters", guardianEmitters.stream().mapToLong(Long::longValue).toArray());
         return tag;
     }
 
@@ -52,6 +64,9 @@ public class RiftCubeSavedData extends SavedData {
         long[] arr = tag.getLongArray("Cells");
         for (long v : arr) {
             data.generatedCells.add(v);
+        }
+        for (long v : tag.getLongArray("GuardianEmitters")) {
+            data.guardianEmitters.add(v);
         }
         return data;
     }

@@ -1,0 +1,38 @@
+{
+  "parent": "universegate:portal_core_placed",
+  "criteria": {
+    "placed_charged_lightning_rod": {
+      "trigger": "minecraft:placed_block",
+      "conditions": {
+        "location": [
+          {
+            "condition": "minecraft:block_state_property",
+            "block": "universegate:charged_lightning_rod"
+          }
+        ]
+      }
+    }
+  },
+  "display": {
+    "announce_to_chat": false,
+    "description": {
+      "translate": "advancement.universegate.charged_rod.description"
+    },
+    "frame": "task",
+    "hidden": false,
+    "icon": {
+      "count": 1,
+      "id": "universegate:charged_lightning_rod"
+    },
+    "show_toast": true,
+    "title": {
+      "translate": "advancement.universegate.charged_rod.title"
+    }
+  },
+  "requirements": [
+    [
+      "placed_charged_lightning_rod"
+    ]
+  ],
+  "sends_telemetry_event": true
+}

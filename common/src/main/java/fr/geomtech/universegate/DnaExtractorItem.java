@@ -31,8 +31,7 @@ import java.util.UUID;
 
 public class DnaExtractorItem extends Item {
 
-    public static final int REQUIRED_CRYSTAL_STACKS = 10;
-    public static final int REQUIRED_CRYSTALS = REQUIRED_CRYSTAL_STACKS * 64;
+    public static final int REQUIRED_CRYSTALS = 64;
 
     private static final int EXTRACTION_DURATION_TICKS = 20 * 20;
     private static final double MAX_SCAN_DISTANCE = 14.0D;
@@ -196,7 +195,7 @@ public class DnaExtractorItem extends Item {
                                 TooltipFlag tooltipFlag) {
         super.appendHoverText(stack, context, tooltipComponents, tooltipFlag);
         tooltipComponents.add(
-                Component.translatable("tooltip.universegate.dna_extractor_cost", REQUIRED_CRYSTAL_STACKS, REQUIRED_CRYSTALS)
+                Component.translatable("tooltip.universegate.dna_extractor_cost", REQUIRED_CRYSTALS)
                         .withStyle(ChatFormatting.AQUA)
         );
         tooltipComponents.add(
@@ -278,7 +277,7 @@ public class DnaExtractorItem extends Item {
 
     private static void sendNotEnoughCrystalsMessage(Player player) {
         player.displayClientMessage(
-                Component.translatable("message.universegate.dna_extractor_need_crystals", REQUIRED_CRYSTAL_STACKS, REQUIRED_CRYSTALS),
+                Component.translatable("message.universegate.dna_extractor_need_crystals", REQUIRED_CRYSTALS),
                 true
         );
     }

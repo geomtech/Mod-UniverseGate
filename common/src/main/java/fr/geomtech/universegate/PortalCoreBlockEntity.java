@@ -48,7 +48,7 @@ public class PortalCoreBlockEntity extends BlockEntity implements PosMenuProvide
     private boolean restorePending = false;
     private boolean outboundChunkForceClaimed = false;
     private int darkEnergyAmount = 0;
-    public static final int DARK_ENERGY_THRESHOLD = 4000;
+    public static final int DARK_ENERGY_THRESHOLD = 400;
 
     public PortalCoreBlockEntity(BlockPos pos, BlockState state) {
 

@@ -1,0 +1,70 @@
+{
+  "criteria": {
+    "has_energy_crystal": {
+      "trigger": "minecraft:inventory_changed",
+      "conditions": {
+        "items": [
+          {
+            "items": "universegate:energy_crystal"
+          }
+        ]
+      }
+    },
+    "has_portal_frame": {
+      "trigger": "minecraft:inventory_changed",
+      "conditions": {
+        "items": [
+          {
+            "items": "universegate:portal_frame"
+          }
+        ]
+      }
+    },
+    "has_portal_core": {
+      "trigger": "minecraft:inventory_changed",
+      "conditions": {
+        "items": [
+          {
+            "items": "universegate:portal_core"
+          }
+        ]
+      }
+    },
+    "has_solar_panel": {
+      "trigger": "minecraft:inventory_changed",
+      "conditions": {
+        "items": [
+          {
+            "items": "universegate:solar_panel"
+          }
+        ]
+      }
+    }
+  },
+  "display": {
+    "announce_to_chat": false,
+    "description": {
+      "translate": "advancement.universegate.root.description"
+    },
+    "frame": "task",
+    "hidden": false,
+    "icon": {
+      "count": 1,
+      "id": "universegate:portal_frame"
+    },
+    "show_toast": true,
+    "title": {
+      "translate": "advancement.universegate.root.title"
+    },
+    "background": "minecraft:textures/gui/advancements/backgrounds/end.png"
+  },
+  "requirements": [
+    [
+      "has_energy_crystal",
+      "has_portal_frame",
+      "has_portal_core",
+      "has_solar_panel"
+    ]
+  ],
+  "sends_telemetry_event": true
+}
