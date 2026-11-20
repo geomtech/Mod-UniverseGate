@@ -15,7 +15,7 @@ final class PortalGateRingLayer implements PortalGateLayer {
     /** Centre de l'anneau, en pixels depuis le coin du Core : milieu de l'ouverture 3x4. */
     static final float CENTER_H = 8.0F;
     static final float CENTER_V = 48.0F;
-    static final float OUTER_RADIUS = 45.0F;
+    static final float OUTER_RADIUS = 47.0F;
     static final float INNER_RADIUS = 35.0F;
 
     /** Épaisseur de l'anneau : 7 px, centrée dans le bloc. */
