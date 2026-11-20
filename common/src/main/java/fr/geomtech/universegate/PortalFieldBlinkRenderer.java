@@ -68,17 +68,17 @@ public class PortalFieldBlinkRenderer extends ImmediateBlockEntityRenderer<Porta
             .withVertexFormat(DefaultVertexFormat.POSITION_COLOR, VertexFormat.Mode.QUADS)
             .build();
 
-    private static final RenderType PORTAL_OCCLUSION_RENDER_TYPE = RenderType.create(
+    static final RenderType PORTAL_OCCLUSION_RENDER_TYPE = RenderType.create(
             "universegate_portal_field_occlusion",
             RenderSetup.builder(PORTAL_OCCLUSION_PIPELINE).bufferSize(512).sortOnUpload().createRenderSetup()
     );
 
-    private static final RenderType SINGULARITY_RENDER_TYPE = RenderType.create(
+    static final RenderType SINGULARITY_RENDER_TYPE = RenderType.create(
             "universegate_portal_field_singularity",
             RenderSetup.builder(SINGULARITY_PIPELINE).bufferSize(1536).createRenderSetup()
     );
     *///?} else {
-        private static final RenderType PORTAL_OCCLUSION_RENDER_TYPE = RenderType.create(
+        static final RenderType PORTAL_OCCLUSION_RENDER_TYPE = RenderType.create(
             "universegate_portal_field_occlusion",
             DefaultVertexFormat.POSITION_COLOR,
             VertexFormat.Mode.QUADS,
@@ -95,7 +95,7 @@ public class PortalFieldBlinkRenderer extends ImmediateBlockEntityRenderer<Porta
                     .createCompositeState(false)
     );
 
-    private static final RenderType SINGULARITY_RENDER_TYPE = RenderType.create(
+    static final RenderType SINGULARITY_RENDER_TYPE = RenderType.create(
             "universegate_portal_field_singularity",
             DefaultVertexFormat.POSITION_COLOR,
             VertexFormat.Mode.QUADS,
@@ -713,7 +713,7 @@ public class PortalFieldBlinkRenderer extends ImmediateBlockEntityRenderer<Porta
     }
 
     @Nullable
-    private static PortalCoords resolvePortalCoords(Level level,
+    static PortalCoords resolvePortalCoords(Level level,
                                                     BlockPos fieldPos,
                                                     Direction.Axis axis) {
         int coreMinY = fieldPos.getY() - PortalFrameDetector.INNER_HEIGHT;
@@ -763,7 +763,7 @@ public class PortalFieldBlinkRenderer extends ImmediateBlockEntityRenderer<Porta
         return new PortalCoords(horizontalIndex, verticalIndex, phase);
     }
 
-    private record PortalCoords(int horizontalIndex, int verticalIndex, float phase) {}
+    record PortalCoords(int horizontalIndex, int verticalIndex, float phase) {}
 
     private record EnergySample(int red, int green, int blue, int alpha) {}
 }

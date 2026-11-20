@@ -160,7 +160,6 @@
   "block.universegate.mob_cloner_controller": "Contrôleur du cloneur",
   "item.universegate.dark_matter_bucket": "Seau de matière noire",
   "container.universegate.rift_refiner": "Raffineur de faille",
-
   "tooltip.universegate.portal_core": "Le coeur d'un portail dimensionnel",
   "tooltip.universegate.portal_frame": "Structure du portail dimensionnel",
   "tooltip.universegate.portal_keyboard": "Contrôle la destination du portail",
@@ -236,5 +235,6 @@
   "advancement.universegate.zpc_interface.title": "Branche-moi ça",
   "advancement.universegate.zpc_interface.description": "Pose un contrôleur d'interface ZPC. Relie un générateur d'énergie sombre pour recharger tes ZPC.",
   "advancement.universegate.weather_machine.title": "Faiseur de pluie",
-  "advancement.universegate.weather_machine.description": "Pose un contrôleur météorologique."
+  "advancement.universegate.weather_machine.description": "Pose un contrôleur météorologique.",
+  "subtitles.universegate.portal_arc": "Arc du portail crépite"
 }

@@ -467,10 +467,11 @@ public final class OverworldVillagePortalGenerator {
                                            BlockPos keyboardPos) {
         PortalRiftHelper.placeRiftFrame(level, corePos, right);
 
+        // Le pupitre se tourne vers le joueur, qui se tient du côté opposé au portail (comme à la pose à la main).
         Direction facing = Direction.getNearest(
-                corePos.getX() - keyboardPos.getX(),
+                keyboardPos.getX() - corePos.getX(),
                 0,
-                corePos.getZ() - keyboardPos.getZ()
+                keyboardPos.getZ() - corePos.getZ()
         );
         if (!facing.getAxis().isHorizontal()) {
             facing = Direction.NORTH;

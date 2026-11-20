@@ -19,6 +19,10 @@ public final class ModSounds {
     public static final SoundEvent PORTAL_CLOSING = register("portal_closing");
     public static final SoundEvent PORTAL_ERROR = register("portal_error");
     public static final SoundEvent PORTAL_UNSTABLE = register("portal_unstable");
+    /** Échappement de vapeur de l'anneau à la fermeture (son provisoire : à remplacer par un son du mod). */
+    public static final SoundEvent PORTAL_VENT = register("portal_vent");
+    /** Crépitement d'un arc électrique de l'anneau (pas la foudre vanilla). */
+    public static final SoundEvent PORTAL_ARC = register("portal_arc");
     public static final SoundEvent PORTAL_ENTITY_GOING_THROUGH = register("portal_entity_going_through");
     public static final SoundEvent METEO_MACHINE = register("meteo_machine");
     public static final SoundEvent BEAM = register("beam");
@@ -36,14 +40,10 @@ public final class ModSounds {
         level.playSound(null, pos, sound, SoundSource.BLOCKS, volume, pitch);
     }
 
-    public static void playPortalAmbientAt(ServerLevel level, BlockPos pos, boolean unstable) {
-        playAt(level, pos, unstable ? PORTAL_UNSTABLE : PORTAL_IDLE, 0.35F, 1.0F);
-    }
-
     public static void playPortalOpenedAt(ServerLevel level, BlockPos pos, boolean unstable) {
         stopPortalOpeningNear(level, pos);
         playAt(level, pos, PORTAL_OPENING_END, 1.0F, 1.0F);
-        playPortalAmbientAt(level, pos, unstable);
+        // L'ambiance du portail ouvert est jouée par le client (PortalAmbientSoundClient).
     }
 
     public static void playPortalDialingAt(ServerLevel level, BlockPos pos) {
@@ -73,23 +73,9 @@ public final class ModSounds {
         stopSoundNear(level, pos, PORTAL_OPENING_END);
     }
 
-    public static void stopPortalAmbientNear(ServerLevel level, BlockPos pos) {
-        stopSoundNear(level, pos, PORTAL_IDLE);
-        stopSoundNear(level, pos, PORTAL_UNSTABLE);
-    }
-
-    public static void stopPortalAmbientNear(ServerLevel level, BlockPos pos, boolean unstable) {
-        stopSoundNear(level, pos, unstable ? PORTAL_UNSTABLE : PORTAL_IDLE);
-    }
-
+    /** L'ambiance du portail ouvert s'arrête côté client ; seule la séquence d'ouverture est coupée ici. */
     public static void stopPortalLifecycleNear(ServerLevel level, BlockPos pos) {
         stopPortalOpeningNear(level, pos);
-        stopPortalAmbientNear(level, pos);
-    }
-
-    public static void stopPortalLifecycleNear(ServerLevel level, BlockPos pos, boolean unstable) {
-        stopPortalOpeningNear(level, pos);
-        stopPortalAmbientNear(level, pos, unstable);
     }
 
     private static void stopSoundNear(ServerLevel level, BlockPos pos, SoundEvent sound) {

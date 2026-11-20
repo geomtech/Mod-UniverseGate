@@ -28,8 +28,6 @@ public class PortalCoreBlockEntity extends BlockEntity implements PosMenuProvide
     private static final long PER_ENTITY_EXTENSION_TICKS = 20L * 10L;
     private static final long UNSTABLE_THRESHOLD_TICKS = 20L * 60L;
     private static final long OPENING_DURATION_FALLBACK_TICKS = 20L * 9L;
-    private static final long AMBIENT_LOOP_INTERVAL_TICKS = 20L * 27L;
-    private static final long UNSTABLE_AMBIENT_LOOP_INTERVAL_TICKS = 10L;
     private static final long PLAYER_PASS_CHUNK_FORCE_TICKS = 20L * 15L;
     private static final long TICK_DURATION_MILLIS = 50L;
 
@@ -50,7 +48,6 @@ public class PortalCoreBlockEntity extends BlockEntity implements PosMenuProvide
     private boolean opening = false;
     private long openingStartedGameTime = 0L;
     private long openingCompleteGameTime = 0L;
-    private long nextAmbientLoopGameTime = 0L;
     private long keepChunkForcedUntilGameTime = 0L;
     private boolean restorePending = false;
     private boolean outboundChunkForceClaimed = false;
@@ -92,6 +89,9 @@ public class PortalCoreBlockEntity extends BlockEntity implements PosMenuProvide
 
     public void onBroken() {
         if (!(level instanceof ServerLevel sl)) return;
+        // Le Core part : le cadre redevient visible (sans toucher au Core, en cours de retrait).
+        applyFormed(sl, net.minecraft.core.Direction.EAST, false);
+        applyFormed(sl, net.minecraft.core.Direction.SOUTH, false);
 
         // Si actif, ferme localement (et tente de fermer l’autre côté si possible)
         if (isActiveOrOpening()) {
@@ -103,16 +103,116 @@ public class PortalCoreBlockEntity extends BlockEntity implements PosMenuProvide
         setChanged();
     }
 
+    // ---------- Portail construit (anneau 3D) ----------
+    // Quand le cadre est complet, le Core et les blocs du cadre passent en FORMED : ils deviennent invisibles
+    // et PortalGateRenderer dessine l'anneau 3D à leur place.
+    private void refreshFormation(ServerLevel sl) {
+        net.minecraft.core.Direction right = PortalFrameDetector.find(sl, worldPosition)
+                .map(PortalFrameDetector.FrameMatch::right)
+                .orElse(null);
+        boolean wasFormed = getBlockState().is(ModBlocks.PORTAL_CORE) && getBlockState().getValue(PortalCoreBlock.FORMED);
+        if (right == null) {
+            if (wasFormed) clearFormation(sl);
+            return;
+        }
+        applyFormed(sl, right.getClockWise(), false); // l'autre orientation, si le cadre a été reconstruit autrement
+        applyFormed(sl, right, true);
+        setCoreFormed(sl, true);
+    }
+
+    private void clearFormation(ServerLevel sl) {
+        applyFormed(sl, net.minecraft.core.Direction.EAST, false);
+        applyFormed(sl, net.minecraft.core.Direction.SOUTH, false);
+        setCoreFormed(sl, false);
+    }
+
+    private void applyFormed(ServerLevel sl, net.minecraft.core.Direction right, boolean formed) {
+        PortalFrameDetector.FrameMatch match = new PortalFrameDetector.FrameMatch(right, java.util.List.of());
+        for (BlockPos p : PortalFrameHelper.collectFrame(match, worldPosition)) {
+            BlockState state = sl.getBlockState(p);
+            if (state.is(ModBlocks.PORTAL_FRAME) && state.getValue(PortalFrameBlock.FORMED) != formed) {
+                sl.setBlock(p, state.setValue(PortalFrameBlock.FORMED, formed), 3);
+            }
+        }
+    }
+
+    private void setCoreFormed(ServerLevel sl, boolean formed) {
+        BlockState state = getBlockState();
+        if (state.is(ModBlocks.PORTAL_CORE) && state.getValue(PortalCoreBlock.FORMED) != formed) {
+            sl.setBlock(worldPosition, state.setValue(PortalCoreBlock.FORMED, formed), 3);
+        }
+    }
+
     // ---------- Ticking ----------
+    // Côté client uniquement : PortalAmbientSoundClient (type Object pour ne pas charger
+    // de classe client sur un serveur dédié).
+    private Object clientAmbientSound;
+    private PortalCinematics.State clientCinematics;
+    // Animation de l'anneau 3D (rotation, vapeur) : PortalGateAnimator, côté client uniquement.
+    private Object clientGateAnimator;
+    // Valeurs synchronisées pour la mise en scène côté client (PortalCinematics).
+    private long clientActiveUntil;
+    private int linkSteps = 4;
+
     public void clientTick() {
-        if (level == null || !level.isClientSide() || !opening) return;
-        PortalOpeningParticles.clientTick(level, worldPosition, this);
+        if (level == null || !level.isClientSide()) return;
+        if (opening) {
+            PortalOpeningParticles.clientTick(level, worldPosition, this);
+        }
+        if (opening || active) {
+            if (clientCinematics == null) clientCinematics = new PortalCinematics.State();
+            PortalCinematics.clientTick(level, this, clientCinematics);
+        } else {
+            clientCinematics = null;
+        }
+        if (getBlockState().is(ModBlocks.PORTAL_CORE) && getBlockState().getValue(PortalCoreBlock.FORMED)) {
+            if (clientGateAnimator == null) clientGateAnimator = new PortalGateAnimator();
+            ((PortalGateAnimator) clientGateAnimator).tick(level, this);
+        } else {
+            clientGateAnimator = null;
+        }
+        if (active) {
+            if (clientAmbientSound == null) clientAmbientSound = new PortalAmbientSoundClient();
+            ((PortalAmbientSoundClient) clientAmbientSound).tick(this, level.getGameTime());
+        } else {
+            stopClientAmbientSound();
+        }
+    }
+
+    private void stopClientAmbientSound() {
+        if (clientAmbientSound == null) return;
+        ((PortalAmbientSoundClient) clientAmbientSound).stop();
+        clientAmbientSound = null;
+    }
+
+    boolean isClientAmbientUnstable() { return visualUnstable; }
+    /** Animation de l'anneau 3D, ou null si le portail n'est pas construit (côté client). */
+    PortalGateAnimator getClientGateAnimator() { return (PortalGateAnimator) clientGateAnimator; }
+    long getClientActiveUntil() { return clientActiveUntil; }
+    int getClientLinkSteps() { return linkSteps; }
+
+    /** Nombre de fissures de l'accrochage : dépend du trajet (même dimension, autre dimension, Faille). */
+    void setLinkSteps(int steps) {
+        if (linkSteps == steps) return;
+        linkSteps = steps;
+        syncOpeningToClients();
+    }
+
+    @Override
+    public void setRemoved() {
+        super.setRemoved();
+        if (level != null && level.isClientSide()) {
+            stopClientAmbientSound();
+        }
     }
 
     public void serverTick() {
         if (!(level instanceof ServerLevel sl)) return;
         long now = sl.getGameTime();
         syncOutboundChunkForce(sl, now);
+        if ((now + (worldPosition.asLong() & 7L)) % 10L == 0L) {
+            refreshFormation(sl);
+        }
         if (restorePending) {
             restorePending = false;
             if (active && !restoreActiveState(sl)) return;
@@ -153,7 +253,6 @@ public class PortalCoreBlockEntity extends BlockEntity implements PosMenuProvide
         }
 
         refreshInstabilityVisuals(sl, now);
-        tickPortalAmbientLoop(sl, now);
     }
 
     private void spawnRiftParticles(ServerLevel level) {
@@ -223,20 +322,11 @@ public class PortalCoreBlockEntity extends BlockEntity implements PosMenuProvide
 
         PortalConnectionManager.setNearbyKeyboardsLit(sl, worldPosition, true);
 
-        startPortalAmbient(sl, now);
+        syncOpeningToClients();
 
         return true;
     }
 
-    void onPortalAmbientStarted(long now) {
-        nextAmbientLoopGameTime = now + getAmbientLoopIntervalTicks(now);
-    }
-
-    private long getAmbientLoopIntervalTicks(long now) {
-        return shouldUseUnstableVisuals(now)
-                ? UNSTABLE_AMBIENT_LOOP_INTERVAL_TICKS
-                : AMBIENT_LOOP_INTERVAL_TICKS;
-    }
 
     private boolean emitsRedstoneSignal() {
         return active || opening;
@@ -289,6 +379,10 @@ public class PortalCoreBlockEntity extends BlockEntity implements PosMenuProvide
         activeUntilGameTime = now + PER_ENTITY_EXTENSION_TICKS;
         activeUntilEpochMillis = computeEpochDeadlineFromGameTime(now, activeUntilGameTime);
         setChanged();
+        // Le client cale l'effondrement sur cette échéance ; au plus une mise à jour par seconde.
+        if (Math.abs(activeUntilGameTime - lastSyncedActiveUntil) >= 20L) {
+            syncOpeningToClients();
+        }
     }
 
     void onPlayerPassedThrough(long now) {
@@ -373,19 +467,8 @@ public class PortalCoreBlockEntity extends BlockEntity implements PosMenuProvide
 
         visualUnstable = unstableNow;
         PortalConnectionManager.syncActivePortalInstability(level, worldPosition, unstableNow);
-        ModSounds.stopPortalAmbientNear(level, worldPosition);
-        startPortalAmbient(level, now);
         setChanged();
-    }
-
-    private void startPortalAmbient(ServerLevel level, long now) {
-        ModSounds.playPortalAmbientAt(level, worldPosition, visualUnstable);
-        onPortalAmbientStarted(now);
-    }
-
-    private void tickPortalAmbientLoop(ServerLevel level, long now) {
-        if (nextAmbientLoopGameTime > now) return;
-        startPortalAmbient(level, now);
+        syncOpeningToClients();
     }
 
     public void setPortalName(String name) { this.portalName = name == null ? "" : name; setChanged(); }
@@ -425,7 +508,6 @@ public class PortalCoreBlockEntity extends BlockEntity implements PosMenuProvide
         this.maintenanceEnergyBypass = maintenanceEnergyBypass;
         this.openingStartedGameTime = openingStartedGameTime;
         this.openingCompleteGameTime = openingCompleteGameTime;
-        this.nextAmbientLoopGameTime = 0L;
         setChanged();
         updateRedstoneSignal(previouslyEmitting);
         if (level instanceof ServerLevel sl) {
@@ -445,7 +527,6 @@ public class PortalCoreBlockEntity extends BlockEntity implements PosMenuProvide
         this.visualUnstable = riftLightningLink;
         this.openingStartedGameTime = 0L;
         this.openingCompleteGameTime = 0L;
-        this.nextAmbientLoopGameTime = 0L;
         setChanged();
         updateRedstoneSignal(previouslyEmitting);
         if (level instanceof ServerLevel sl) {
@@ -476,7 +557,6 @@ public class PortalCoreBlockEntity extends BlockEntity implements PosMenuProvide
         this.maintenanceEnergyBypass = maintenanceEnergyBypass;
         this.openingStartedGameTime = 0L;
         this.openingCompleteGameTime = 0L;
-        this.nextAmbientLoopGameTime = 0L;
         setChanged();
         updateRedstoneSignal(previouslyEmitting);
         if (level instanceof ServerLevel sl) {
@@ -500,7 +580,6 @@ public class PortalCoreBlockEntity extends BlockEntity implements PosMenuProvide
         this.maintenanceEnergyBypass = false;
         this.openingStartedGameTime = 0L;
         this.openingCompleteGameTime = 0L;
-        this.nextAmbientLoopGameTime = 0L;
         setChanged();
         updateRedstoneSignal(previouslyEmitting);
         if (level instanceof ServerLevel sl) {
@@ -570,6 +649,10 @@ public class PortalCoreBlockEntity extends BlockEntity implements PosMenuProvide
             opening = tag.getBoolean("Opening");
             openingStartedGameTime = opening ? tag.getLong("OpeningStart") : 0L;
             openingCompleteGameTime = opening ? tag.getLong("OpeningComplete") : 0L;
+            active = tag.getBoolean("Active");
+            visualUnstable = active && tag.getBoolean("VisualUnstable");
+            clientActiveUntil = active ? tag.getLong("ActiveUntil") : 0L;
+            linkSteps = tag.contains("LinkSteps") ? tag.getInt("LinkSteps") : 4;
             return;
         }
 
@@ -597,7 +680,6 @@ public class PortalCoreBlockEntity extends BlockEntity implements PosMenuProvide
             activeUntilEpochMillis = 0L;
             activeStartedGameTime = 0L;
             visualUnstable = false;
-            nextAmbientLoopGameTime = 0L;
         }
         if (!opening) {
             openingStartedGameTime = 0L;
@@ -611,8 +693,9 @@ public class PortalCoreBlockEntity extends BlockEntity implements PosMenuProvide
     }
 
     // ---------- Client sync ----------
-    // Seul l'état d'ouverture est envoyé aux clients : il leur suffit pour animer la séquence
-    // d'ouverture eux-mêmes (voir PortalOpeningParticles), sans paquet de particules à chaque tick.
+    // Seul l'état d'ouverture/activité est envoyé aux clients : il leur suffit pour animer la séquence
+    // d'ouverture (PortalOpeningParticles) et jouer l'ambiance (PortalAmbientSoundClient) eux-mêmes,
+    // sans paquet de particules ni de son à chaque tick.
     private static final String CLIENT_SYNC_KEY = "UniverseGateClientSync";
 
     @Override
@@ -622,6 +705,10 @@ public class PortalCoreBlockEntity extends BlockEntity implements PosMenuProvide
         tag.putBoolean("Opening", opening);
         tag.putLong("OpeningStart", openingStartedGameTime);
         tag.putLong("OpeningComplete", openingCompleteGameTime);
+        tag.putBoolean("Active", active);
+        tag.putBoolean("VisualUnstable", visualUnstable);
+        tag.putLong("ActiveUntil", activeUntilGameTime);
+        tag.putInt("LinkSteps", linkSteps);
         return tag;
     }
 
@@ -630,8 +717,11 @@ public class PortalCoreBlockEntity extends BlockEntity implements PosMenuProvide
         return ClientboundBlockEntityDataPacket.create(this);
     }
 
+    private long lastSyncedActiveUntil;
+
     private void syncOpeningToClients() {
         if (!(level instanceof ServerLevel sl)) return;
+        lastSyncedActiveUntil = activeUntilGameTime;
         BlockState state = getBlockState();
         sl.sendBlockUpdated(worldPosition, state, state, 3);
     }

@@ -89,6 +89,7 @@ public class UniverseGateFabricClient implements ClientModInitializer {
 		BlockEntityRenderers.register(ModBlockEntities.PARABOLA, ParabolaDishRenderer::new);
 		BlockEntityRenderers.register(ModBlockEntities.ZPC_INTERFACE_CONTROLLER, ZpcInterfaceControllerRenderer::new);
 		BlockEntityRenderers.register(ModBlockEntities.FLUID_PIPE, FluidPipeBlockEntityRenderer::new);
+		BlockEntityRenderers.register(ModBlockEntities.PORTAL_CORE, fr.geomtech.universegate.PortalGateRenderer::new);
 		//? if >=1.21.11 {
 		/*BlockRenderLayerMap.putBlock(ModBlocks.FLUID_PIPE, ChunkSectionLayer.TRANSLUCENT);
 		BlockRenderLayerMap.putBlock(ModBlocks.RIFT_CRYSTAL_CLUSTER, ChunkSectionLayer.CUTOUT);
