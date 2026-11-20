@@ -68,5 +68,35 @@
     "sounds": [
       "universegate:rift_dimension_ambient_sound"
     ]
+  },
+  "portal_vent": {
+    "sounds": [
+      {
+        "name": "minecraft:random/fizz",
+        "volume": 0.8,
+        "pitch": 0.7
+      }
+    ]
+  },
+  "portal_arc": {
+    "subtitle": "subtitles.universegate.portal_arc",
+    "sounds": [
+      {
+        "name": "universegate:portal_arc_1",
+        "attenuation_distance": 24
+      },
+      {
+        "name": "universegate:portal_arc_2",
+        "attenuation_distance": 24
+      },
+      {
+        "name": "universegate:portal_arc_3",
+        "attenuation_distance": 24
+      },
+      {
+        "name": "universegate:portal_arc_4",
+        "attenuation_distance": 24
+      }
+    ]
   }
 }

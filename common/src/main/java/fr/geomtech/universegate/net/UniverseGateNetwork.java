@@ -37,6 +37,7 @@ public final class UniverseGateNetwork {
         Services.PLATFORM.registerClientboundPayload(PortalCoreNamePayload.TYPE, PortalCoreNamePayload.STREAM_CODEC);
         Services.PLATFORM.registerClientboundPayload(PortalKeyboardStatusPayload.TYPE, PortalKeyboardStatusPayload.STREAM_CODEC);
         Services.PLATFORM.registerClientboundPayload(PortalConnectionErrorPayload.TYPE, PortalConnectionErrorPayload.STREAM_CODEC);
+        Services.PLATFORM.registerClientboundPayload(PortalFieldCollapsePayload.TYPE, PortalFieldCollapsePayload.STREAM_CODEC);
                         
         // handler C2S (connect)
         Services.PLATFORM.registerServerboundPayload(ConnectPortalPayload.TYPE, ConnectPortalPayload.STREAM_CODEC, (payload, player) -> {

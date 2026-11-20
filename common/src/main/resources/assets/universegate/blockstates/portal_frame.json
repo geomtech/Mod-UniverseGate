@@ -1,12 +1,52 @@
 {
   "variants": {
-    "blink_on=false,lit=false,unstable=false": { "model": "universegate:block/portal_frame" },
-    "blink_on=false,lit=false,unstable=true": { "model": "universegate:block/portal_frame" },
-    "blink_on=false,lit=true,unstable=false": { "model": "universegate:block/portal_frame" },
-    "blink_on=false,lit=true,unstable=true": { "model": "universegate:block/portal_frame" },
-    "blink_on=true,lit=false,unstable=false": { "model": "universegate:block/portal_frame" },
-    "blink_on=true,lit=false,unstable=true": { "model": "universegate:block/portal_frame" },
-    "blink_on=true,lit=true,unstable=false": { "model": "universegate:block/portal_frame" },
-    "blink_on=true,lit=true,unstable=true": { "model": "universegate:block/portal_frame" }
+    "blink_on=false,formed=false,lit=false,unstable=false": {
+      "model": "universegate:block/portal_frame"
+    },
+    "blink_on=false,formed=false,lit=false,unstable=true": {
+      "model": "universegate:block/portal_frame"
+    },
+    "blink_on=false,formed=false,lit=true,unstable=false": {
+      "model": "universegate:block/portal_frame"
+    },
+    "blink_on=false,formed=false,lit=true,unstable=true": {
+      "model": "universegate:block/portal_frame"
+    },
+    "blink_on=false,formed=true,lit=false,unstable=false": {
+      "model": "universegate:block/portal_frame"
+    },
+    "blink_on=false,formed=true,lit=false,unstable=true": {
+      "model": "universegate:block/portal_frame"
+    },
+    "blink_on=false,formed=true,lit=true,unstable=false": {
+      "model": "universegate:block/portal_frame"
+    },
+    "blink_on=false,formed=true,lit=true,unstable=true": {
+      "model": "universegate:block/portal_frame"
+    },
+    "blink_on=true,formed=false,lit=false,unstable=false": {
+      "model": "universegate:block/portal_frame"
+    },
+    "blink_on=true,formed=false,lit=false,unstable=true": {
+      "model": "universegate:block/portal_frame"
+    },
+    "blink_on=true,formed=false,lit=true,unstable=false": {
+      "model": "universegate:block/portal_frame"
+    },
+    "blink_on=true,formed=false,lit=true,unstable=true": {
+      "model": "universegate:block/portal_frame"
+    },
+    "blink_on=true,formed=true,lit=false,unstable=false": {
+      "model": "universegate:block/portal_frame"
+    },
+    "blink_on=true,formed=true,lit=false,unstable=true": {
+      "model": "universegate:block/portal_frame"
+    },
+    "blink_on=true,formed=true,lit=true,unstable=false": {
+      "model": "universegate:block/portal_frame"
+    },
+    "blink_on=true,formed=true,lit=true,unstable=true": {
+      "model": "universegate:block/portal_frame"
+    }
   }
 }

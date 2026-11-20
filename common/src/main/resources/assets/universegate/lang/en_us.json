@@ -242,5 +242,6 @@
   "advancement.universegate.zpc_interface.title": "Plug It In",
   "advancement.universegate.zpc_interface.description": "Place a ZPC Interface Controller. Link a Dark Energy Generator to recharge your ZPCs.",
   "advancement.universegate.weather_machine.title": "Rain Maker",
-  "advancement.universegate.weather_machine.description": "Place a Meteorological Controller."
+  "advancement.universegate.weather_machine.description": "Place a Meteorological Controller.",
+  "subtitles.universegate.portal_arc": "Portal arc crackles"
 }

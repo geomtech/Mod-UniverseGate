@@ -12,6 +12,9 @@ import net.minecraft.world.level.BlockGetter;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.EntityBlock;
+import net.minecraft.world.level.block.RenderShape;
+import net.minecraft.world.phys.shapes.Shapes;
+import net.minecraft.world.phys.shapes.VoxelShape;
 import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.block.entity.BlockEntityTicker;
 import net.minecraft.world.level.block.entity.BlockEntityType;
@@ -26,19 +29,40 @@ public class PortalFrameBlock extends Block implements EntityBlock {
     public static final BooleanProperty ACTIVE = BlockStateProperties.LIT;
     public static final BooleanProperty UNSTABLE = BooleanProperty.create("unstable");
     public static final BooleanProperty BLINK_ON = BooleanProperty.create("blink_on");
+    /** Portail complet : le bloc est masqué, l'anneau 3D dessiné par le Core le remplace (PortalGateRenderer). */
+    public static final BooleanProperty FORMED = BooleanProperty.create("formed");
 
     public PortalFrameBlock(Properties properties) {
         super(properties);
         this.registerDefaultState(this.stateDefinition.any()
                 .setValue(ACTIVE, false)
                 .setValue(UNSTABLE, false)
-                .setValue(BLINK_ON, false));
+                .setValue(BLINK_ON, false)
+                .setValue(FORMED, false));
     }
 
     @Override
     protected void createBlockStateDefinition(StateDefinition.Builder<Block, BlockState> builder) {
-        builder.add(ACTIVE, UNSTABLE, BLINK_ON);
+        builder.add(ACTIVE, UNSTABLE, BLINK_ON, FORMED);
     }
+
+    @Override
+    protected RenderShape getRenderShape(BlockState state) {
+        return state.getValue(FORMED) ? RenderShape.INVISIBLE : RenderShape.MODEL;
+    }
+
+    // Bloc masqué : il ne doit plus cacher les faces de ses voisins.
+    //? if >=1.21.11 {
+    /*@Override
+    protected VoxelShape getOcclusionShape(BlockState state) {
+        return state.getValue(FORMED) ? Shapes.empty() : Shapes.block();
+    }
+    *///?} else {
+    @Override
+    protected VoxelShape getOcclusionShape(BlockState state, BlockGetter level, BlockPos pos) {
+        return state.getValue(FORMED) ? Shapes.empty() : Shapes.block();
+    }
+    //?}
 
     public static int lightLevel(BlockState state) {
         return state.getValue(ACTIVE) && state.getValue(BLINK_ON) ? 12 : 0;
@@ -81,6 +105,7 @@ public class PortalFrameBlock extends Block implements EntityBlock {
     @Override
     public void animateTick(BlockState state, Level level, BlockPos pos, RandomSource random) {
         if (!state.getValue(ACTIVE)) return;
+        if (state.getValue(FORMED)) return; // l'anneau 3D gère ses propres effets
         boolean unstable = state.getValue(UNSTABLE);
         if (!state.getValue(BLINK_ON)) return;
 
@@ -127,6 +152,11 @@ public class PortalFrameBlock extends Block implements EntityBlock {
     //? if >=1.21.11 {
     /*@Override
     protected void affectNeighborsAfterRemoval(BlockState state, ServerLevel level, BlockPos pos, boolean movedByPiston) {
+        if (level.getBlockState(pos).is(this)) {
+            // Simple changement d'état (FORMED, BLINK_ON...) : le cadre est toujours là.
+            super.affectNeighborsAfterRemoval(state, level, pos, movedByPiston);
+            return;
+        }
         BlockPos corePos = findCoreNear(level, pos, 4, 5);
         if (corePos != null && level.getBlockEntity(corePos) instanceof PortalCoreBlockEntity core && core.isActiveOrOpening()) {
             PortalConnectionManager.forceCloseOneSide(level, corePos);
