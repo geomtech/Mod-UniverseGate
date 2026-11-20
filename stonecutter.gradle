@@ -1,0 +1,110 @@
+plugins {
+	id 'dev.kikugie.stonecutter'
+	// Declared here (not applied) so both loader plugins share one classloader.
+	id 'net.fabricmc.fabric-loom-remap' version "${loom_version}" apply false
+	id 'net.neoforged.moddev' version "${moddev_version}" apply false
+}
+
+// Minecraft version the sources in */src are currently written for.
+// Switch with `./gradlew "Set active project to <mc>"`, and switch back to 1.21.1 before committing
+// (`./gradlew "Reset active project"`).
+stonecutter.active '1.21.1'
+
+// Stonecutter nodes: one project per branch and Minecraft version (:common:1.21.1, :fabric:1.21.1, ...).
+def nodes = subprojects.findAll { it.parent != rootProject }
+def nodeOf = { String branch, String mc -> project(":${branch}:${mc}") }
+
+configure(nodes) {
+	// Load versions/<mc>.properties as project properties (minecraft_version, fabric_api_version, ...).
+	def mc = project.name
+	def versionProps = rootProject.file("versions/${mc}.properties")
+	if (!versionProps.exists()) {
+		throw new GradleException("Missing ${versionProps} for Minecraft ${mc}")
+	}
+	def props = new Properties()
+	versionProps.withInputStream { props.load(it) }
+	props.each { key, value -> ext.set(key as String, value) }
+
+	apply plugin: 'java'
+	apply plugin: 'maven-publish'
+
+	version = "${rootProject.mod_version}+${mc}"
+	group = rootProject.maven_group
+
+	base {
+		archivesName = "${rootProject.archives_base_name}-${project.parent.name}"
+	}
+
+	repositories {
+		mavenCentral()
+		exclusiveContent {
+			forRepository {
+				maven {
+					name = 'Sponge'
+					url = 'https://repo.spongepowered.org/repository/maven-public/'
+				}
+			}
+			filter { includeGroupAndSubgroups('org.spongepowered') }
+		}
+	}
+
+	java {
+		withSourcesJar()
+		sourceCompatibility = JavaVersion.VERSION_21
+		targetCompatibility = JavaVersion.VERSION_21
+	}
+
+	tasks.withType(JavaCompile).configureEach {
+		it.options.release = 21
+		it.options.encoding = 'UTF-8'
+	}
+
+	jar {
+		from(rootProject.file('LICENSE')) {
+			rename { "${it}_${rootProject.archives_base_name}" }
+		}
+	}
+}
+
+// Shared wiring for the loader projects: compile the common sources of the same Minecraft version
+// and ship the common resources inside each loader jar.
+configure(nodes.findAll { it.parent.name in ['fabric', 'neoforge'] }) {
+	def commonProject = nodeOf('common', project.name)
+	evaluationDependsOn(commonProject.path)
+
+	def commonMain = commonProject.sourceSets.main
+
+	dependencies {
+		// Lets IDEs resolve common classes from loader code; the sources themselves are compiled below.
+		compileOnly commonProject
+	}
+
+	tasks.named('compileJava', JavaCompile) {
+		source(commonMain.java)
+	}
+
+	tasks.named('processResources', ProcessResources) {
+		from(commonMain.resources)
+	}
+
+	tasks.named('sourcesJar', Jar) {
+		from(commonMain.allSource)
+	}
+
+	publishing {
+		publications {
+			create('mavenJava', MavenPublication) {
+				artifactId = base.archivesName.get()
+				from components.java
+			}
+		}
+	}
+}
+
+// `./gradlew buildAll` builds every loader for every Minecraft version.
+// `./gradlew build` does the same (it runs in every project); `./gradlew :fabric:1.21.1:build` builds one jar.
+tasks.register('buildAll') {
+	group = 'build'
+	description = 'Builds the Fabric and NeoForge jars for every supported Minecraft version.'
+	dependsOn(nodes.collect { "${it.path}:build" })
+}

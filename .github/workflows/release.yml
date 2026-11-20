@@ -122,8 +122,8 @@ jobs:
           tag_name: ${{ steps.version.outputs.tag }}
           generate_release_notes: true
           files: |
-            fabric/build/libs/*.jar
-            neoforge/build/libs/*.jar
+            fabric/versions/*/build/libs/*.jar
+            neoforge/versions/*/build/libs/*.jar
           fail_on_unmatched_files: true
 
       - name: skip notice
