@@ -27,6 +27,9 @@ import fr.geomtech.universegate.ZpcInterfaceControllerRenderer;
 import fr.geomtech.universegate.ZpcInterfaceControllerScreen;
 import fr.geomtech.universegate.net.UniverseGateClientNetwork;
 import net.minecraft.client.renderer.ItemBlockRenderTypes;
+//? if >=1.21.11 {
+/*import net.minecraft.client.renderer.chunk.ChunkSectionLayer;
+*///?}
 import net.minecraft.client.renderer.RenderType;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.inventory.AbstractContainerMenu;
@@ -56,11 +59,19 @@ public final class UniverseGateNeoForgeClient {
         UniverseGateClientNetwork.registerClient();
 
         modBus.addListener(FMLClientSetupEvent.class, event -> event.enqueueWork(() -> {
+            //? if >=1.21.11 {
+            /*ItemBlockRenderTypes.setRenderLayer(ModFluids.STILL_DARK_MATTER, ChunkSectionLayer.TRANSLUCENT);
+            ItemBlockRenderTypes.setRenderLayer(ModFluids.FLOWING_DARK_MATTER, ChunkSectionLayer.TRANSLUCENT);
+            ItemBlockRenderTypes.setRenderLayer(ModBlocks.PORTAL_FIELD, ChunkSectionLayer.TRANSLUCENT);
+            ItemBlockRenderTypes.setRenderLayer(ModBlocks.FLUID_PIPE, ChunkSectionLayer.TRANSLUCENT);
+            ItemBlockRenderTypes.setRenderLayer(ModBlocks.RIFT_CRYSTAL_CLUSTER, ChunkSectionLayer.CUTOUT);
+            *///?} else {
             ItemBlockRenderTypes.setRenderLayer(ModFluids.STILL_DARK_MATTER, RenderType.translucent());
             ItemBlockRenderTypes.setRenderLayer(ModFluids.FLOWING_DARK_MATTER, RenderType.translucent());
             ItemBlockRenderTypes.setRenderLayer(ModBlocks.PORTAL_FIELD, RenderType.translucent());
             ItemBlockRenderTypes.setRenderLayer(ModBlocks.FLUID_PIPE, RenderType.translucent());
             ItemBlockRenderTypes.setRenderLayer(ModBlocks.RIFT_CRYSTAL_CLUSTER, RenderType.cutout());
+            //?}
         }));
 
         modBus.addListener(RegisterParticleProvidersEvent.class, event ->

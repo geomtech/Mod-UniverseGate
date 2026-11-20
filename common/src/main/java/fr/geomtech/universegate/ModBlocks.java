@@ -196,7 +196,12 @@ public final class ModBlocks {
 
     public static final Block DARK_MATTER_BLOCK = register(
             "dark_matter_block",
+            //? if >=1.21.11 {
+            /*// The constructor is protected in 1.21.11 and no loader opens it.
+            new LiquidBlock(ModFluids.STILL_DARK_MATTER, properties("dark_matter_block", BlockBehaviour.Properties.ofFullCopy(Blocks.WATER).noLootTable())) {}
+            *///?} else {
             new LiquidBlock(ModFluids.STILL_DARK_MATTER, properties("dark_matter_block", BlockBehaviour.Properties.ofFullCopy(Blocks.WATER).noLootTable()))
+            //?}
     );
 
     public static final Block RIFT_REFINER = register(

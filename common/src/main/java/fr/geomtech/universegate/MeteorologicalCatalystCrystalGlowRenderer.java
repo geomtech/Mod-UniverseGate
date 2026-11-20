@@ -5,7 +5,7 @@ import com.mojang.blaze3d.vertex.VertexConsumer;
 import net.minecraft.core.BlockPos;
 import net.minecraft.client.renderer.MultiBufferSource;
 import net.minecraft.client.renderer.RenderType;
-import net.minecraft.client.renderer.blockentity.BlockEntityRenderer;
+import fr.geomtech.universegate.compat.ImmediateBlockEntityRenderer;
 import net.minecraft.client.renderer.blockentity.BlockEntityRendererProvider;
 import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.util.Mth;
@@ -13,7 +13,7 @@ import net.minecraft.world.level.block.state.BlockState;
 import org.joml.Matrix4f;
 import org.jetbrains.annotations.Nullable;
 
-public class MeteorologicalCatalystCrystalGlowRenderer implements BlockEntityRenderer<MeteorologicalCatalystBlockEntity> {
+public class MeteorologicalCatalystCrystalGlowRenderer extends ImmediateBlockEntityRenderer<MeteorologicalCatalystBlockEntity> {
 
     private static final float FACE_EPSILON = 0.0010F;
     private static final float ROD_HALF = 0.5F / 16.0F;

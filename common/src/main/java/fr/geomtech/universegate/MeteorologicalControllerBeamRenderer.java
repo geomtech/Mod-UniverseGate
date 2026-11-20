@@ -1,15 +1,18 @@
 package fr.geomtech.universegate;
 
+//? if >=1.21.11 {
+/*import fr.geomtech.universegate.compat.RecordingBufferSource;
+*///?}
 import com.mojang.blaze3d.vertex.PoseStack;
 import net.minecraft.client.renderer.MultiBufferSource;
 import net.minecraft.client.renderer.blockentity.BeaconRenderer;
-import net.minecraft.client.renderer.blockentity.BlockEntityRenderer;
+import fr.geomtech.universegate.compat.ImmediateBlockEntityRenderer;
 import net.minecraft.client.renderer.blockentity.BlockEntityRendererProvider;
 import net.minecraft.core.BlockPos;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.level.Level;
 
-public class MeteorologicalControllerBeamRenderer implements BlockEntityRenderer<MeteorologicalControllerBlockEntity> {
+public class MeteorologicalControllerBeamRenderer extends ImmediateBlockEntityRenderer<MeteorologicalControllerBlockEntity> {
 
     private static final ResourceLocation BEAM_TEXTURE =
             ResourceLocation.fromNamespaceAndPath("minecraft", "textures/entity/beacon_beam.png");
@@ -42,6 +45,14 @@ public class MeteorologicalControllerBeamRenderer implements BlockEntityRenderer
                 catalystPos.getZ() - controllerPos.getZ()
         );
 
+        //? if >=1.21.11 {
+        /*BeaconRenderer.submitBeaconBeam(
+                poseStack,
+                ((RecordingBufferSource) buffer).collector(),
+                BEAM_TEXTURE,
+                1.0F,
+                Math.floorMod(level.getGameTime(), 40) + partialTick,
+        *///?} else {
         BeaconRenderer.renderBeaconBeam(
                 poseStack,
                 buffer,
@@ -49,6 +60,7 @@ public class MeteorologicalControllerBeamRenderer implements BlockEntityRenderer
                 partialTick,
                 1.0F,
                 level.getGameTime(),
+        //?}
                 1,
                 beamHeight,
                 BEAM_COLOR,
@@ -60,7 +72,7 @@ public class MeteorologicalControllerBeamRenderer implements BlockEntityRenderer
     }
 
     @Override
-    public boolean shouldRenderOffScreen(MeteorologicalControllerBlockEntity blockEntity) {
+    protected boolean rendersOffScreen() {
         return true;
     }
 

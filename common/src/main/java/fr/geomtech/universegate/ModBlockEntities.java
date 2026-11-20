@@ -1,6 +1,7 @@
 package fr.geomtech.universegate;
 
-import java.util.Set;
+import fr.geomtech.universegate.platform.PlatformHelper;
+import fr.geomtech.universegate.platform.Services;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.core.Registry;
@@ -136,13 +137,15 @@ public final class ModBlockEntities {
                     type(MobClonerControllerBlockEntity::new, ModBlocks.MOB_CLONER_CONTROLLER)
             );
 
-    private static <T extends BlockEntity> BlockEntityType<T> type(BlockEntityType.BlockEntitySupplier<T> factory, Block block) {
-        //? if >=1.21.11 {
-        /*return new BlockEntityType<>(factory, Set.of(block));
-        *///?} else {
-        return BlockEntityType.Builder.of(factory, block).build(null);
-        //?}
+    //? if >=1.21.11 {
+    /*private static <T extends BlockEntity> BlockEntityType<T> type(PlatformHelper.BlockEntityFactory<T> factory, Block block) {
+        return Services.PLATFORM.createBlockEntityType(factory, block);
     }
+    *///?} else {
+    private static <T extends BlockEntity> BlockEntityType<T> type(BlockEntityType.BlockEntitySupplier<T> factory, Block block) {
+        return BlockEntityType.Builder.of(factory, block).build(null);
+    }
+    //?}
 
     public static void register() {}
 

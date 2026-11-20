@@ -10,8 +10,15 @@ import net.minecraft.client.model.geom.builders.LayerDefinition;
 import net.minecraft.client.model.geom.builders.MeshDefinition;
 import net.minecraft.client.model.geom.builders.PartDefinition;
 import net.minecraft.resources.ResourceLocation;
+//? if >=1.21.11 {
+/*import net.minecraft.client.renderer.entity.state.HumanoidRenderState;
+*///?}
 
+//? if >=1.21.11 {
+/*public class RiftShadeModel extends HumanoidModel<HumanoidRenderState> {
+*///?} else {
 public class RiftShadeModel extends HumanoidModel<RiftShadeEntity> {
+//?}
 
     public static final ModelLayerLocation LAYER_LOCATION = new ModelLayerLocation(
             ResourceLocation.fromNamespaceAndPath(UniverseGate.MOD_ID, "rift_shade"),

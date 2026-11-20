@@ -594,7 +594,13 @@ public class MobClonerControllerBlockEntity extends net.minecraft.world.level.bl
         double centerX = clonerPos.getX() + 0.5D;
         double centerZ = clonerPos.getZ() + 0.5D;
 
+        //? if >=1.21.11 {
+        /*// The flash particle takes a color since 1.21.9; white is what it always looked like.
+        level.sendParticles(net.minecraft.core.particles.ColorParticleOption.create(ParticleTypes.FLASH, 0xFFFFFFFF),
+                centerX, clonerPos.getY() + 2.3D, centerZ, 2, 0.15D, 0.15D, 0.15D, 0.0D);
+        *///?} else {
         level.sendParticles(ParticleTypes.FLASH, centerX, clonerPos.getY() + 2.3D, centerZ, 2, 0.15D, 0.15D, 0.15D, 0.0D);
+        //?}
         level.sendParticles(ParticleTypes.EXPLOSION, centerX, clonerPos.getY() + 2.0D, centerZ, 4, 0.25D, 0.45D, 0.25D, 0.02D);
 
         for (int layer = 0; layer < 3; layer++) {

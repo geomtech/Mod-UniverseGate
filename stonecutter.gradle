@@ -37,6 +37,9 @@ stonecutter.parameters {
 		replace('Set.<RelativeMovement>of()', 'Set.<Relative>of()')
 		replace('.hasImpulse = ', '.needsSync = ')
 		replace('Direction.getNearest(', 'Direction.getApproximateNearest(')
+		// Client rendering
+		replace('import net.minecraft.client.renderer.RenderType;', 'import net.minecraft.client.renderer.rendertype.RenderType; import net.minecraft.client.renderer.rendertype.RenderTypes;')
+		replace('RenderType.lightning()', 'RenderTypes.lightning()')
 		// Removed classes: version-specific stand-ins in common/versions/<mc>/src (package compat)
 		replace('import net.minecraft.world.ItemInteractionResult;', 'import fr.geomtech.universegate.compat.ItemInteractionResult;')
 		replace('import net.minecraft.world.InteractionResultHolder;', 'import fr.geomtech.universegate.compat.InteractionResultHolder;')

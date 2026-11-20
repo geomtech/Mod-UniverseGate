@@ -1,5 +1,6 @@
 package fr.geomtech.universegate;
 
+import fr.geomtech.universegate.compat.GuiCompat;
 import com.mojang.blaze3d.systems.RenderSystem;
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.gui.screens.inventory.AbstractContainerScreen;
@@ -30,15 +31,17 @@ public class RiftRefinerScreen extends AbstractContainerScreen<RiftRefinerMenu> 
 
     @Override
     protected void renderBg(GuiGraphics guiGraphics, float partialTick, int mouseX, int mouseY) {
+        //? if <1.21.11 {
         RenderSystem.setShader(GameRenderer::getPositionTexShader);
         RenderSystem.setShaderColor(1.0F, 1.0F, 1.0F, 1.0F);
         RenderSystem.setShaderTexture(0, TEXTURE);
+        //?}
         int x = (this.width - this.imageWidth) / 2;
         int y = (this.height - this.imageHeight) / 2;
-        guiGraphics.blit(TEXTURE, x, y, 0, 0, this.imageWidth, this.imageHeight);
+        GuiCompat.blit(guiGraphics, TEXTURE, x, y, 0, 0, this.imageWidth, this.imageHeight);
 
         if (menu.isCrafting()) {
-            guiGraphics.blit(TEXTURE, x + 79, y + 34, 176, 14, menu.getScaledProgress(), 16);
+            GuiCompat.blit(guiGraphics, TEXTURE, x + 79, y + 34, 176, 14, menu.getScaledProgress(), 16);
         }
         
         // Fluid Tank Render
@@ -66,7 +69,11 @@ public class RiftRefinerScreen extends AbstractContainerScreen<RiftRefinerMenu> 
         
         // Check if hovering over fluid tank area (x+120, y+20 to x+136, y+70)
         if (mouseX >= x + 120 && mouseX <= x + 136 && mouseY >= y + 20 && mouseY <= y + 70) {
+            //? if >=1.21.11 {
+            /*guiGraphics.setTooltipForNextFrame(this.font, Component.literal(menu.getFluidAmount() + " / " + menu.getMaxFluid() + " mB"), mouseX, mouseY);
+            *///?} else {
             guiGraphics.renderTooltip(this.font, Component.literal(menu.getFluidAmount() + " / " + menu.getMaxFluid() + " mB"), mouseX, mouseY);
+            //?}
         }
     }
 }

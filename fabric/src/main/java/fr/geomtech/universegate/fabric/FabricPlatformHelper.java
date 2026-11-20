@@ -1,5 +1,11 @@
 package fr.geomtech.universegate.fabric;
 
+//? if >=1.21.11 {
+/*import net.fabricmc.fabric.api.object.builder.v1.block.entity.FabricBlockEntityTypeBuilder;
+import net.minecraft.world.level.block.Block;
+import net.minecraft.world.level.block.entity.BlockEntity;
+import net.minecraft.world.level.block.entity.BlockEntityType;
+*///?}
 import fr.geomtech.universegate.DarkMatterFluid;
 import fr.geomtech.universegate.UniverseGate;
 import fr.geomtech.universegate.platform.PlatformHelper;
@@ -92,6 +98,13 @@ public final class FabricPlatformHelper implements PlatformHelper {
                                                        SpawnPlacements.SpawnPredicate<T> predicate) {
         SpawnPlacements.register(type, placementType, heightmap, predicate);
     }
+
+    //? if >=1.21.11 {
+    /*@Override
+    public <T extends BlockEntity> BlockEntityType<T> createBlockEntityType(BlockEntityFactory<T> factory, Block block) {
+        return FabricBlockEntityTypeBuilder.<T>create(factory::create, block).build();
+    }
+    *///?}
 
     @Override
     public FlowingFluid createDarkMatterSource() {
