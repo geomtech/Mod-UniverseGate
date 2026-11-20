@@ -44,7 +44,7 @@ public class PortalKeyboardBlock extends BaseEntityBlock {
     public static final DirectionProperty FACING = BlockStateProperties.HORIZONTAL_FACING;
     public static final BooleanProperty LIT = BlockStateProperties.LIT;
 
-    // Socle octogonal, pied et pupitre incliné avec le cadran (même style que l'anneau 3D du portail).
+    // Socle, pied et pupitre incliné : copie « faite main » du contrôleur naturel des bâtisseurs.
     private static final VoxelShape SHAPE_NORTH = Shapes.or(
             Block.box(1.0D, 0.0D, 1.0D, 15.0D, 3.0D, 15.0D),
             Block.box(5.0D, 3.0D, 5.0D, 11.0D, 8.0D, 11.0D),
