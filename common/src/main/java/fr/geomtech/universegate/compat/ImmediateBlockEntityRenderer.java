@@ -4,6 +4,7 @@ import com.mojang.blaze3d.vertex.PoseStack;
 import net.minecraft.client.renderer.MultiBufferSource;
 import net.minecraft.client.renderer.blockentity.BlockEntityRenderer;
 import net.minecraft.world.level.block.entity.BlockEntity;
+import net.minecraft.world.phys.AABB;
 
 //? if >=1.21.11 {
 /*import net.minecraft.client.renderer.SubmitNodeCollector;
@@ -70,6 +71,21 @@ import org.jetbrains.annotations.Nullable;
     protected boolean rendersOffScreen() {
         return false;
     }
+
+    /^*
+     * Zone dans laquelle le rendu doit rester visible. NeoForge écarte un rendu dont cette zone sort de l'écran
+     * (IBlockEntityRendererExtension#getRenderBoundingBox, même signature) : un rendu qui dépasse de son bloc la
+     * précise avec {@link #renderBounds}. Ignoré ailleurs.
+     ^/
+    public AABB getRenderBoundingBox(T blockEntity) {
+        AABB bounds = renderBounds(blockEntity);
+        return bounds != null ? bounds : new AABB(blockEntity.getBlockPos());
+    }
+
+    /^* Zone de rendu plus grande que le bloc, ou null pour le bloc seul. ^/
+    protected AABB renderBounds(T blockEntity) {
+        return null;
+    }
 }
 *///?} else {
 public abstract class ImmediateBlockEntityRenderer<T extends BlockEntity> implements BlockEntityRenderer<T> {
@@ -85,6 +101,21 @@ public abstract class ImmediateBlockEntityRenderer<T extends BlockEntity> implem
 
     protected boolean rendersOffScreen() {
         return false;
+    }
+
+    /**
+     * Zone dans laquelle le rendu doit rester visible. NeoForge écarte un rendu dont cette zone sort de l'écran
+     * (IBlockEntityRendererExtension#getRenderBoundingBox, même signature) : un rendu qui dépasse de son bloc la
+     * précise avec {@link #renderBounds}. Ignoré ailleurs.
+     */
+    public AABB getRenderBoundingBox(T blockEntity) {
+        AABB bounds = renderBounds(blockEntity);
+        return bounds != null ? bounds : new AABB(blockEntity.getBlockPos());
+    }
+
+    /** Zone de rendu plus grande que le bloc, ou null pour le bloc seul. */
+    protected AABB renderBounds(T blockEntity) {
+        return null;
     }
 }
 //?}

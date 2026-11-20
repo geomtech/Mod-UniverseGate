@@ -8,6 +8,7 @@ import net.minecraft.core.Direction;
 import net.minecraft.util.Mth;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.state.BlockState;
+import net.minecraft.world.phys.AABB;
 
 /**
  * Modèle 3D d'un portail construit, dessiné par le Core : socle, anneau qui tourne et membrane, sous forme de
@@ -21,6 +22,14 @@ public class PortalGateRenderer extends ImmediateBlockEntityRenderer<PortalCoreB
     protected boolean rendersOffScreen() {
         // L'anneau dépasse largement du bloc du Core.
         return true;
+    }
+
+    @Override
+    protected AABB renderBounds(PortalCoreBlockEntity core) {
+        // Tout le portail (anneau qui dépasse d'un demi-bloc compris), quelle que soit son orientation :
+        // sinon NeoForge cache l'anneau dès que le bloc du Core sort de l'écran.
+        var p = core.getBlockPos();
+        return new AABB(p.getX() - 3, p.getY(), p.getZ() - 3, p.getX() + 4, p.getY() + 7, p.getZ() + 4);
     }
 
     @Override
