@@ -26,6 +26,10 @@ import net.minecraft.world.level.block.entity.BlockEntityTicker;
 import net.minecraft.world.level.block.entity.BlockEntityType;
 import net.minecraft.world.level.block.RenderShape;
 import net.minecraft.world.phys.BlockHitResult;
+import net.minecraft.world.level.block.state.StateDefinition;
+import net.minecraft.world.level.block.state.properties.BooleanProperty;
+import net.minecraft.world.phys.shapes.Shapes;
+import net.minecraft.world.phys.shapes.VoxelShape;
 
 import org.jetbrains.annotations.Nullable;
 
@@ -33,9 +37,30 @@ import org.jetbrains.annotations.Nullable;
 
 public class PortalCoreBlock extends BaseEntityBlock {
 
+    /** Portail complet : le Core est masqué, il est dessiné au pied de l'anneau 3D (PortalGateRenderer). */
+    public static final BooleanProperty FORMED = PortalFrameBlock.FORMED;
+
     public PortalCoreBlock(Properties properties) {
         super(properties);
+        this.registerDefaultState(this.stateDefinition.any().setValue(FORMED, false));
     }
+
+    @Override
+    protected void createBlockStateDefinition(StateDefinition.Builder<Block, BlockState> builder) {
+        builder.add(FORMED);
+    }
+
+    //? if >=1.21.11 {
+    /*@Override
+    protected VoxelShape getOcclusionShape(BlockState state) {
+        return state.getValue(FORMED) ? Shapes.empty() : Shapes.block();
+    }
+    *///?} else {
+    @Override
+    protected VoxelShape getOcclusionShape(BlockState state, BlockGetter level, BlockPos pos) {
+        return state.getValue(FORMED) ? Shapes.empty() : Shapes.block();
+    }
+    //?}
 
     public static final MapCodec<PortalCoreBlock> CODEC =
             simpleCodec(PortalCoreBlock::new);
@@ -52,7 +77,7 @@ public class PortalCoreBlock extends BaseEntityBlock {
 
     @Override
     public RenderShape getRenderShape(BlockState state) {
-        return RenderShape.MODEL;
+        return state.getValue(FORMED) ? RenderShape.INVISIBLE : RenderShape.MODEL;
     }
 
     @Override
@@ -116,7 +141,7 @@ public class PortalCoreBlock extends BaseEntityBlock {
     public void onPlace(BlockState state, Level level, BlockPos pos, BlockState oldState, boolean movedByPiston) {
         super.onPlace(state, level, pos, oldState, movedByPiston);
         PortalFireGuard.clearFireAbove(level, pos);
-        if (!level.isClientSide() && level.getBlockEntity(pos) instanceof PortalCoreBlockEntity be) {
+        if (!level.isClientSide() && !oldState.is(this) && level.getBlockEntity(pos) instanceof PortalCoreBlockEntity be) {
             be.onPlaced();
         }
     }

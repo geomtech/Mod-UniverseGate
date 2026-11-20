@@ -238,7 +238,7 @@ public final class PortalCinematics {
         long until = core.getClientActiveUntil();
         long remaining = until > 0L ? until - now : Long.MAX_VALUE;
 
-        // Les veines et le cœur sombre sont dessinés par PortalMembraneRenderer : pas de particules ici,
+        // Les veines et le cœur sombre sont dessinés par PortalMembraneLayer : pas de particules ici,
         // seulement des touches ponctuelles (déchirures, passages, effondrement).
         // Portail instable : la membrane grésille et se déchire par endroits.
         if (unstable && random.nextFloat() < 0.2F) {

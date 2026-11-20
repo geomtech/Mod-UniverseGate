@@ -89,6 +89,9 @@ public class PortalCoreBlockEntity extends BlockEntity implements PosMenuProvide
 
     public void onBroken() {
         if (!(level instanceof ServerLevel sl)) return;
+        // Le Core part : le cadre redevient visible (sans toucher au Core, en cours de retrait).
+        applyFormed(sl, net.minecraft.core.Direction.EAST, false);
+        applyFormed(sl, net.minecraft.core.Direction.SOUTH, false);
 
         // Si actif, ferme localement (et tente de fermer l’autre côté si possible)
         if (isActiveOrOpening()) {
@@ -100,11 +103,53 @@ public class PortalCoreBlockEntity extends BlockEntity implements PosMenuProvide
         setChanged();
     }
 
+    // ---------- Portail construit (anneau 3D) ----------
+    // Quand le cadre est complet, le Core et les blocs du cadre passent en FORMED : ils deviennent invisibles
+    // et PortalGateRenderer dessine l'anneau 3D à leur place.
+    private void refreshFormation(ServerLevel sl) {
+        net.minecraft.core.Direction right = PortalFrameDetector.find(sl, worldPosition)
+                .map(PortalFrameDetector.FrameMatch::right)
+                .orElse(null);
+        boolean wasFormed = getBlockState().is(ModBlocks.PORTAL_CORE) && getBlockState().getValue(PortalCoreBlock.FORMED);
+        if (right == null) {
+            if (wasFormed) clearFormation(sl);
+            return;
+        }
+        applyFormed(sl, right.getClockWise(), false); // l'autre orientation, si le cadre a été reconstruit autrement
+        applyFormed(sl, right, true);
+        setCoreFormed(sl, true);
+    }
+
+    private void clearFormation(ServerLevel sl) {
+        applyFormed(sl, net.minecraft.core.Direction.EAST, false);
+        applyFormed(sl, net.minecraft.core.Direction.SOUTH, false);
+        setCoreFormed(sl, false);
+    }
+
+    private void applyFormed(ServerLevel sl, net.minecraft.core.Direction right, boolean formed) {
+        PortalFrameDetector.FrameMatch match = new PortalFrameDetector.FrameMatch(right, java.util.List.of());
+        for (BlockPos p : PortalFrameHelper.collectFrame(match, worldPosition)) {
+            BlockState state = sl.getBlockState(p);
+            if (state.is(ModBlocks.PORTAL_FRAME) && state.getValue(PortalFrameBlock.FORMED) != formed) {
+                sl.setBlock(p, state.setValue(PortalFrameBlock.FORMED, formed), 3);
+            }
+        }
+    }
+
+    private void setCoreFormed(ServerLevel sl, boolean formed) {
+        BlockState state = getBlockState();
+        if (state.is(ModBlocks.PORTAL_CORE) && state.getValue(PortalCoreBlock.FORMED) != formed) {
+            sl.setBlock(worldPosition, state.setValue(PortalCoreBlock.FORMED, formed), 3);
+        }
+    }
+
     // ---------- Ticking ----------
     // Côté client uniquement : PortalAmbientSoundClient (type Object pour ne pas charger
     // de classe client sur un serveur dédié).
     private Object clientAmbientSound;
     private PortalCinematics.State clientCinematics;
+    // Animation de l'anneau 3D (rotation, vapeur) : PortalGateAnimator, côté client uniquement.
+    private Object clientGateAnimator;
     // Valeurs synchronisées pour la mise en scène côté client (PortalCinematics).
     private long clientActiveUntil;
     private int linkSteps = 4;
@@ -119,6 +164,12 @@ public class PortalCoreBlockEntity extends BlockEntity implements PosMenuProvide
             PortalCinematics.clientTick(level, this, clientCinematics);
         } else {
             clientCinematics = null;
+        }
+        if (getBlockState().is(ModBlocks.PORTAL_CORE) && getBlockState().getValue(PortalCoreBlock.FORMED)) {
+            if (clientGateAnimator == null) clientGateAnimator = new PortalGateAnimator();
+            ((PortalGateAnimator) clientGateAnimator).tick(level, this);
+        } else {
+            clientGateAnimator = null;
         }
         if (active) {
             if (clientAmbientSound == null) clientAmbientSound = new PortalAmbientSoundClient();
@@ -135,6 +186,8 @@ public class PortalCoreBlockEntity extends BlockEntity implements PosMenuProvide
     }
 
     boolean isClientAmbientUnstable() { return visualUnstable; }
+    /** Animation de l'anneau 3D, ou null si le portail n'est pas construit (côté client). */
+    PortalGateAnimator getClientGateAnimator() { return (PortalGateAnimator) clientGateAnimator; }
     long getClientActiveUntil() { return clientActiveUntil; }
     int getClientLinkSteps() { return linkSteps; }
 
@@ -157,6 +210,9 @@ public class PortalCoreBlockEntity extends BlockEntity implements PosMenuProvide
         if (!(level instanceof ServerLevel sl)) return;
         long now = sl.getGameTime();
         syncOutboundChunkForce(sl, now);
+        if ((now + (worldPosition.asLong() & 7L)) % 10L == 0L) {
+            refreshFormation(sl);
+        }
         if (restorePending) {
             restorePending = false;
             if (active && !restoreActiveState(sl)) return;

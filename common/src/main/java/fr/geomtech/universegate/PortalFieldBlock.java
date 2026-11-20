@@ -186,7 +186,7 @@ public class PortalFieldBlock extends Block implements EntityBlock, SimpleWaterl
 
     @Override
     protected RenderShape getRenderShape(BlockState state) {
-        // La membrane est dessinée par PortalMembraneRenderer, pas par un modèle de bloc.
+        // La membrane est dessinée par PortalMembraneLayer (anneau 3D du Core), pas par un modèle de bloc.
         return RenderShape.INVISIBLE;
     }
 

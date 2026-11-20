@@ -68,5 +68,14 @@
     "sounds": [
       "universegate:rift_dimension_ambient_sound"
     ]
+  },
+  "portal_vent": {
+    "sounds": [
+      {
+        "name": "minecraft:random/fizz",
+        "volume": 0.8,
+        "pitch": 0.7
+      }
+    ]
   }
 }

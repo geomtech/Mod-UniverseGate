@@ -1,6 +1,9 @@
 {
   "variants": {
-    "": {
+    "formed=false": {
+      "model": "universegate:block/portal_core"
+    },
+    "formed=true": {
       "model": "universegate:block/portal_core"
     }
   }
