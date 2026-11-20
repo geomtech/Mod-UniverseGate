@@ -61,8 +61,15 @@ public final class PortalTeleportHandler {
     /** Appelé par PortalFieldBlock quand une entité touche le champ. */
     public static void tryTeleport(Entity entity, BlockPos fieldPos) {
         if (!(entity.level() instanceof ServerLevel sourceLevel)) return;
-        if (!entity.isAlive()) return;
-        if (entity.isPassenger()) return;
+        if (!entity.isAlive() || entity.isPassenger()) return;
+        BlockPos corePos = findCoreNear(sourceLevel, fieldPos);
+        if (corePos != null && sourceLevel.getBlockEntity(corePos) instanceof PortalCoreBlockEntity core)
+            tryTeleport(entity, fieldPos, core);
+    }
+
+    static void tryTeleport(Entity entity, BlockPos fieldPos, PortalCoreBlockEntity core) {
+        if (!(entity.level() instanceof ServerLevel sourceLevel) || !core.isActive()) return;
+        if (!entity.isAlive() || entity.isPassenger()) return;
 
         long now = sourceLevel.getGameTime();
         UUID entityId = entity.getUUID();
@@ -76,12 +83,7 @@ public final class PortalTeleportHandler {
         float projectilePitchAfterTeleport = preservedPitch;
         List<UUID> pursuingMobIds = List.of();
 
-        // 1) trouver le core associé au champ
-        BlockPos corePos = findCoreNear(sourceLevel, fieldPos);
-        if (corePos == null) return;
-
-        if (!(sourceLevel.getBlockEntity(corePos) instanceof PortalCoreBlockEntity core)) return;
-        if (!core.isActive()) return;
+        BlockPos corePos = core.getBlockPos();
         if (!core.isOutboundTravelEnabled()) {
             keepPortalOpenFromDestinationContact(sourceLevel, core, now);
             if (entity instanceof ServerPlayer player) {

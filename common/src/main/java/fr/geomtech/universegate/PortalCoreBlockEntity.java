@@ -10,6 +10,7 @@ import net.minecraft.world.level.storage.ValueOutput;
 *///?}
 import fr.geomtech.universegate.platform.PosMenuProvider;
 import net.minecraft.core.BlockPos;
+import net.minecraft.core.Direction;
 import net.minecraft.network.protocol.game.ClientboundBlockEntityDataPacket;
 import net.minecraft.network.chat.Component;
 import net.minecraft.world.level.ChunkPos;
@@ -20,7 +21,10 @@ import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.inventory.AbstractContainerMenu;
 import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.block.state.BlockState;
+import net.minecraft.world.phys.AABB;
 
+import java.util.ArrayList;
+import java.util.List;
 import java.util.UUID;
 
 public class PortalCoreBlockEntity extends BlockEntity implements PosMenuProvider {
@@ -50,6 +54,7 @@ public class PortalCoreBlockEntity extends BlockEntity implements PosMenuProvide
     private long openingCompleteGameTime = 0L;
     private long keepChunkForcedUntilGameTime = 0L;
     private boolean restorePending = false;
+    private final List<BlockPos> wiredFieldCells = new ArrayList<>();
     private boolean outboundChunkForceClaimed = false;
     private int darkEnergyAmount = 0;
     public static final int DARK_ENERGY_THRESHOLD = 400;
@@ -257,6 +262,44 @@ public class PortalCoreBlockEntity extends BlockEntity implements PosMenuProvide
         }
 
         refreshInstabilityVisuals(sl, now);
+        // These cells keep their real blocks, so they cannot trigger PortalFieldBlock.entityInside.
+        for (BlockPos cell : wiredFieldCells) {
+            for (var entity : sl.getEntities(null, new AABB(cell).deflate(.001))) {
+                PortalTeleportHandler.tryTeleport(entity, cell, this);
+                if (!active) return;
+            }
+        }
+    }
+
+    void placeField(ServerLevel level, PortalFrameDetector.FrameMatch frame, boolean unstable) {
+        BlockState field = ModBlocks.PORTAL_FIELD.defaultBlockState()
+                .setValue(PortalFieldBlock.AXIS, frame.right().getAxis())
+                .setValue(PortalFieldBlock.UNSTABLE, unstable);
+        wiredFieldCells.clear();
+        for (BlockPos pos : frame.interior()) {
+            BlockState current = level.getBlockState(pos);
+            if (hasWiring(level, pos, current)) {
+                wiredFieldCells.add(pos);
+                continue;
+            }
+            BlockState desired = field.setValue(PortalFieldBlock.WATERLOGGED, level.getFluidState(pos).is(FluidTags.WATER));
+            if (desired != current) level.setBlock(pos, desired, 3);
+        }
+    }
+
+    private static boolean hasWiring(ServerLevel level, BlockPos pos, BlockState state) {
+        if (ElectricWireBlock.isWire(state) || state.is(ModBlocks.CROCODILE_CLIP)
+                || state.is(ModBlocks.ENERGY_CONDUIT) || state.is(ModBlocks.DARK_ENERGY_CONDUIT)) return true;
+        if (state.isAir()) return false;
+        // Replacing a support would detach a cable even when the cable itself is outside the opening.
+        for (Direction side : Direction.values()) {
+            BlockState neighbor = level.getBlockState(pos.relative(side));
+            if ((ElectricWireBlock.isWire(neighbor) && neighbor.getValue(ElectricWireBlock.FACING) == side.getOpposite())
+                    || (neighbor.is(ModBlocks.CROCODILE_CLIP) && neighbor.getValue(CrocodileClipBlock.FACING) == side.getOpposite())) {
+                return true;
+            }
+        }
+        return false;
     }
 
     private void spawnRiftParticles(ServerLevel level) {
@@ -286,25 +329,8 @@ public class PortalCoreBlockEntity extends BlockEntity implements PosMenuProvide
         }
 
         var frameMatch = match.get();
-        var axis = frameMatch.right() == net.minecraft.core.Direction.EAST
-                ? net.minecraft.core.Direction.Axis.X
-                : net.minecraft.core.Direction.Axis.Z;
         boolean unstableVisual = shouldUseUnstableVisuals(now);
-        BlockState desiredFieldBaseState = ModBlocks.PORTAL_FIELD.defaultBlockState()
-                .setValue(PortalFieldBlock.AXIS, axis)
-                .setValue(PortalFieldBlock.UNSTABLE, unstableVisual);
-
-        for (BlockPos p : frameMatch.interior()) {
-            BlockState current = sl.getBlockState(p);
-            boolean waterlogged = current.is(ModBlocks.PORTAL_FIELD)
-                    && current.hasProperty(PortalFieldBlock.WATERLOGGED)
-                    ? current.getValue(PortalFieldBlock.WATERLOGGED)
-                    : sl.getFluidState(p).is(FluidTags.WATER);
-            BlockState desiredFieldState = desiredFieldBaseState.setValue(PortalFieldBlock.WATERLOGGED, waterlogged);
-            if (!current.equals(desiredFieldState)) {
-                sl.setBlock(p, desiredFieldState, 3);
-            }
-        }
+        placeField(sl, frameMatch, unstableVisual);
 
         for (BlockPos p : PortalFrameHelper.collectFrame(frameMatch, worldPosition)) {
             BlockState state = sl.getBlockState(p);
@@ -570,6 +596,7 @@ public class PortalCoreBlockEntity extends BlockEntity implements PosMenuProvide
     }
 
     void clearActiveState() {
+        wiredFieldCells.clear();
         boolean previouslyEmitting = emitsRedstoneSignal();
         this.active = false;
         this.opening = false;

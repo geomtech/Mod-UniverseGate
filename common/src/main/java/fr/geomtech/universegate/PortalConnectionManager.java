@@ -6,7 +6,6 @@ import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.level.ServerLevel;
-import net.minecraft.tags.FluidTags;
 import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.LightningBolt;
 import net.minecraft.world.level.Level;
@@ -212,15 +211,8 @@ public final class PortalConnectionManager {
         boolean unstableA = sourceCore.isRiftLightningLink();
         boolean unstableB = targetCore.isRiftLightningLink();
 
-        if (!placeField(sourceLevel, frameA.get(), unstableA)) {
-            forceCloseOneSide(sourceLevel, sourceCorePos);
-            return;
-        }
-        if (!placeField(targetLevel, frameB.get(), unstableB)) {
-            removeField(sourceLevel, frameA.get());
-            forceCloseOneSide(sourceLevel, sourceCorePos);
-            return;
-        }
+        sourceCore.placeField(sourceLevel, frameA.get(), unstableA);
+        targetCore.placeField(targetLevel, frameB.get(), unstableB);
 
         long untilA = sourceLevel.getGameTime() + ACTIVE_OPEN_DURATION_TICKS;
         long untilB = targetLevel.getGameTime() + ACTIVE_OPEN_DURATION_TICKS;
@@ -392,18 +384,6 @@ public final class PortalConnectionManager {
     // ----------------------------
     // Champ portal (à brancher ensuite)
     // ----------------------------
-    private static boolean placeField(ServerLevel level, PortalFrameDetector.FrameMatch match, boolean unstable) {
-        var axis = axisFromMatch(match);
-        var baseFieldState = ModBlocks.PORTAL_FIELD.defaultBlockState()
-                .setValue(PortalFieldBlock.AXIS, axis)
-                .setValue(PortalFieldBlock.UNSTABLE, unstable);
-        for (BlockPos p : match.interior()) {
-            boolean waterlogged = level.getFluidState(p).is(FluidTags.WATER);
-            level.setBlock(p, baseFieldState.setValue(PortalFieldBlock.WATERLOGGED, waterlogged), 3);
-        }
-        return true;
-    }
-
     private static void removeField(ServerLevel level, PortalFrameDetector.FrameMatch match) {
         java.util.List<BlockPos> collapsed = new java.util.ArrayList<>();
         Direction.Axis collapseAxis = axisFromMatch(match);
