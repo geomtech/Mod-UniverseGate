@@ -19,6 +19,9 @@ import java.util.Arrays;
 final class PortalGateMesh {
 
     static final int EMPTY = -1;
+    private static final int EDGE_TOP = 0x2E2E2E;
+    private static final int EDGE_SIDE = 0x202020;
+    private static final int EDGE_BOTTOM = 0x141414;
 
     /** Choix de la couleur d'un pixel étiqueté. {@code angle} : angle du pixel autour du centre de rotation. */
     interface Tint {
@@ -94,7 +97,9 @@ final class PortalGateMesh {
                         float edge = d[1] < 0 ? v : v + 1;
                         put(q, n, h, edge, h + 1, edge, z0, z1, 2);
                     }
-                    c[n] = shade(color[i], d[1] > 0 ? 0.75F : 0.5F);
+                    // Tranches d'une teinte unie selon l'orientation (dessus plus clair) : sinon chaque point
+                    // blanc du motif dessinerait une barre blanche sur la tranche.
+                    c[n] = d[1] > 0 ? EDGE_TOP : d[1] < 0 ? EDGE_BOTTOM : EDGE_SIDE;
                     t[n] = tag[i];
                     a[n] = angleOf(h, h + 1, v, v + 1, pivotH, pivotV);
                     n++;
