@@ -1,5 +1,15 @@
 package fr.geomtech.universegate;
 
+//? if >=1.21.11 {
+/*import net.minecraft.world.entity.InsideBlockEffectApplier;
+*///?}
+//? if >=1.21.11 {
+/*import net.minecraft.world.level.LevelReader;
+import net.minecraft.world.level.ScheduledTickAccess;
+import net.minecraft.util.RandomSource;
+import net.minecraft.world.level.redstone.Orientation;
+import org.jetbrains.annotations.Nullable;
+*///?}
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.server.level.ServerLevel;
@@ -54,26 +64,40 @@ public class PortalFieldBlock extends Block implements EntityBlock, SimpleWaterl
         PortalFireGuard.clearFireAbove(level, pos);
     }
 
+    //? if >=1.21.11 {
+    /*@Override
+    protected void neighborChanged(BlockState state, Level level, BlockPos pos, Block neighborBlock, @Nullable Orientation orientation, boolean movedByPiston) {
+    *///?} else {
     @Override
-    protected void neighborChanged(BlockState state,
-                                   Level level,
-                                   BlockPos pos,
-                                   Block neighborBlock,
-                                   BlockPos neighborPos,
-                                   boolean movedByPiston) {
+    protected void neighborChanged(BlockState state, Level level, BlockPos pos, Block neighborBlock, BlockPos neighborPos, boolean movedByPiston) {
+    //?}
         PortalFireGuard.clearFireAbove(level, pos);
+        //? if >=1.21.11 {
+        /*super.neighborChanged(state, level, pos, neighborBlock, orientation, movedByPiston);
+        *///?} else {
         super.neighborChanged(state, level, pos, neighborBlock, neighborPos, movedByPiston);
+        //?}
     }
 
+    //? if >=1.21.11 {
+    /*@Override
+    protected void entityInside(BlockState state, Level level, BlockPos pos, Entity entity, InsideBlockEffectApplier effectApplier, boolean intersects) {
+    *///?} else {
     @Override
     public void entityInside(BlockState state, Level level, BlockPos pos, Entity entity) {
+    //?}
         if (level.isClientSide()) return;
 
         PortalTeleportHandler.tryTeleport(entity, pos);
     }
 
+    //? if >=1.21.11 {
+    /*@Override
+    public void wasExploded(ServerLevel level, BlockPos pos, Explosion explosion) {
+    *///?} else {
     @Override
     public void wasExploded(Level level, BlockPos pos, Explosion explosion) {
+    //?}
         if (!level.isClientSide() && level instanceof ServerLevel sl) {
             BlockPos corePos = findCoreNear(sl, pos, 4, 5);
             if (corePos != null && sl.getBlockEntity(corePos) instanceof PortalCoreBlockEntity core && core.isActive()) {
@@ -112,13 +136,23 @@ public class PortalFieldBlock extends Block implements EntityBlock, SimpleWaterl
         return Shapes.empty();
     }
 
+    //? if >=1.21.11 {
+    /*@Override
+    protected boolean propagatesSkylightDown(BlockState state) {
+    *///?} else {
     @Override
     public boolean propagatesSkylightDown(BlockState state, BlockGetter level, BlockPos pos) {
+    //?}
         return true;
     }
 
+    //? if >=1.21.11 {
+    /*@Override
+    protected int getLightBlock(BlockState state) {
+    *///?} else {
     @Override
     public int getLightBlock(BlockState state, BlockGetter level, BlockPos pos) {
+    //?}
         return 0;
     }
 
@@ -127,17 +161,26 @@ public class PortalFieldBlock extends Block implements EntityBlock, SimpleWaterl
         return state.getValue(WATERLOGGED) ? Fluids.WATER.getSource(false) : super.getFluidState(state);
     }
 
+    //? if >=1.21.11 {
+    /*@Override
+    protected BlockState updateShape(BlockState state, LevelReader level, ScheduledTickAccess tickAccess, BlockPos currentPos,
+                                     Direction direction, BlockPos neighborPos, BlockState neighborState, RandomSource random) {
+    *///?} else {
     @Override
-    protected BlockState updateShape(BlockState state,
-                                     Direction direction,
-                                     BlockState neighborState,
-                                     LevelAccessor level,
-                                     BlockPos currentPos,
-                                     BlockPos neighborPos) {
+    protected BlockState updateShape(BlockState state, Direction direction, BlockState neighborState, LevelAccessor level, BlockPos currentPos, BlockPos neighborPos) {
+    //?}
         if (state.getValue(WATERLOGGED)) {
+            //? if >=1.21.11 {
+            /*tickAccess.scheduleTick(currentPos, Fluids.WATER, Fluids.WATER.getTickDelay(level));
+            *///?} else {
             level.scheduleTick(currentPos, Fluids.WATER, Fluids.WATER.getTickDelay(level));
+            //?}
         }
+        //? if >=1.21.11 {
+        /*return super.updateShape(state, level, tickAccess, currentPos, direction, neighborPos, neighborState, random);
+        *///?} else {
         return super.updateShape(state, direction, neighborState, level, currentPos, neighborPos);
+        //?}
     }
 
     @Override

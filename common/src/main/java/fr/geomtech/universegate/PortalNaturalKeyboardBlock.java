@@ -1,5 +1,9 @@
 package fr.geomtech.universegate;
 
+//? if >=1.21.11 {
+/*import net.minecraft.world.level.redstone.Orientation;
+import org.jetbrains.annotations.Nullable;
+*///?}
 import fr.geomtech.universegate.platform.MenuHelper;
 
 import com.mojang.serialization.MapCodec;
@@ -149,17 +153,29 @@ public class PortalNaturalKeyboardBlock extends BaseEntityBlock {
         }
     }
 
+    //? if >=1.21.11 {
+    /*@Override
+    protected void neighborChanged(BlockState state, Level level, BlockPos pos, Block neighborBlock, @Nullable Orientation orientation, boolean movedByPiston) {
+    *///?} else {
     @Override
-    protected void neighborChanged(BlockState state,
-                                   Level level,
-                                   BlockPos pos,
-                                   Block neighborBlock,
-                                   BlockPos neighborPos,
-                                   boolean movedByPiston) {
+    protected void neighborChanged(BlockState state, Level level, BlockPos pos, Block neighborBlock, BlockPos neighborPos, boolean movedByPiston) {
+    //?}
         PortalFireGuard.clearFireAbove(level, pos);
+        //? if >=1.21.11 {
+        /*super.neighborChanged(state, level, pos, neighborBlock, orientation, movedByPiston);
+        *///?} else {
         super.neighborChanged(state, level, pos, neighborBlock, neighborPos, movedByPiston);
+        //?}
     }
 
+    //? if >=1.21.11 {
+    /*// The keyboard's items are dropped by its block entity (BlockEntity.preRemoveSideEffects).
+    @Override
+    protected void affectNeighborsAfterRemoval(BlockState state, ServerLevel level, BlockPos pos, boolean movedByPiston) {
+        PortalConnectionManager.forceCloseFromKeyboard(level, pos);
+        super.affectNeighborsAfterRemoval(state, level, pos, movedByPiston);
+    }
+    *///?} else {
     @Override
     public void onRemove(BlockState state, Level level, BlockPos pos, BlockState newState, boolean movedByPiston) {
         if (!level.isClientSide() && !state.is(newState.getBlock())) {
@@ -173,6 +189,7 @@ public class PortalNaturalKeyboardBlock extends BaseEntityBlock {
         }
         super.onRemove(state, level, pos, newState, movedByPiston);
     }
+    //?}
 
     @Override
     protected InteractionResult useWithoutItem(BlockState state, Level level, BlockPos pos, Player player, BlockHitResult hit) {

@@ -1,5 +1,11 @@
 package fr.geomtech.universegate;
 
+//? if >=1.21.11 {
+/*import net.minecraft.server.level.ServerLevel;
+import net.minecraft.world.level.LevelReader;
+import net.minecraft.world.level.ScheduledTickAccess;
+import net.minecraft.util.RandomSource;
+*///?}
 import com.mojang.serialization.MapCodec;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
@@ -127,6 +133,20 @@ public class ParabolaBlock extends BaseEntityBlock {
         return createTickerHelper(type, ModBlockEntities.PARABOLA, ParabolaBlockEntity::serverTick);
     }
 
+    //? if >=1.21.11 {
+    /*@Override
+    protected void affectNeighborsAfterRemoval(BlockState state, ServerLevel level, BlockPos pos, boolean movedByPiston) {
+        BlockPos basePos = getBasePos(pos, state);
+        for (int i = 0; i < 4; i++) {
+            BlockPos partPos = basePos.above(i);
+            if (partPos.equals(pos)) continue;
+            if (level.getBlockState(partPos).is(this)) {
+                level.setBlock(partPos, Blocks.AIR.defaultBlockState(), 3);
+            }
+        }
+        super.affectNeighborsAfterRemoval(state, level, pos, movedByPiston);
+    }
+    *///?} else {
     @Override
     public void onRemove(BlockState state, Level level, BlockPos pos, BlockState newState, boolean movedByPiston) {
         if (state.is(newState.getBlock())) {
@@ -147,16 +167,27 @@ public class ParabolaBlock extends BaseEntityBlock {
 
         super.onRemove(state, level, pos, newState, movedByPiston);
     }
+    //?}
 
+    //? if >=1.21.11 {
+    /*@Override
+    protected BlockState updateShape(BlockState state, LevelReader level, ScheduledTickAccess tickAccess, BlockPos currentPos,
+                                     Direction direction, BlockPos neighborPos, BlockState neighborState, RandomSource random) {
+    *///?} else {
     @Override
     protected BlockState updateShape(BlockState state, Direction direction, BlockState neighborState, LevelAccessor level, BlockPos currentPos, BlockPos neighborPos) {
+    //?}
         if (direction == Direction.DOWN && !canSurvive(state, level, currentPos)) {
             return Blocks.AIR.defaultBlockState();
         }
         if (state.getValue(PART) == Part.BASE) {
             return updateConnections(level, currentPos, state);
         }
+        //? if >=1.21.11 {
+        /*return super.updateShape(state, level, tickAccess, currentPos, direction, neighborPos, neighborState, random);
+        *///?} else {
         return super.updateShape(state, direction, neighborState, level, currentPos, neighborPos);
+        //?}
     }
 
     @Override

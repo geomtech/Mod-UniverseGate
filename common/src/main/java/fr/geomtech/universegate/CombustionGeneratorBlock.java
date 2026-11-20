@@ -113,9 +113,14 @@ public class CombustionGeneratorBlock extends BaseEntityBlock {
                 MenuHelper.open(sp, provider);
             }
         }
+        //? if >=1.21.11 {
+        /*return level.isClientSide() ? InteractionResult.SUCCESS : InteractionResult.CONSUME;
+        *///?} else {
         return InteractionResult.sidedSuccess(level.isClientSide());
+        //?}
     }
 
+    //? if <1.21.11 {
     @Override
     public void onRemove(BlockState state, Level level, BlockPos pos, BlockState newState, boolean movedByPiston) {
         if (!level.isClientSide() && !state.is(newState.getBlock())) {
@@ -126,6 +131,7 @@ public class CombustionGeneratorBlock extends BaseEntityBlock {
         }
         super.onRemove(state, level, pos, newState, movedByPiston);
     }
+    //?}
 
     @Override
     public @Nullable <T extends BlockEntity> BlockEntityTicker<T> getTicker(Level level,

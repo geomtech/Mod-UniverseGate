@@ -1,5 +1,6 @@
 package fr.geomtech.universegate;
 
+import fr.geomtech.universegate.compat.Compat;
 import net.minecraft.core.BlockPos;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.sounds.SoundEvent;
@@ -80,7 +81,7 @@ public class RiftBeastEntity extends Animal {
     @Nullable
     @Override
     public AgeableMob getBreedOffspring(ServerLevel level, AgeableMob otherParent) {
-        return ModEntityTypes.RIFT_BEAST.create(level);
+        return Compat.create(ModEntityTypes.RIFT_BEAST, level, MobSpawnType.BREEDING);
     }
 
     @Override

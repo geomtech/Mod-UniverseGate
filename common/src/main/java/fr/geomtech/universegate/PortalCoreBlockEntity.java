@@ -511,6 +511,15 @@ public class PortalCoreBlockEntity extends BlockEntity implements PosMenuProvide
 
     // ---------- NBT ----------
     //? if >=1.21.11 {
+    /*// Called before the block entity is removed (replaces Block.onRemove since 1.21.5).
+    @Override
+    public void preRemoveSideEffects(BlockPos pos, BlockState state) {
+        onBroken();
+        super.preRemoveSideEffects(pos, state);
+    }
+    *///?}
+
+    //? if >=1.21.11 {
     /*@Override
     protected void saveAdditional(ValueOutput output) {
         super.saveAdditional(output);

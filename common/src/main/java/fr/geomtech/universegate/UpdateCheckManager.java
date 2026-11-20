@@ -169,7 +169,11 @@ public final class UpdateCheckManager {
                         .withStyle(style -> style
                                 .withColor(ChatFormatting.AQUA)
                                 .withUnderlined(true)
+                                //? if >=1.21.11 {
+                                /*.withClickEvent(new ClickEvent.OpenUrl(java.net.URI.create(RELEASES_PAGE_URL)))));
+                                *///?} else {
                                 .withClickEvent(new ClickEvent(ClickEvent.Action.OPEN_URL, RELEASES_PAGE_URL))));
+                                //?}
     }
 
     private static boolean isVersionNewer(String current, String latest) {

@@ -1,5 +1,6 @@
 package fr.geomtech.universegate;
 
+import net.minecraft.world.InteractionResult;
 import fr.geomtech.universegate.net.UniverseGateNetwork;
 import fr.geomtech.universegate.platform.MenuHelper;
 import fr.geomtech.universegate.platform.PosMenuProvider;

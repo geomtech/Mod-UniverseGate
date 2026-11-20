@@ -2,6 +2,8 @@ package fr.geomtech.universegate;
 
 import fr.geomtech.universegate.platform.Services;
 import net.minecraft.core.Registry;
+import net.minecraft.core.registries.Registries;
+import net.minecraft.resources.ResourceKey;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.entity.EntityType;
@@ -29,7 +31,11 @@ public final class ModEntityTypes {
                 .eyeHeight(3.45F)
                 .clientTrackingRange(10);
 
+        //? if >=1.21.11 {
+        /*return builder.build(ResourceKey.create(Registries.ENTITY_TYPE, ResourceLocation.fromNamespaceAndPath(UniverseGate.MOD_ID, "rift_beast")));
+        *///?} else {
         return builder.build(UniverseGate.MOD_ID + ":rift_beast");
+        //?}
     }
 
     private static EntityType<RiftShadeEntity> createRiftShadeType() {
@@ -37,8 +43,16 @@ public final class ModEntityTypes {
                 .sized(0.7F, 2.2F)
                 .eyeHeight(1.95F)
                 .clientTrackingRange(8);
+        //? if >=1.21.11 {
+        /*// Replaces RiftShadeEntity.shouldDespawnInPeaceful() (removed from Mob)
+        builder = builder.notInPeaceful();
+        *///?}
 
+        //? if >=1.21.11 {
+        /*return builder.build(ResourceKey.create(Registries.ENTITY_TYPE, ResourceLocation.fromNamespaceAndPath(UniverseGate.MOD_ID, "rift_shade")));
+        *///?} else {
         return builder.build(UniverseGate.MOD_ID + ":rift_shade");
+        //?}
     }
 
     public static void register() {

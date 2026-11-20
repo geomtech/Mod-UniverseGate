@@ -551,6 +551,15 @@ public class ZpcInterfaceControllerBlockEntity extends net.minecraft.world.level
     }
 
     //? if >=1.21.11 {
+    /*// Called before the block entity is removed (replaces Block.onRemove since 1.21.5).
+    @Override
+    public void preRemoveSideEffects(BlockPos pos, BlockState state) {
+        dropInstalledZpc();
+        super.preRemoveSideEffects(pos, state);
+    }
+    *///?}
+
+    //? if >=1.21.11 {
     /*@Override
     protected void saveAdditional(ValueOutput output) {
         super.saveAdditional(output);

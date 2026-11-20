@@ -1,5 +1,11 @@
 package fr.geomtech.universegate;
 
+import fr.geomtech.universegate.compat.Nbt;
+//? if >=1.21.11 {
+/*import net.minecraft.world.item.component.TooltipDisplay;
+import java.util.ArrayList;
+import java.util.function.Consumer;
+*///?}
 import net.minecraft.ChatFormatting;
 import net.minecraft.core.component.DataComponents;
 import net.minecraft.nbt.CompoundTag;
@@ -29,7 +35,7 @@ public class ZpcItem extends Item {
         CompoundTag tag = customData.copyTag();
         if (!tag.contains(TAG_ENERGY)) return 0L;
 
-        return clampEnergy(tag.getLong(TAG_ENERGY));
+        return clampEnergy(Nbt.getLong(tag, TAG_ENERGY));
     }
 
     public static void setStoredEnergy(ItemStack stack, long energy) {
@@ -94,12 +100,24 @@ public class ZpcItem extends Item {
         return 0xD65742;
     }
 
+    //? if >=1.21.11 {
+    /*@Override
+    public void appendHoverText(ItemStack stack, TooltipContext context, TooltipDisplay tooltipDisplay,
+                                Consumer<Component> tooltipAdder, TooltipFlag tooltipFlag) {
+        super.appendHoverText(stack, context, tooltipDisplay, tooltipAdder, tooltipFlag);
+        List<Component> tooltipComponents = new ArrayList<>();
+        appendTooltipLines(stack, context, tooltipComponents, tooltipFlag);
+        tooltipComponents.forEach(tooltipAdder);
+    }
+    *///?} else {
     @Override
-    public void appendHoverText(ItemStack stack,
-                                TooltipContext context,
-                                List<Component> tooltipComponents,
-                                TooltipFlag tooltipFlag) {
+    public void appendHoverText(ItemStack stack, TooltipContext context, List<Component> tooltipComponents, TooltipFlag tooltipFlag) {
         super.appendHoverText(stack, context, tooltipComponents, tooltipFlag);
+        appendTooltipLines(stack, context, tooltipComponents, tooltipFlag);
+    }
+    //?}
+
+    private void appendTooltipLines(ItemStack stack, TooltipContext context, List<Component> tooltipComponents, TooltipFlag tooltipFlag) {
 
         long stored = getStoredEnergy(stack);
         int percent = chargePercentFromEnergy(stored);

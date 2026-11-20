@@ -1,5 +1,9 @@
 package fr.geomtech.universegate;
 
+//? if >=1.21.11 {
+/*import net.minecraft.world.level.redstone.Orientation;
+import org.jetbrains.annotations.Nullable;
+*///?}
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.server.level.ServerLevel;
@@ -105,17 +109,31 @@ public class PortalFrameBlock extends Block implements EntityBlock {
         level.addParticle(ModParticles.SPARK, x, y, z, vx, vy, vz);
     }
 
+    //? if >=1.21.11 {
+    /*@Override
+    protected void neighborChanged(BlockState state, Level level, BlockPos pos, Block neighborBlock, @Nullable Orientation orientation, boolean movedByPiston) {
+    *///?} else {
     @Override
-    protected void neighborChanged(BlockState state,
-                                   Level level,
-                                   BlockPos pos,
-                                   Block neighborBlock,
-                                   BlockPos neighborPos,
-                                   boolean movedByPiston) {
+    protected void neighborChanged(BlockState state, Level level, BlockPos pos, Block neighborBlock, BlockPos neighborPos, boolean movedByPiston) {
+    //?}
         PortalFireGuard.clearFireAbove(level, pos);
+        //? if >=1.21.11 {
+        /*super.neighborChanged(state, level, pos, neighborBlock, orientation, movedByPiston);
+        *///?} else {
         super.neighborChanged(state, level, pos, neighborBlock, neighborPos, movedByPiston);
+        //?}
     }
 
+    //? if >=1.21.11 {
+    /*@Override
+    protected void affectNeighborsAfterRemoval(BlockState state, ServerLevel level, BlockPos pos, boolean movedByPiston) {
+        BlockPos corePos = findCoreNear(level, pos, 4, 5);
+        if (corePos != null && level.getBlockEntity(corePos) instanceof PortalCoreBlockEntity core && core.isActiveOrOpening()) {
+            PortalConnectionManager.forceCloseOneSide(level, corePos);
+        }
+        super.affectNeighborsAfterRemoval(state, level, pos, movedByPiston);
+    }
+    *///?} else {
     @Override
     public void onRemove(BlockState state, Level level, BlockPos pos, BlockState newState, boolean movedByPiston) {
         if (!level.isClientSide() && !state.is(newState.getBlock())) {
@@ -126,6 +144,7 @@ public class PortalFrameBlock extends Block implements EntityBlock {
         }
         super.onRemove(state, level, pos, newState, movedByPiston);
     }
+    //?}
 
     private static BlockPos findCoreNear(ServerLevel level, BlockPos center, int rXZ, int rY) {
         for (int dy = -rY; dy <= rY; dy++) {

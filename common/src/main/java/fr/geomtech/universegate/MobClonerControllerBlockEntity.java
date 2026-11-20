@@ -1,5 +1,6 @@
 package fr.geomtech.universegate;
 
+import fr.geomtech.universegate.compat.Compat;
 import fr.geomtech.universegate.compat.DataReader;
 import fr.geomtech.universegate.compat.DataWriter;
 import net.minecraft.core.HolderLookup;
@@ -513,7 +514,7 @@ public class MobClonerControllerBlockEntity extends net.minecraft.world.level.bl
 
     @Nullable
     private static Mob createMobFromType(ServerLevel level, EntityType<?> entityType) {
-        Entity entity = entityType.create(level);
+        Entity entity = Compat.create(entityType, level, MobSpawnType.MOB_SUMMONED);
         if (entity instanceof Mob mob) {
             return mob;
         }
@@ -523,7 +524,7 @@ public class MobClonerControllerBlockEntity extends net.minecraft.world.level.bl
     private static boolean canSpawnOnTopOfCloner(ServerLevel level, BlockPos clonerPos, Mob mob) {
         BlockPos spawnPos = clonerPos.above();
         float yaw = level.random.nextFloat() * 360.0F;
-        mob.moveTo(spawnPos.getX() + 0.5D, spawnPos.getY(), spawnPos.getZ() + 0.5D, yaw, 0.0F);
+        Compat.moveTo(mob, spawnPos.getX() + 0.5D, spawnPos.getY(), spawnPos.getZ() + 0.5D, yaw, 0.0F);
         return level.noCollision(mob);
     }
 
@@ -724,6 +725,14 @@ public class MobClonerControllerBlockEntity extends net.minecraft.world.level.bl
         forceRescan();
         syncClient();
     }
+
+    //? if >=1.21.11 {
+    /*// Called before the block entity is removed (replaces Block.onRemove since 1.21.5).
+    @Override
+    public void preRemoveSideEffects(BlockPos pos, BlockState state) {
+        dropContents();
+    }
+    *///?}
 
     //? if >=1.21.11 {
     /*@Override

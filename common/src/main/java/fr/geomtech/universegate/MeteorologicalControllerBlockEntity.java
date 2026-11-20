@@ -1,5 +1,7 @@
 package fr.geomtech.universegate;
 
+import net.minecraft.world.entity.MobSpawnType;
+import fr.geomtech.universegate.compat.Compat;
 import fr.geomtech.universegate.compat.DataReader;
 import fr.geomtech.universegate.compat.DataWriter;
 import net.minecraft.core.HolderLookup;
@@ -268,9 +270,9 @@ public class MeteorologicalControllerBlockEntity extends BlockEntity implements 
     }
 
     private void strikeCatalystWithLightning(ServerLevel level, BlockPos catalystPos) {
-        LightningBolt lightningBolt = EntityType.LIGHTNING_BOLT.create(level);
+        LightningBolt lightningBolt = Compat.create(EntityType.LIGHTNING_BOLT, level, MobSpawnType.TRIGGERED);
         if (lightningBolt == null) return;
-        lightningBolt.moveTo(catalystPos.getX() + 0.5D, catalystPos.getY() + 1.0D, catalystPos.getZ() + 0.5D);
+        Compat.moveTo(lightningBolt, catalystPos.getX() + 0.5D, catalystPos.getY() + 1.0D, catalystPos.getZ() + 0.5D);
         lightningBolt.setVisualOnly(true);
         level.addFreshEntity(lightningBolt);
     }

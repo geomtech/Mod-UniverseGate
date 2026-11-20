@@ -1,5 +1,6 @@
 package fr.geomtech.universegate;
 
+import fr.geomtech.universegate.compat.Compat;
 import fr.geomtech.universegate.compat.Nbt;
 import fr.geomtech.universegate.compat.SavedDataCompat;
 import net.minecraft.core.BlockPos;

@@ -43,6 +43,7 @@ public final class UniverseGate {
 		ModParticles.register();
 		ModVillagers.register();
 		UniverseGatePoiHelper.registerChargedLightningRodPoi();
+		OverworldVillagePortalGenerator.registerTicketType();
 	}
 
 	/** Registers network payloads. Does not touch registries. */

@@ -1,5 +1,6 @@
 package fr.geomtech.universegate;
 
+import fr.geomtech.universegate.compat.Compat;
 import fr.geomtech.universegate.compat.DataReader;
 import fr.geomtech.universegate.compat.DataWriter;
 import net.minecraft.core.HolderLookup;
@@ -123,7 +124,7 @@ public class CombustionGeneratorBlockEntity extends BlockEntity implements World
     }
 
     public boolean canAcceptFuel(ItemStack stack) {
-        if (!isSupportedFuel(stack)) return false;
+        if (!isSupportedFuel(level, stack)) return false;
 
         ItemStack slotStack = inventory.get(SLOT_FUEL);
         if (slotStack.isEmpty()) return true;
@@ -132,7 +133,7 @@ public class CombustionGeneratorBlockEntity extends BlockEntity implements World
     }
 
     public int insertFuel(ItemStack stack) {
-        if (!isSupportedFuel(stack)) return 0;
+        if (!isSupportedFuel(level, stack)) return 0;
 
         ItemStack slotStack = inventory.get(SLOT_FUEL);
         int maxStackSize = Math.min(stack.getMaxStackSize(), getMaxStackSize());
@@ -164,7 +165,7 @@ public class CombustionGeneratorBlockEntity extends BlockEntity implements World
         ItemStack fuelStack = inventory.get(SLOT_FUEL);
         if (fuelStack.isEmpty()) return false;
 
-        int fuelEnergy = getFuelEnergy(fuelStack);
+        int fuelEnergy = getFuelEnergy(level, fuelStack);
         if (fuelEnergy <= 0) return false;
         if (bufferedEnergy + fuelEnergy > MAX_BUFFERED_ENERGY) return false;
 
@@ -195,17 +196,17 @@ public class CombustionGeneratorBlockEntity extends BlockEntity implements World
         return true;
     }
 
-    public static boolean isSupportedFuel(ItemStack stack) {
+    public static boolean isSupportedFuel(@Nullable Level level, ItemStack stack) {
         return !stack.isEmpty()
-                && (stack.is(ModItems.RIFT_CRYSTAL) || AbstractFurnaceBlockEntity.isFuel(stack));
+                && (stack.is(ModItems.RIFT_CRYSTAL) || Compat.isFuel(level, stack));
     }
 
-    private static int getFuelEnergy(ItemStack stack) {
+    private static int getFuelEnergy(@Nullable Level level, ItemStack stack) {
         if (stack.is(ModItems.RIFT_CRYSTAL)) {
             return RIFT_CRYSTAL_ENERGY;
         }
 
-        int burnDuration = AbstractFurnaceBlockEntity.getFuel().getOrDefault(stack.getItem(), 0);
+        int burnDuration = Compat.burnDuration(level, stack);
         if (burnDuration <= 0) return 0;
 
         return Math.max(1, (int) Math.round(burnDuration * ENERGY_PER_BURN_TICK));
@@ -262,7 +263,7 @@ public class CombustionGeneratorBlockEntity extends BlockEntity implements World
     public void setItem(int slot, ItemStack stack) {
         if (slot != SLOT_FUEL) return;
 
-        if (!stack.isEmpty() && !isSupportedFuel(stack)) {
+        if (!stack.isEmpty() && !isSupportedFuel(level, stack)) {
             return;
         }
 
@@ -275,7 +276,7 @@ public class CombustionGeneratorBlockEntity extends BlockEntity implements World
 
     @Override
     public boolean canPlaceItem(int slot, ItemStack stack) {
-        return slot == SLOT_FUEL && isSupportedFuel(stack);
+        return slot == SLOT_FUEL && isSupportedFuel(level, stack);
     }
 
     @Override

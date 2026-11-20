@@ -1,5 +1,6 @@
 package fr.geomtech.universegate;
 
+import fr.geomtech.universegate.compat.Compat;
 import com.mojang.brigadier.CommandDispatcher;
 import com.mojang.brigadier.context.CommandContext;
 import net.minecraft.commands.CommandSourceStack;
@@ -55,7 +56,7 @@ public final class EngineerExpeditionManager {
     public static void registerCommands(CommandDispatcher<CommandSourceStack> dispatcher) {
         dispatcher.register(
                 Commands.literal("universegate")
-                        .requires(source -> source.getEntity() instanceof ServerPlayer && source.hasPermission(2))
+                        .requires(source -> source.getEntity() instanceof ServerPlayer && Compat.hasPermission(source, 2))
                         .then(Commands.literal("engineer_event")
                                 .then(Commands.literal("force").executes(EngineerExpeditionManager::forceEventCommand))
                                 .then(Commands.literal("status").executes(EngineerExpeditionManager::statusCommand))
@@ -524,7 +525,7 @@ public final class EngineerExpeditionManager {
     private static @Nullable Villager selectEngineer(List<Villager> villagers) {
         for (Villager villager : villagers) {
             if (!villager.isAlive()) continue;
-            if (villager.getVillagerData().getProfession().equals(ModVillagers.ENGINEER)) {
+            if (isEngineer(villager)) {
                 villager.setPersistenceRequired();
                 return villager;
             }
@@ -532,8 +533,7 @@ public final class EngineerExpeditionManager {
 
         for (Villager villager : villagers) {
             if (!villager.isAlive()) continue;
-            VillagerProfession profession = villager.getVillagerData().getProfession();
-            if (profession != VillagerProfession.NONE && profession != VillagerProfession.NITWIT) continue;
+            if (!isJoblessOrNitwit(villager)) continue;
             ensureEngineerProfession(villager);
             return villager;
         }
@@ -542,9 +542,31 @@ public final class EngineerExpeditionManager {
     }
 
     private static void ensureEngineerProfession(Villager villager) {
-        if (villager.getVillagerData().getProfession().equals(ModVillagers.ENGINEER)) return;
+        if (isEngineer(villager)) return;
+        //? if >=1.21.11 {
+        /*villager.setVillagerData(villager.getVillagerData().withProfession(villager.registryAccess(), ModVillagers.ENGINEER_KEY));
+        *///?} else {
         villager.setVillagerData(villager.getVillagerData().setProfession(ModVillagers.ENGINEER));
+        //?}
         villager.setPersistenceRequired();
+    }
+
+    private static boolean isEngineer(Villager villager) {
+        //? if >=1.21.11 {
+        /*return villager.getVillagerData().profession().is(ModVillagers.ENGINEER_KEY);
+        *///?} else {
+        return villager.getVillagerData().getProfession().equals(ModVillagers.ENGINEER);
+        //?}
+    }
+
+    private static boolean isJoblessOrNitwit(Villager villager) {
+        //? if >=1.21.11 {
+        /*var profession = villager.getVillagerData().profession();
+        return profession.is(VillagerProfession.NONE) || profession.is(VillagerProfession.NITWIT);
+        *///?} else {
+        VillagerProfession profession = villager.getVillagerData().getProfession();
+        return profession == VillagerProfession.NONE || profession == VillagerProfession.NITWIT;
+        //?}
     }
 
     private static List<UUID> pickCompanions(RandomSource random, List<Villager> villagers, UUID engineerId) {
