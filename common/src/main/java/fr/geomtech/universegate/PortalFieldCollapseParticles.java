@@ -44,31 +44,26 @@ public final class PortalFieldCollapseParticles {
         RandomSource random = level.random;
         int count = payload.unstable() ? 12 : 8;
 
-        for (BlockPos pos : payload.cells()) {
-            for (int i = 0; i < count; i++) {
-                double x = pos.getX() + 0.5;
-                double y = pos.getY() + random.nextDouble();
-                double z = pos.getZ() + 0.5;
-
-                if (payload.xAxis()) {
-                    x += (random.nextDouble() - 0.5) * 0.9;
-                    z += (random.nextDouble() - 0.5) * 0.12;
-                } else {
-                    x += (random.nextDouble() - 0.5) * 0.12;
-                    z += (random.nextDouble() - 0.5) * 0.9;
-                }
-
-                // L'ancien sendParticles(count = 1, dx, dy, dz, speed = 0) décalait l'étincelle
-                // d'un bruit gaussien de cette amplitude, sans vitesse.
-                double dx = (random.nextDouble() - 0.5) * 0.05;
-                double dy = (random.nextDouble() - 0.5) * 0.04;
-                double dz = (random.nextDouble() - 0.5) * 0.05;
-                level.addParticle(ModParticles.SPARK,
-                        x + random.nextGaussian() * dx,
-                        y + random.nextGaussian() * dy,
-                        z + random.nextGaussian() * dz,
-                        0.0D, 0.0D, 0.0D);
-            }
+        if (payload.cells().isEmpty()) return;
+        // Étincelles réparties dans le disque de la membrane (et non plus case par case : on voyait le
+        // rectangle 3x4 du champ alors que le portail est rond).
+        double cx = 0, cy = 0, cz = 0;
+        for (BlockPos p : payload.cells()) { cx += p.getX() + 0.5D; cy += p.getY() + 0.5D; cz += p.getZ() + 0.5D; }
+        int n = payload.cells().size();
+        cx /= n; cy /= n; cz /= n;
+        double radius = PortalCinematics.MEMBRANE_RADIUS;
+        int total = n * count;
+        for (int i = 0; i < total; i++) {
+            double a = random.nextDouble() * Math.PI * 2.0D;
+            double r = Math.sqrt(random.nextDouble()) * radius;
+            double u = Math.cos(a) * r, v = Math.sin(a) * r;
+            double depth = (random.nextDouble() - 0.5D) * 0.12D;
+            double x = cx + (payload.xAxis() ? u : depth);
+            double z = cz + (payload.xAxis() ? depth : u);
+            double y = cy + v;
+            level.addParticle(ModParticles.SPARK,
+                    x + random.nextGaussian() * 0.02D, y + random.nextGaussian() * 0.02D, z + random.nextGaussian() * 0.02D,
+                    0.0D, 0.0D, 0.0D);
         }
     }
 }

@@ -46,6 +46,8 @@ public final class PortalCinematics {
     // --- Membrane ---
     private static final double HALF_U = PortalFrameDetector.INNER_WIDTH * 0.5D - 0.1D;
     private static final double HALF_V = PortalFrameDetector.INNER_HEIGHT * 0.5D - 0.1D;
+    /** Rayon de la membrane ronde, en blocs (PortalMembraneLayer : 36 px). */
+    static final double MEMBRANE_RADIUS = 36.0D / 16.0D;
     private static final double CENTER_V = 1.0D + PortalFrameDetector.INNER_HEIGHT * 0.5D;
 
     // --- Effondrement ---
@@ -299,7 +301,7 @@ public final class PortalCinematics {
 
         for (int i = 0; i < 28; i++) {
             double a = random.nextDouble() * Mth.TWO_PI;
-            double du = Math.cos(a) * HALF_U, dv = Math.sin(a) * HALF_V;
+            double du = Math.cos(a) * MEMBRANE_RADIUS, dv = Math.sin(a) * MEMBRANE_RADIUS;
             double x = cx + (xAxis ? du : 0.0D), z = cz + (xAxis ? 0.0D : du), y = cy + dv;
             level.addParticle(ModParticles.SPARK, x, y, z, (cx - x) * 0.09D, (cy - y) * 0.09D, (cz - z) * 0.09D);
         }

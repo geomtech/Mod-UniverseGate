@@ -203,6 +203,8 @@ public class PortalFieldBlock extends Block implements EntityBlock, SimpleWaterl
 
         int count = random.nextFloat() < 0.70F ? 2 : 1;
         if (count == 0) return;
+        // Portail rond : pas d'étincelles dans les coins du champ, cachés par l'anneau.
+        PortalFieldBlinkRenderer.PortalCoords coords = PortalFieldBlinkRenderer.resolvePortalCoords(level, pos, axis);
 
         for (int i = 0; i < count; i++) {
             double x = pos.getX() + 0.5;
@@ -213,6 +215,13 @@ public class PortalFieldBlock extends Block implements EntityBlock, SimpleWaterl
                 x += (random.nextDouble() - 0.5) * 0.92;
             } else {
                 z += (random.nextDouble() - 0.5) * 0.92;
+            }
+            if (coords != null) {
+                double u = coords.horizontalIndex() + (axis == Direction.Axis.X ? x - pos.getX() : z - pos.getZ())
+                        - PortalFrameDetector.INNER_WIDTH * 0.5D;
+                double v = coords.verticalIndex() + (y - pos.getY()) - PortalFrameDetector.INNER_HEIGHT * 0.5D;
+                double r = PortalCinematics.MEMBRANE_RADIUS - 0.1D;
+                if (u * u + v * v > r * r) continue;
             }
 
             double centerX = pos.getX() + 0.5;
