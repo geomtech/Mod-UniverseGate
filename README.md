@@ -26,9 +26,11 @@ Before building a portal, you need energy.
 5.  Place an **Energy Monitor** on the network to check stored energy, total capacity and connected devices.
 
 #### Energy from other mods (optional)
-The **Energy Condenser** speaks the standard energy APIs, so cables from other mods can plug straight into it: **Stellaris**, and any mod using NeoForge energy (FE) or, on Fabric, Team Reborn Energy.
-*   **1 EU = 1 FE**, up to **1,000 per tick** in each direction.
-*   Other mods can fill the condenser (to power portals) or draw from it (to run their machines from your solar panels).
+UniverseGate energy (EU) speaks the standard energy APIs, so cables from other mods plug straight into it: **Stellaris**, and any mod using NeoForge energy (FE) or, on Fabric, Team Reborn Energy.
+*   **Energy Condenser** and **Energy Conduit**: in and out. A conduit shares the energy of every condenser on its network, so a foreign cable can join the network anywhere.
+*   **ZPC Interface**: out only (ZPCs are still recharged with dark energy only).
+*   **1 EU = 1 FE**, up to **1,000 per tick** per connected block.
+*   Dark energy keeps its own network and does not connect to other mods.
 *   None of these mods is required: without them, UniverseGate works exactly the same.
 
 ### 2. Building a Portal

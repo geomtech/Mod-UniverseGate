@@ -45,7 +45,7 @@ public final class UniverseGateNeoForge {
         modBus.addListener(EntityAttributeCreationEvent.class, NeoForgePlatformHelper::onEntityAttributeCreation);
         modBus.addListener(RegisterSpawnPlacementsEvent.class, NeoForgePlatformHelper::onRegisterSpawnPlacements);
         modBus.addListener(RegisterPayloadHandlersEvent.class, NeoForgePlatformHelper::onRegisterPayloadHandlers);
-        // FE energy capability on the Energy Condenser (Stellaris and other energy mods, all optional).
+        // FE energy capability on condensers, conduits and ZPC interfaces (Stellaris and other energy mods, all optional).
         modBus.addListener(RegisterCapabilitiesEvent.class, NeoForgeEnergyCompat::onRegisterCapabilities);
 
         IEventBus gameBus = NeoForge.EVENT_BUS;

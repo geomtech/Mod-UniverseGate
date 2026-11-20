@@ -68,8 +68,8 @@ public class EnergyCondenserBlockEntity extends BlockEntity {
     }
 
     // --- Energy exchange with other mods (Stellaris, any FE / Team Reborn Energy mod) ---
-    // Wired per loader: NeoForge energy capability in the neoforge module, Team Reborn Energy
-    // (only when installed) in the fabric module.
+    // Exposed through ExternalEnergyPort: NeoForge energy capability in the neoforge module,
+    // Team Reborn Energy (only when installed) in the fabric module.
 
     public int getCapacity() {
         return CAPACITY;
@@ -93,11 +93,6 @@ public class EnergyCondenserBlockEntity extends BlockEntity {
             setChanged();
         }
         return extracted;
-    }
-
-    /** Raw restore used by transactional APIs (Team Reborn Energy) to roll back an aborted transfer. */
-    public void restoreStoredEnergy(int value) {
-        storedEnergy = Math.max(0, Math.min(CAPACITY, value));
     }
 
     @Override
