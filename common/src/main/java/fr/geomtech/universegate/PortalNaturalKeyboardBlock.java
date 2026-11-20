@@ -44,9 +44,11 @@ public class PortalNaturalKeyboardBlock extends BaseEntityBlock {
     public static final DirectionProperty FACING = BlockStateProperties.HORIZONTAL_FACING;
     public static final BooleanProperty LIT = BlockStateProperties.LIT;
 
-    // Même silhouette que le contrôleur du joueur : clavier rectangulaire sur un socle chanfreiné.
+    // Même silhouette que le contrôleur du joueur : socle, pied et pupitre incliné.
     private static final VoxelShape SHAPE_NORTH = Shapes.or(
-            Block.box(1.0D, 0.0D, 3.0D, 15.0D, 5.0D, 13.0D)
+            Block.box(1.0D, 0.0D, 1.0D, 15.0D, 3.0D, 15.0D),
+            Block.box(5.0D, 3.0D, 5.0D, 11.0D, 8.0D, 11.0D),
+            Block.box(2.0D, 8.0D, 1.0D, 14.0D, 13.0D, 15.0D)
     );
     private static final VoxelShape SHAPE_EAST = rotate90Y(SHAPE_NORTH);
     private static final VoxelShape SHAPE_SOUTH = rotate90Y(SHAPE_EAST);

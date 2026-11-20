@@ -44,9 +44,11 @@ public class PortalKeyboardBlock extends BaseEntityBlock {
     public static final DirectionProperty FACING = BlockStateProperties.HORIZONTAL_FACING;
     public static final BooleanProperty LIT = BlockStateProperties.LIT;
 
-    // Clavier rectangulaire posé sur un socle plat : copie « faite main » du contrôleur des bâtisseurs.
+    // Pupitre « fait main » : socle, pied et plateau incliné portant un clavier rectangulaire.
     private static final VoxelShape SHAPE_NORTH = Shapes.or(
-            Block.box(1.0D, 0.0D, 3.0D, 15.0D, 5.0D, 13.0D)
+            Block.box(2.0D, 0.0D, 3.0D, 14.0D, 3.0D, 13.0D),
+            Block.box(6.0D, 3.0D, 6.0D, 10.0D, 8.0D, 10.0D),
+            Block.box(1.0D, 8.0D, 2.0D, 15.0D, 13.0D, 14.0D)
     );
     private static final VoxelShape SHAPE_EAST = rotate90Y(SHAPE_NORTH);
     private static final VoxelShape SHAPE_SOUTH = rotate90Y(SHAPE_EAST);
