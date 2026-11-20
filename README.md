@@ -44,10 +44,12 @@ UniverseGate energy is measured in **FE** (Forge Energy) and speaks the standard
 
 ### 3. Entering The Rift (Unstable Link)
 To reach the Rift for the first time, you need to force an unstable connection:
-1.  Craft a **Portal Lightning Rod**.
-2.  Place it within range of your portal.
-3.  Wait for a **Thunderstorm** (or create one with the Meteorological Machine, see below).
-4.  When lightning strikes the rod, it will force the portal to open an unstable Rift link.
+1.  Craft a **Lightning Antenna** (lightning rod, end rod, iron and copper). It stands 4 blocks tall, out in the open, anywhere near your base.
+2.  Craft **Crocodile Clips** and clip them onto your portal frame (or core).
+3.  Lay **Electric Wire** (a blue and red pair) from the antenna's base to the clips. Wires go on floors, walls and ceilings and connect like redstone dust.
+4.  Wait for a **Thunderstorm** (or create one with the Meteorological Machine, see below).
+5.  When lightning strikes the antenna, the charge runs down the wires and forces the portal to open an unstable Rift link.
+    *   *The antenna stores up to 5 charges when no wired portal can open; it sparks while charged.*
     *   *Warning: Unstable portals are volatile.*
 
 ## Village Portals
@@ -70,7 +72,7 @@ Build the Meteorological Machine to change the weather.
 2.  **Power**: Connect the tower to your energy network with Energy Conduits, and add a **Parabola** on the same network. The Parabola draws **120 FE/s** while powered.
 3.  **Charge**: Once everything is in place, the controller charges for **5 minutes**.
 4.  **Activate**: Choose **Clear**, **Rain** or **Thunder**. Activation costs **2500 FE** and consumes the catalyst's Energy Crystal. The chosen weather lasts **10 minutes**.
-    *   *Thunder is the easiest way to strike your Portal Lightning Rods.*
+    *   *Thunder is the easiest way to strike your Lightning Antenna.*
 - Operators can skip the charge time with `/universegate weather_machine charge [pos]`.
 
 ## The Rift

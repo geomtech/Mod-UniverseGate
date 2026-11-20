@@ -1,0 +1,124 @@
+{
+  "variants": {
+    "charged=false,facing=north,part=base": {
+      "model": "universegate:block/lightning_antenna_base"
+    },
+    "charged=true,facing=north,part=base": {
+      "model": "universegate:block/lightning_antenna_base"
+    },
+    "charged=false,facing=north,part=lower": {
+      "model": "universegate:block/lightning_antenna_lower"
+    },
+    "charged=true,facing=north,part=lower": {
+      "model": "universegate:block/lightning_antenna_lower"
+    },
+    "charged=false,facing=north,part=upper": {
+      "model": "universegate:block/lightning_antenna_upper"
+    },
+    "charged=true,facing=north,part=upper": {
+      "model": "universegate:block/lightning_antenna_upper"
+    },
+    "charged=false,facing=north,part=top": {
+      "model": "universegate:block/lightning_antenna_top"
+    },
+    "charged=true,facing=north,part=top": {
+      "model": "universegate:block/lightning_antenna_top_charged"
+    },
+    "charged=false,facing=east,part=base": {
+      "model": "universegate:block/lightning_antenna_base",
+      "y": 90
+    },
+    "charged=true,facing=east,part=base": {
+      "model": "universegate:block/lightning_antenna_base",
+      "y": 90
+    },
+    "charged=false,facing=east,part=lower": {
+      "model": "universegate:block/lightning_antenna_lower",
+      "y": 90
+    },
+    "charged=true,facing=east,part=lower": {
+      "model": "universegate:block/lightning_antenna_lower",
+      "y": 90
+    },
+    "charged=false,facing=east,part=upper": {
+      "model": "universegate:block/lightning_antenna_upper",
+      "y": 90
+    },
+    "charged=true,facing=east,part=upper": {
+      "model": "universegate:block/lightning_antenna_upper",
+      "y": 90
+    },
+    "charged=false,facing=east,part=top": {
+      "model": "universegate:block/lightning_antenna_top",
+      "y": 90
+    },
+    "charged=true,facing=east,part=top": {
+      "model": "universegate:block/lightning_antenna_top_charged",
+      "y": 90
+    },
+    "charged=false,facing=south,part=base": {
+      "model": "universegate:block/lightning_antenna_base",
+      "y": 180
+    },
+    "charged=true,facing=south,part=base": {
+      "model": "universegate:block/lightning_antenna_base",
+      "y": 180
+    },
+    "charged=false,facing=south,part=lower": {
+      "model": "universegate:block/lightning_antenna_lower",
+      "y": 180
+    },
+    "charged=true,facing=south,part=lower": {
+      "model": "universegate:block/lightning_antenna_lower",
+      "y": 180
+    },
+    "charged=false,facing=south,part=upper": {
+      "model": "universegate:block/lightning_antenna_upper",
+      "y": 180
+    },
+    "charged=true,facing=south,part=upper": {
+      "model": "universegate:block/lightning_antenna_upper",
+      "y": 180
+    },
+    "charged=false,facing=south,part=top": {
+      "model": "universegate:block/lightning_antenna_top",
+      "y": 180
+    },
+    "charged=true,facing=south,part=top": {
+      "model": "universegate:block/lightning_antenna_top_charged",
+      "y": 180
+    },
+    "charged=false,facing=west,part=base": {
+      "model": "universegate:block/lightning_antenna_base",
+      "y": 270
+    },
+    "charged=true,facing=west,part=base": {
+      "model": "universegate:block/lightning_antenna_base",
+      "y": 270
+    },
+    "charged=false,facing=west,part=lower": {
+      "model": "universegate:block/lightning_antenna_lower",
+      "y": 270
+    },
+    "charged=true,facing=west,part=lower": {
+      "model": "universegate:block/lightning_antenna_lower",
+      "y": 270
+    },
+    "charged=false,facing=west,part=upper": {
+      "model": "universegate:block/lightning_antenna_upper",
+      "y": 270
+    },
+    "charged=true,facing=west,part=upper": {
+      "model": "universegate:block/lightning_antenna_upper",
+      "y": 270
+    },
+    "charged=false,facing=west,part=top": {
+      "model": "universegate:block/lightning_antenna_top",
+      "y": 270
+    },
+    "charged=true,facing=west,part=top": {
+      "model": "universegate:block/lightning_antenna_top_charged",
+      "y": 270
+    }
+  }
+}

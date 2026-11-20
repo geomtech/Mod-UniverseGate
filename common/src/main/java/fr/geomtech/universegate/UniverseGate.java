@@ -42,7 +42,7 @@ public final class UniverseGate {
 		ModSounds.register();
 		ModParticles.register();
 		ModVillagers.register();
-		UniverseGatePoiHelper.registerChargedLightningRodPoi();
+		UniverseGatePoiHelper.registerLightningAntennaPoi();
 		OverworldVillagePortalGenerator.registerTicketType();
 	}
 

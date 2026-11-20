@@ -194,6 +194,34 @@ public final class ModBlocks {
             new ChargedLightningRodBlock(properties("charged_lightning_rod", BlockBehaviour.Properties.ofFullCopy(Blocks.LIGHTNING_ROD)))
     );
 
+    public static final Block LIGHTNING_ANTENNA = register(
+            "lightning_antenna",
+            new LightningAntennaBlock(properties("lightning_antenna", BlockBehaviour.Properties.ofFullCopy(Blocks.LIGHTNING_ROD)
+                    .strength(3.0f, 6.0f)
+                    .noOcclusion()
+                    .lightLevel(LightningAntennaBlock::lightLevel)))
+    );
+
+    public static final Block ELECTRIC_WIRE = register(
+            "electric_wire",
+            new ElectricWireBlock(properties("electric_wire", BlockBehaviour.Properties.of()
+                    .noCollission()
+                    .instabreak()
+                    .noOcclusion()
+                    .sound(net.minecraft.world.level.block.SoundType.WOOL)
+                    .pushReaction(net.minecraft.world.level.material.PushReaction.DESTROY)))
+    );
+
+    public static final Block CROCODILE_CLIP = register(
+            "crocodile_clip",
+            new CrocodileClipBlock(properties("crocodile_clip", BlockBehaviour.Properties.of()
+                    .noCollission()
+                    .strength(0.3f)
+                    .noOcclusion()
+                    .sound(net.minecraft.world.level.block.SoundType.METAL)
+                    .pushReaction(net.minecraft.world.level.material.PushReaction.DESTROY)))
+    );
+
     public static final Block DARK_MATTER_BLOCK = register(
             "dark_matter_block",
             //? if >=1.21.11 {

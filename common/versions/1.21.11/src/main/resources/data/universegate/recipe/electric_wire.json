@@ -1,0 +1,13 @@
+{
+  "type": "minecraft:crafting_shapeless",
+  "ingredients": [
+    "minecraft:copper_ingot",
+    "minecraft:copper_ingot",
+    "minecraft:blue_dye",
+    "minecraft:red_dye"
+  ],
+  "result": {
+    "count": 12,
+    "id": "universegate:electric_wire"
+  }
+}

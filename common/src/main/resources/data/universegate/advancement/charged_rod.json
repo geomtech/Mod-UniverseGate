@@ -1,13 +1,13 @@
 {
   "parent": "universegate:portal_core_placed",
   "criteria": {
-    "placed_charged_lightning_rod": {
+    "placed_lightning_antenna": {
       "trigger": "minecraft:placed_block",
       "conditions": {
         "location": [
           {
             "condition": "minecraft:block_state_property",
-            "block": "universegate:charged_lightning_rod"
+            "block": "universegate:lightning_antenna"
           }
         ]
       }
@@ -22,7 +22,7 @@
     "hidden": false,
     "icon": {
       "count": 1,
-      "id": "universegate:charged_lightning_rod"
+      "id": "universegate:lightning_antenna"
     },
     "show_toast": true,
     "title": {
@@ -31,7 +31,7 @@
   },
   "requirements": [
     [
-      "placed_charged_lightning_rod"
+      "placed_lightning_antenna"
     ]
   ],
   "sends_telemetry_event": true

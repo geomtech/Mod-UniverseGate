@@ -81,6 +81,13 @@ public final class ModBlockEntities {
                     type(ChargedLightningRodBlockEntity::new, ModBlocks.CHARGED_LIGHTNING_ROD)
             );
 
+    public static final BlockEntityType<LightningAntennaBlockEntity> LIGHTNING_ANTENNA =
+            Registry.register(
+                    BuiltInRegistries.BLOCK_ENTITY_TYPE,
+                    ResourceLocation.fromNamespaceAndPath(UniverseGate.MOD_ID, "lightning_antenna"),
+                    type(LightningAntennaBlockEntity::new, ModBlocks.LIGHTNING_ANTENNA)
+            );
+
     public static final BlockEntityType<MeteorologicalControllerBlockEntity> METEOROLOGICAL_CONTROLLER =
             Registry.register(
                     BuiltInRegistries.BLOCK_ENTITY_TYPE,

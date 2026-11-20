@@ -92,9 +92,13 @@ public class UniverseGateFabricClient implements ClientModInitializer {
 		//? if >=1.21.11 {
 		/*BlockRenderLayerMap.putBlock(ModBlocks.FLUID_PIPE, ChunkSectionLayer.TRANSLUCENT);
 		BlockRenderLayerMap.putBlock(ModBlocks.RIFT_CRYSTAL_CLUSTER, ChunkSectionLayer.CUTOUT);
+		BlockRenderLayerMap.putBlock(ModBlocks.ELECTRIC_WIRE, ChunkSectionLayer.CUTOUT);
+		BlockRenderLayerMap.putBlock(ModBlocks.CROCODILE_CLIP, ChunkSectionLayer.CUTOUT);
+		BlockRenderLayerMap.putBlock(ModBlocks.LIGHTNING_ANTENNA, ChunkSectionLayer.CUTOUT);
 		*///?} else {
 		BlockRenderLayerMap.INSTANCE.putBlock(ModBlocks.FLUID_PIPE, RenderType.translucent());
 		BlockRenderLayerMap.INSTANCE.putBlock(ModBlocks.RIFT_CRYSTAL_CLUSTER, RenderType.cutout());
+		BlockRenderLayerMap.INSTANCE.putBlocks(RenderType.cutout(), ModBlocks.ELECTRIC_WIRE, ModBlocks.CROCODILE_CLIP, ModBlocks.LIGHTNING_ANTENNA);
 		//?}
 		UniverseGateClientNetwork.registerClient();
 		ItemTooltipCallback.EVENT.register((stack, context, type, lines) -> ModTooltips.appendTooltip(stack, lines));

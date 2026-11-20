@@ -1,0 +1,593 @@
+{
+  "multipart": [
+    {
+      "when": {
+        "facing": "down",
+        "north": "side|up"
+      },
+      "apply": {
+        "model": "universegate:block/electric_wire_arm_a_n"
+      }
+    },
+    {
+      "when": {
+        "facing": "down",
+        "north": "up"
+      },
+      "apply": {
+        "model": "universegate:block/electric_wire_riser_n",
+        "x": 270
+      }
+    },
+    {
+      "when": {
+        "facing": "down",
+        "south": "side|up"
+      },
+      "apply": {
+        "model": "universegate:block/electric_wire_arm_a_n",
+        "y": 180
+      }
+    },
+    {
+      "when": {
+        "facing": "down",
+        "south": "up"
+      },
+      "apply": {
+        "model": "universegate:block/electric_wire_riser_n",
+        "x": 270,
+        "y": 180
+      }
+    },
+    {
+      "when": {
+        "facing": "down",
+        "west": "side|up"
+      },
+      "apply": {
+        "model": "universegate:block/electric_wire_arm_b_n",
+        "y": 270
+      }
+    },
+    {
+      "when": {
+        "facing": "down",
+        "west": "up"
+      },
+      "apply": {
+        "model": "universegate:block/electric_wire_riser_n",
+        "x": 270,
+        "y": 270
+      }
+    },
+    {
+      "when": {
+        "facing": "down",
+        "east": "side|up"
+      },
+      "apply": {
+        "model": "universegate:block/electric_wire_arm_b_n",
+        "y": 90
+      }
+    },
+    {
+      "when": {
+        "facing": "down",
+        "east": "up"
+      },
+      "apply": {
+        "model": "universegate:block/electric_wire_riser_n",
+        "x": 270,
+        "y": 90
+      }
+    },
+    {
+      "when": {
+        "facing": "down",
+        "north": "none",
+        "south": "none",
+        "west": "none",
+        "east": "none"
+      },
+      "apply": {
+        "model": "universegate:block/electric_wire_coil"
+      }
+    },
+    {
+      "when": {
+        "facing": "up",
+        "north": "side|up"
+      },
+      "apply": {
+        "model": "universegate:block/electric_wire_arm_a_n",
+        "x": 180,
+        "y": 180
+      }
+    },
+    {
+      "when": {
+        "facing": "up",
+        "north": "up"
+      },
+      "apply": {
+        "model": "universegate:block/electric_wire_riser_n",
+        "x": 90,
+        "y": 180
+      }
+    },
+    {
+      "when": {
+        "facing": "up",
+        "south": "side|up"
+      },
+      "apply": {
+        "model": "universegate:block/electric_wire_arm_a_n",
+        "x": 180
+      }
+    },
+    {
+      "when": {
+        "facing": "up",
+        "south": "up"
+      },
+      "apply": {
+        "model": "universegate:block/electric_wire_riser_n",
+        "x": 90
+      }
+    },
+    {
+      "when": {
+        "facing": "up",
+        "west": "side|up"
+      },
+      "apply": {
+        "model": "universegate:block/electric_wire_arm_b_n",
+        "x": 180,
+        "y": 90
+      }
+    },
+    {
+      "when": {
+        "facing": "up",
+        "west": "up"
+      },
+      "apply": {
+        "model": "universegate:block/electric_wire_riser_n",
+        "x": 90,
+        "y": 90
+      }
+    },
+    {
+      "when": {
+        "facing": "up",
+        "east": "side|up"
+      },
+      "apply": {
+        "model": "universegate:block/electric_wire_arm_b_n",
+        "x": 180,
+        "y": 270
+      }
+    },
+    {
+      "when": {
+        "facing": "up",
+        "east": "up"
+      },
+      "apply": {
+        "model": "universegate:block/electric_wire_riser_n",
+        "x": 90,
+        "y": 270
+      }
+    },
+    {
+      "when": {
+        "facing": "up",
+        "north": "none",
+        "south": "none",
+        "west": "none",
+        "east": "none"
+      },
+      "apply": {
+        "model": "universegate:block/electric_wire_coil",
+        "x": 180,
+        "y": 180
+      }
+    },
+    {
+      "when": {
+        "facing": "north",
+        "down": "side|up"
+      },
+      "apply": {
+        "model": "universegate:block/electric_wire_arm_a_n",
+        "x": 90,
+        "y": 180
+      }
+    },
+    {
+      "when": {
+        "facing": "north",
+        "down": "up"
+      },
+      "apply": {
+        "model": "universegate:block/electric_wire_riser_n",
+        "y": 180
+      }
+    },
+    {
+      "when": {
+        "facing": "north",
+        "up": "side|up"
+      },
+      "apply": {
+        "model": "universegate:block/electric_wire_arm_a_n",
+        "x": 270
+      }
+    },
+    {
+      "when": {
+        "facing": "north",
+        "up": "up"
+      },
+      "apply": {
+        "model": "universegate:block/electric_wire_riser_n",
+        "x": 180
+      }
+    },
+    {
+      "when": {
+        "facing": "north",
+        "west": "side|up"
+      },
+      "apply": {
+        "model": "universegate:block/electric_wire_arm_b_w",
+        "x": 270
+      }
+    },
+    {
+      "when": {
+        "facing": "north",
+        "west": "up"
+      },
+      "apply": {
+        "model": "universegate:block/electric_wire_riser_w",
+        "x": 270,
+        "y": 270
+      }
+    },
+    {
+      "when": {
+        "facing": "north",
+        "east": "side|up"
+      },
+      "apply": {
+        "model": "universegate:block/electric_wire_arm_b_w",
+        "x": 90,
+        "y": 180
+      }
+    },
+    {
+      "when": {
+        "facing": "north",
+        "east": "up"
+      },
+      "apply": {
+        "model": "universegate:block/electric_wire_riser_w",
+        "x": 90,
+        "y": 270
+      }
+    },
+    {
+      "when": {
+        "facing": "north",
+        "down": "none",
+        "up": "none",
+        "west": "none",
+        "east": "none"
+      },
+      "apply": {
+        "model": "universegate:block/electric_wire_coil",
+        "x": 90,
+        "y": 180
+      }
+    },
+    {
+      "when": {
+        "facing": "south",
+        "down": "side|up"
+      },
+      "apply": {
+        "model": "universegate:block/electric_wire_arm_a_n",
+        "x": 90
+      }
+    },
+    {
+      "when": {
+        "facing": "south",
+        "down": "up"
+      },
+      "apply": {
+        "model": "universegate:block/electric_wire_riser_n"
+      }
+    },
+    {
+      "when": {
+        "facing": "south",
+        "up": "side|up"
+      },
+      "apply": {
+        "model": "universegate:block/electric_wire_arm_a_n",
+        "x": 270,
+        "y": 180
+      }
+    },
+    {
+      "when": {
+        "facing": "south",
+        "up": "up"
+      },
+      "apply": {
+        "model": "universegate:block/electric_wire_riser_n",
+        "x": 180,
+        "y": 180
+      }
+    },
+    {
+      "when": {
+        "facing": "south",
+        "west": "side|up"
+      },
+      "apply": {
+        "model": "universegate:block/electric_wire_arm_b_w",
+        "x": 90
+      }
+    },
+    {
+      "when": {
+        "facing": "south",
+        "west": "up"
+      },
+      "apply": {
+        "model": "universegate:block/electric_wire_riser_w",
+        "x": 90,
+        "y": 90
+      }
+    },
+    {
+      "when": {
+        "facing": "south",
+        "east": "side|up"
+      },
+      "apply": {
+        "model": "universegate:block/electric_wire_arm_b_w",
+        "x": 270,
+        "y": 180
+      }
+    },
+    {
+      "when": {
+        "facing": "south",
+        "east": "up"
+      },
+      "apply": {
+        "model": "universegate:block/electric_wire_riser_w",
+        "x": 270,
+        "y": 90
+      }
+    },
+    {
+      "when": {
+        "facing": "south",
+        "down": "none",
+        "up": "none",
+        "west": "none",
+        "east": "none"
+      },
+      "apply": {
+        "model": "universegate:block/electric_wire_coil",
+        "x": 90
+      }
+    },
+    {
+      "when": {
+        "facing": "west",
+        "down": "side|up"
+      },
+      "apply": {
+        "model": "universegate:block/electric_wire_arm_a_n",
+        "x": 90,
+        "y": 90
+      }
+    },
+    {
+      "when": {
+        "facing": "west",
+        "down": "up"
+      },
+      "apply": {
+        "model": "universegate:block/electric_wire_riser_n",
+        "y": 90
+      }
+    },
+    {
+      "when": {
+        "facing": "west",
+        "up": "side|up"
+      },
+      "apply": {
+        "model": "universegate:block/electric_wire_arm_a_n",
+        "x": 270,
+        "y": 270
+      }
+    },
+    {
+      "when": {
+        "facing": "west",
+        "up": "up"
+      },
+      "apply": {
+        "model": "universegate:block/electric_wire_riser_n",
+        "x": 180,
+        "y": 270
+      }
+    },
+    {
+      "when": {
+        "facing": "west",
+        "north": "side|up"
+      },
+      "apply": {
+        "model": "universegate:block/electric_wire_arm_b_w",
+        "x": 90,
+        "y": 90
+      }
+    },
+    {
+      "when": {
+        "facing": "west",
+        "north": "up"
+      },
+      "apply": {
+        "model": "universegate:block/electric_wire_riser_w",
+        "x": 90,
+        "y": 180
+      }
+    },
+    {
+      "when": {
+        "facing": "west",
+        "south": "side|up"
+      },
+      "apply": {
+        "model": "universegate:block/electric_wire_arm_b_w",
+        "x": 270,
+        "y": 270
+      }
+    },
+    {
+      "when": {
+        "facing": "west",
+        "south": "up"
+      },
+      "apply": {
+        "model": "universegate:block/electric_wire_riser_w",
+        "x": 270,
+        "y": 180
+      }
+    },
+    {
+      "when": {
+        "facing": "west",
+        "down": "none",
+        "up": "none",
+        "north": "none",
+        "south": "none"
+      },
+      "apply": {
+        "model": "universegate:block/electric_wire_coil",
+        "x": 90,
+        "y": 90
+      }
+    },
+    {
+      "when": {
+        "facing": "east",
+        "down": "side|up"
+      },
+      "apply": {
+        "model": "universegate:block/electric_wire_arm_a_n",
+        "x": 90,
+        "y": 270
+      }
+    },
+    {
+      "when": {
+        "facing": "east",
+        "down": "up"
+      },
+      "apply": {
+        "model": "universegate:block/electric_wire_riser_n",
+        "y": 270
+      }
+    },
+    {
+      "when": {
+        "facing": "east",
+        "up": "side|up"
+      },
+      "apply": {
+        "model": "universegate:block/electric_wire_arm_a_n",
+        "x": 270,
+        "y": 90
+      }
+    },
+    {
+      "when": {
+        "facing": "east",
+        "up": "up"
+      },
+      "apply": {
+        "model": "universegate:block/electric_wire_riser_n",
+        "x": 180,
+        "y": 90
+      }
+    },
+    {
+      "when": {
+        "facing": "east",
+        "north": "side|up"
+      },
+      "apply": {
+        "model": "universegate:block/electric_wire_arm_b_w",
+        "x": 270,
+        "y": 90
+      }
+    },
+    {
+      "when": {
+        "facing": "east",
+        "north": "up"
+      },
+      "apply": {
+        "model": "universegate:block/electric_wire_riser_w",
+        "x": 270
+      }
+    },
+    {
+      "when": {
+        "facing": "east",
+        "south": "side|up"
+      },
+      "apply": {
+        "model": "universegate:block/electric_wire_arm_b_w",
+        "x": 90,
+        "y": 270
+      }
+    },
+    {
+      "when": {
+        "facing": "east",
+        "south": "up"
+      },
+      "apply": {
+        "model": "universegate:block/electric_wire_riser_w",
+        "x": 90
+      }
+    },
+    {
+      "when": {
+        "facing": "east",
+        "down": "none",
+        "up": "none",
+        "north": "none",
+        "south": "none"
+      },
+      "apply": {
+        "model": "universegate:block/electric_wire_coil",
+        "x": 90,
+        "y": 270
+      }
+    }
+  ]
+}

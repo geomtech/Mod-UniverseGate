@@ -1,0 +1,18 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "pattern": [
+    " R ",
+    " E ",
+    "ICI"
+  ],
+  "key": {
+    "R": "minecraft:lightning_rod",
+    "E": "minecraft:end_rod",
+    "I": "minecraft:iron_ingot",
+    "C": "minecraft:copper_ingot"
+  },
+  "result": {
+    "count": 1,
+    "id": "universegate:lightning_antenna"
+  }
+}
