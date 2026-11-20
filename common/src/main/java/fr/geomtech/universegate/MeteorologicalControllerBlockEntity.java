@@ -292,7 +292,7 @@ public class MeteorologicalControllerBlockEntity extends BlockEntity implements 
             double x = centerX + Math.cos(angle) * radius;
             double y = centerY + level.random.nextDouble() * 0.9D;
             double z = centerZ + Math.sin(angle) * radius;
-            level.sendParticles(ParticleTypes.END_ROD, x, y, z, 1, 0.0D, 0.015D, 0.0D, 0.0D);
+            level.sendParticles(ModParticles.SPARK, x, y, z, 1, 0.0D, 0.015D, 0.0D, 0.0D);
         }
     }
 
@@ -305,7 +305,7 @@ public class MeteorologicalControllerBlockEntity extends BlockEntity implements 
         int maxY = Math.min(level.getMaxBuildHeight() - 1, startY + 110);
 
         for (int y = startY; y <= maxY; y += 2) {
-            level.sendParticles(ParticleTypes.END_ROD, centerX, y + 0.1D, centerZ, 1, 0.02D, 0.0D, 0.02D, 0.0D);
+            level.sendParticles(ModParticles.SPARK, centerX, y + 0.1D, centerZ, 1, 0.02D, 0.0D, 0.02D, 0.0D);
         }
 
         for (int y = startY; y <= maxY; y += 5) {
@@ -323,7 +323,7 @@ public class MeteorologicalControllerBlockEntity extends BlockEntity implements 
             double angle = (Math.PI * 2.0D * i / points) + level.random.nextDouble() * 0.08D;
             double x = centerX + Math.cos(angle) * radius;
             double z = centerZ + Math.sin(angle) * radius;
-            level.sendParticles(ParticleTypes.END_ROD, x, y, z, 1, 0.0D, 0.0D, 0.0D, 0.0D);
+            level.sendParticles(ModParticles.SPARK, x, y, z, 1, 0.0D, 0.0D, 0.0D, 0.0D);
         }
     }
 

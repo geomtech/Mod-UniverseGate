@@ -288,7 +288,7 @@ public final class PortalConnectionManager {
             int whiteCount = count - blackCount;
 
             if (whiteCount > 0) {
-                sendOpeningParticles(level, p, axis, ParticleTypes.END_ROD, whiteCount, 0.002D);
+                sendOpeningParticles(level, p, axis, ModParticles.SPARK, whiteCount, 0.002D);
             }
             if (blackCount > 0) {
                 sendOpeningParticles(level, p, axis, ParticleTypes.SQUID_INK, blackCount, 0.01D);
@@ -572,7 +572,7 @@ public final class PortalConnectionManager {
             double vx = (random.nextDouble() - 0.5) * 0.05;
             double vy = (random.nextDouble() - 0.5) * 0.04;
             double vz = (random.nextDouble() - 0.5) * 0.05;
-            level.sendParticles(ParticleTypes.END_ROD, x, y, z, 1, vx, vy, vz, 0.0);
+            level.sendParticles(ModParticles.SPARK, x, y, z, 1, vx, vy, vz, 0.0);
         }
     }
 

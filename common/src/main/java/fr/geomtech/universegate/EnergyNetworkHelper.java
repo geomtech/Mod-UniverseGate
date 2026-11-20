@@ -10,9 +10,12 @@ import java.util.ArrayDeque;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.HashSet;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
+import java.util.WeakHashMap;
 
 public final class EnergyNetworkHelper {
 
@@ -386,6 +389,7 @@ public final class EnergyNetworkHelper {
 
             for (Direction direction : Direction.values()) {
                 BlockPos neighborPos = conduitPos.relative(direction);
+                if (!level.isLoaded(neighborPos)) continue;
                 BlockState neighborState = level.getBlockState(neighborPos);
 
                 if (neighborState.is(ModBlocks.ENERGY_CONDUIT) && visited.add(neighborPos.immutable())) {
@@ -453,7 +457,59 @@ public final class EnergyNetworkHelper {
                                      Set<BlockPos> parabolas,
                                      Set<BlockPos> zpcInterfaces) {}
 
+    /**
+     * Per-tick cache of conduit network scans. Many machines on the same network scan it on the
+     * same tick (every condenser, generator, parabola, portal...), so each network is walked at most
+     * once per tick and per level. Keyed by every conduit visited during the walk.
+     */
+    private static final Map<ServerLevel, ScanCache> SCAN_CACHE = new WeakHashMap<>();
+
+    private static final class ScanCache {
+        long gameTime = Long.MIN_VALUE;
+        final Map<BlockPos, ConduitScanResult> byConduit = new HashMap<>();
+    }
+
+    private static ScanCache scanCache(ServerLevel level) {
+        ScanCache cache = SCAN_CACHE.computeIfAbsent(level, ignored -> new ScanCache());
+        long now = level.getGameTime();
+        if (cache.gameTime != now) {
+            cache.gameTime = now;
+            cache.byConduit.clear();
+        }
+        return cache;
+    }
+
     private static ConduitScanResult scanConduits(ServerLevel level, Set<BlockPos> startConduits) {
+        ScanCache cache = scanCache(level);
+        List<ConduitScanResult> parts = new ArrayList<>();
+        Set<ConduitScanResult> seen = java.util.Collections.newSetFromMap(new java.util.IdentityHashMap<>());
+
+        for (BlockPos start : startConduits) {
+            ConduitScanResult part = cache.byConduit.get(start);
+            if (part == null) {
+                if (!level.isLoaded(start) || !level.getBlockState(start).is(ModBlocks.ENERGY_CONDUIT)) continue;
+                part = walkConduitNetwork(level, start.immutable(), cache);
+            }
+            if (seen.add(part)) parts.add(part);
+        }
+
+        if (parts.isEmpty()) return new ConduitScanResult(Set.of(), Set.of(), Set.of(), Set.of());
+        if (parts.size() == 1) return parts.get(0);
+
+        Set<BlockPos> condensers = new HashSet<>();
+        Set<BlockPos> solarPanels = new HashSet<>();
+        Set<BlockPos> parabolas = new HashSet<>();
+        Set<BlockPos> zpcInterfaces = new HashSet<>();
+        for (ConduitScanResult part : parts) {
+            condensers.addAll(part.condensers());
+            solarPanels.addAll(part.solarPanels());
+            parabolas.addAll(part.parabolas());
+            zpcInterfaces.addAll(part.zpcInterfaces());
+        }
+        return new ConduitScanResult(condensers, solarPanels, parabolas, zpcInterfaces);
+    }
+
+    private static ConduitScanResult walkConduitNetwork(ServerLevel level, BlockPos start, ScanCache cache) {
         Set<BlockPos> visited = new HashSet<>();
         ArrayDeque<BlockPos> queue = new ArrayDeque<>();
         Set<BlockPos> condensers = new HashSet<>();
@@ -461,11 +517,8 @@ public final class EnergyNetworkHelper {
         Set<BlockPos> parabolas = new HashSet<>();
         Set<BlockPos> zpcInterfaces = new HashSet<>();
 
-        for (BlockPos start : startConduits) {
-            if (level.getBlockState(start).is(ModBlocks.ENERGY_CONDUIT) && visited.add(start.immutable())) {
-                queue.add(start.immutable());
-            }
-        }
+        visited.add(start);
+        queue.add(start);
 
         int searched = 0;
         while (!queue.isEmpty()) {
@@ -477,6 +530,8 @@ public final class EnergyNetworkHelper {
 
             for (Direction direction : Direction.values()) {
                 BlockPos neighborPos = conduitPos.relative(direction);
+                // Never load (or generate) a chunk synchronously just to follow a conduit.
+                if (!level.isLoaded(neighborPos)) continue;
                 BlockState neighborState = level.getBlockState(neighborPos);
 
                 if (neighborState.is(ModBlocks.ENERGY_CONDUIT) && visited.add(neighborPos.immutable())) {
@@ -505,7 +560,11 @@ public final class EnergyNetworkHelper {
             }
         }
 
-        return new ConduitScanResult(condensers, solarPanels, parabolas, zpcInterfaces);
+        ConduitScanResult result = new ConduitScanResult(condensers, solarPanels, parabolas, zpcInterfaces);
+        for (BlockPos conduit : visited) {
+            cache.byConduit.put(conduit, result);
+        }
+        return result;
     }
 
     private static boolean isSolarPanelSocketConnection(BlockState panelState, Direction directionFromConduitToPanel) {
@@ -517,7 +576,7 @@ public final class EnergyNetworkHelper {
     private static void collectAdjacentConduits(ServerLevel level, BlockPos origin, Set<BlockPos> output) {
         for (Direction direction : Direction.values()) {
             BlockPos neighborPos = origin.relative(direction);
-            if (level.getBlockState(neighborPos).is(ModBlocks.ENERGY_CONDUIT)) {
+            if (level.isLoaded(neighborPos) && level.getBlockState(neighborPos).is(ModBlocks.ENERGY_CONDUIT)) {
                 output.add(neighborPos.immutable());
             }
         }

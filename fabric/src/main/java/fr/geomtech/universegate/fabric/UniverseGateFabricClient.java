@@ -27,6 +27,9 @@ import fr.geomtech.universegate.ZpcInterfaceControllerRenderer;
 import fr.geomtech.universegate.ZpcInterfaceControllerScreen;
 import fr.geomtech.universegate.net.UniverseGateClientNetwork;
 import net.fabricmc.api.ClientModInitializer;
+import net.fabricmc.fabric.api.client.particle.v1.ParticleFactoryRegistry;
+import fr.geomtech.universegate.ModParticles;
+import fr.geomtech.universegate.UniverseGateSparkParticle;
 import net.fabricmc.fabric.api.blockrenderlayer.v1.BlockRenderLayerMap;
 import net.fabricmc.fabric.api.client.item.v1.ItemTooltipCallback;
 import net.fabricmc.fabric.api.client.render.fluid.v1.FluidRenderHandlerRegistry;
@@ -51,6 +54,7 @@ public class UniverseGateFabricClient implements ClientModInitializer {
 				new SimpleFluidRenderHandler(darkMatterStill, darkMatterFlowing)
 		);
 		BlockRenderLayerMap.INSTANCE.putFluids(RenderType.translucent(), ModFluids.STILL_DARK_MATTER, ModFluids.FLOWING_DARK_MATTER);
+		ParticleFactoryRegistry.getInstance().register(ModParticles.SPARK, UniverseGateSparkParticle.Provider::new);
 
 		MenuScreens.<AbstractContainerMenu, PortalKeyboardScreen>register(ModMenuTypes.PORTAL_KEYBOARD, PortalKeyboardScreen::new);
 		MenuScreens.<AbstractContainerMenu, PortalKeyboardScreen>register(ModMenuTypes.PORTAL_NATURAL_KEYBOARD, PortalKeyboardScreen::new);

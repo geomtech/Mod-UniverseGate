@@ -39,6 +39,9 @@ import net.neoforged.neoforge.client.event.RegisterGuiLayersEvent;
 import net.neoforged.neoforge.client.event.RegisterMenuScreensEvent;
 import net.neoforged.neoforge.client.extensions.common.IClientFluidTypeExtensions;
 import net.neoforged.neoforge.client.extensions.common.RegisterClientExtensionsEvent;
+import net.neoforged.neoforge.client.event.RegisterParticleProvidersEvent;
+import fr.geomtech.universegate.ModParticles;
+import fr.geomtech.universegate.UniverseGateSparkParticle;
 import net.neoforged.neoforge.common.NeoForge;
 import net.neoforged.neoforge.event.entity.player.ItemTooltipEvent;
 
@@ -58,6 +61,9 @@ public final class UniverseGateNeoForgeClient {
             ItemBlockRenderTypes.setRenderLayer(ModBlocks.PORTAL_FIELD, RenderType.translucent());
             ItemBlockRenderTypes.setRenderLayer(ModBlocks.FLUID_PIPE, RenderType.translucent());
         }));
+
+        modBus.addListener(RegisterParticleProvidersEvent.class, event ->
+                event.registerSpriteSet(ModParticles.SPARK, UniverseGateSparkParticle.Provider::new));
 
         modBus.addListener(RegisterClientExtensionsEvent.class, event -> event.registerFluidType(new IClientFluidTypeExtensions() {
             @Override

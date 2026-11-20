@@ -4,19 +4,26 @@ import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.server.level.TicketType;
 import net.minecraft.tags.StructureTags;
 import net.minecraft.util.Mth;
 import net.minecraft.util.RandomSource;
 import net.minecraft.world.entity.npc.Villager;
+import net.minecraft.world.level.ChunkPos;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.levelgen.Heightmap;
 import net.minecraft.world.phys.AABB;
 import org.jetbrains.annotations.Nullable;
 
+import java.util.Comparator;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
+import java.util.UUID;
+import java.util.WeakHashMap;
 
 public final class OverworldVillagePortalGenerator {
 
@@ -32,7 +39,6 @@ public final class OverworldVillagePortalGenerator {
     private static final int MAX_PORTAL_OFFSET = 30;
     private static final int PORTAL_PLACEMENT_ATTEMPTS = 28;
     private static final int BOOTSTRAP_TARGET_PORTALS = 7;
-    private static final int BOOTSTRAP_ATTEMPTS_PER_CYCLE = 2;
     private static final int BOOTSTRAP_SEARCH_RADIUS_CHUNKS = 40;
     private static final int BOOTSTRAP_MIN_DISTANCE_FROM_SPAWN = 1200;
     private static final double BOOTSTRAP_GOLDEN_ANGLE = 2.399963229728653D;
@@ -40,45 +46,127 @@ public final class OverworldVillagePortalGenerator {
     private static final int BOOTSTRAP_RADIUS_STEP = 180;
     private static final String GENERATED_PORTAL_NAME = "Village Gate";
 
+    // --- Lag guards -------------------------------------------------------------------------
+    // Locating villages (like /locate) and loading/generating chunks synchronously on the main
+    // thread are the most expensive things this generator does. Keep them rare.
+    /** A player's nearest village is only re-located after moving this far, or after PLAYER_RESEARCH_TICKS. */
+    private static final int PLAYER_RESEARCH_MOVE_CHUNKS = 8;
+    private static final long PLAYER_RESEARCH_TICKS = 20L * 60L * 5L;
+    /** A village that was too small (or had no room for a portal) is re-checked after this delay. */
+    private static final long REJECTED_VILLAGE_RETRY_TICKS = 20L * 60L * 10L;
+    /** Remote "bootstrap" villages: one probe at most every 2 minutes. */
+    private static final long BOOTSTRAP_EVERY_TICKS = 20L * 60L * 2L;
+    /** How many bootstrap cycles we wait for an asynchronously loaded village before giving up. */
+    private static final int BOOTSTRAP_MAX_WAIT_CYCLES = 5;
+    private static final TicketType<ChunkPos> VILLAGE_TICKET = TicketType.create(
+            UniverseGate.MOD_ID + ":village_portal",
+            Comparator.comparingLong(ChunkPos::toLong),
+            (int) (BOOTSTRAP_EVERY_TICKS * (BOOTSTRAP_MAX_WAIT_CYCLES + 1)));
+
+    private record PlayerSearch(ChunkPos origin, long searchedAt, @Nullable BlockPos village) {}
+
+    private static final class LevelState {
+        final Map<UUID, PlayerSearch> playerSearches = new HashMap<>();
+        final Map<Long, Long> retryAfter = new HashMap<>();
+        @Nullable BlockPos pendingBootstrapVillage;
+        int pendingBootstrapWaitCycles;
+    }
+
+    private static final Map<ServerLevel, LevelState> STATES = new WeakHashMap<>();
+
     private OverworldVillagePortalGenerator() {}
 
     public static void tickWorld(ServerLevel level) {
         if (!level.dimension().equals(Level.OVERWORLD)) return;
-        if (level.getGameTime() % CHECK_EVERY_TICKS != 0L) return;
+        long now = level.getGameTime();
+        if (now % CHECK_EVERY_TICKS != 0L) return;
 
         List<ServerPlayer> players = level.players();
         if (players.isEmpty()) return;
 
         VillagePortalSavedData data = VillagePortalSavedData.get(level.getServer());
+        LevelState state = STATES.computeIfAbsent(level, ignored -> new LevelState());
+        state.retryAfter.values().removeIf(retryAt -> retryAt <= now);
+
         Set<Long> checkedThisTick = new HashSet<>();
+        Set<UUID> online = new HashSet<>();
 
         for (ServerPlayer player : players) {
             if (player.isSpectator()) continue;
+            online.add(player.getUUID());
 
-            BlockPos villageCenter = findNearestVillageCenter(level, player.blockPosition(), VILLAGE_SEARCH_RADIUS_CHUNKS);
+            BlockPos villageCenter = nearestVillageFor(level, state, player, now);
             if (villageCenter == null) continue;
 
             long villageKey = packVillage(villageCenter);
             if (!checkedThisTick.add(villageKey)) continue;
             if (data.isProcessed(villageCenter)) continue;
+            if (state.retryAfter.containsKey(villageKey)) continue;
 
-            preloadVillageChunks(level, villageCenter);
+            // Only look at a village once its chunks are already loaded around a player:
+            // never load or generate them synchronously from here.
+            if (!isVillageAreaLoaded(level, villageCenter)) continue;
 
-            VillageSize villageSize = evaluateVillageSize(level, villageCenter, VILLAGER_COUNT_RADIUS);
-            if (villageSize.adultVillagers() < MIN_ADULT_VILLAGERS) continue;
-            if (villageSize.maxHorizontalDistance() < MIN_VILLAGE_SPREAD_BLOCKS) continue;
-
-            if (hasPortalCoreNear(level, villageCenter, EXISTING_PORTAL_RADIUS)) {
-                data.markProcessed(villageCenter);
-                continue;
-            }
-
-            if (tryPlaceVillagePortal(level, villageCenter)) {
-                data.markProcessed(villageCenter);
-            }
+            processVillage(level, data, state, villageCenter, now);
         }
 
-        bootstrapUndiscoveredVillagePortals(level, data);
+        state.playerSearches.keySet().retainAll(online);
+
+        if (now % BOOTSTRAP_EVERY_TICKS == 0L) {
+            bootstrapUndiscoveredVillagePortals(level, data, state, now);
+        }
+    }
+
+    private static @Nullable BlockPos nearestVillageFor(ServerLevel level, LevelState state, ServerPlayer player, long now) {
+        ChunkPos playerChunk = player.chunkPosition();
+        PlayerSearch previous = state.playerSearches.get(player.getUUID());
+        if (previous != null
+                && now - previous.searchedAt() < PLAYER_RESEARCH_TICKS
+                && previous.origin().getChessboardDistance(playerChunk) < PLAYER_RESEARCH_MOVE_CHUNKS) {
+            return previous.village();
+        }
+
+        BlockPos village = findNearestVillageCenter(level, player.blockPosition(), VILLAGE_SEARCH_RADIUS_CHUNKS);
+        state.playerSearches.put(player.getUUID(), new PlayerSearch(playerChunk, now, village));
+        return village;
+    }
+
+    /** @return true when a portal was generated for this village. */
+    private static boolean processVillage(ServerLevel level,
+                                          VillagePortalSavedData data,
+                                          LevelState state,
+                                          BlockPos villageCenter,
+                                          long now) {
+        VillageSize villageSize = evaluateVillageSize(level, villageCenter, VILLAGER_COUNT_RADIUS);
+        if (villageSize.adultVillagers() < MIN_ADULT_VILLAGERS
+                || villageSize.maxHorizontalDistance() < MIN_VILLAGE_SPREAD_BLOCKS) {
+            state.retryAfter.put(packVillage(villageCenter), now + REJECTED_VILLAGE_RETRY_TICKS);
+            return false;
+        }
+
+        if (hasPortalCoreNear(level, villageCenter, EXISTING_PORTAL_RADIUS)) {
+            data.markProcessed(villageCenter);
+            return false;
+        }
+
+        if (tryPlaceVillagePortal(level, villageCenter)) {
+            data.markProcessed(villageCenter);
+            return true;
+        }
+
+        state.retryAfter.put(packVillage(villageCenter), now + REJECTED_VILLAGE_RETRY_TICKS);
+        return false;
+    }
+
+    private static boolean isVillageAreaLoaded(ServerLevel level, BlockPos villageCenter) {
+        int centerChunkX = villageCenter.getX() >> 4;
+        int centerChunkZ = villageCenter.getZ() >> 4;
+        for (int dx = -VILLAGE_PRELOAD_RADIUS_CHUNKS; dx <= VILLAGE_PRELOAD_RADIUS_CHUNKS; dx++) {
+            for (int dz = -VILLAGE_PRELOAD_RADIUS_CHUNKS; dz <= VILLAGE_PRELOAD_RADIUS_CHUNKS; dz++) {
+                if (!level.hasChunk(centerChunkX + dx, centerChunkZ + dz)) return false;
+            }
+        }
+        return true;
     }
 
     private static @Nullable BlockPos findNearestVillageCenter(ServerLevel level, BlockPos from, int radiusChunks) {
@@ -120,52 +208,55 @@ public final class OverworldVillagePortalGenerator {
         return new VillageSize(adults, Math.sqrt(maxDistanceSqr));
     }
 
-    private static void preloadVillageChunks(ServerLevel level, BlockPos villageCenter) {
-        int centerChunkX = villageCenter.getX() >> 4;
-        int centerChunkZ = villageCenter.getZ() >> 4;
-        for (int dx = -VILLAGE_PRELOAD_RADIUS_CHUNKS; dx <= VILLAGE_PRELOAD_RADIUS_CHUNKS; dx++) {
-            for (int dz = -VILLAGE_PRELOAD_RADIUS_CHUNKS; dz <= VILLAGE_PRELOAD_RADIUS_CHUNKS; dz++) {
-                level.getChunk(centerChunkX + dx, centerChunkZ + dz);
-            }
-        }
+    private static void requestVillageChunks(ServerLevel level, BlockPos villageCenter) {
+        ChunkPos center = new ChunkPos(villageCenter);
+        level.getChunkSource().addRegionTicket(VILLAGE_TICKET, center, VILLAGE_PRELOAD_RADIUS_CHUNKS, center);
     }
 
-    private static void bootstrapUndiscoveredVillagePortals(ServerLevel level, VillagePortalSavedData data) {
+    private static void releaseVillageChunks(ServerLevel level, BlockPos villageCenter) {
+        ChunkPos center = new ChunkPos(villageCenter);
+        level.getChunkSource().removeRegionTicket(VILLAGE_TICKET, center, VILLAGE_PRELOAD_RADIUS_CHUNKS, center);
+    }
+
+    private static void bootstrapUndiscoveredVillagePortals(ServerLevel level,
+                                                            VillagePortalSavedData data,
+                                                            LevelState state,
+                                                            long now) {
+        // A remote village was requested earlier: its chunks load in the background through a
+        // chunk ticket instead of being generated synchronously on the server thread.
+        BlockPos pending = state.pendingBootstrapVillage;
+        if (pending != null) {
+            if (isVillageAreaLoaded(level, pending)) {
+                if (!data.isProcessed(pending) && processVillage(level, data, state, pending, now)) {
+                    data.incrementBootstrapGeneratedPortals();
+                }
+            } else if (++state.pendingBootstrapWaitCycles <= BOOTSTRAP_MAX_WAIT_CYCLES) {
+                return;
+            }
+            releaseVillageChunks(level, pending);
+            state.pendingBootstrapVillage = null;
+            state.pendingBootstrapWaitCycles = 0;
+            return;
+        }
+
         if (!hasAnyOverworldPortal(level)) return;
         if (data.getBootstrapGeneratedPortals() >= BOOTSTRAP_TARGET_PORTALS) return;
 
         BlockPos spawnPos = level.getSharedSpawnPos();
         long minDistanceSqr = (long) BOOTSTRAP_MIN_DISTANCE_FROM_SPAWN * (long) BOOTSTRAP_MIN_DISTANCE_FROM_SPAWN;
 
-        for (int i = 0; i < BOOTSTRAP_ATTEMPTS_PER_CYCLE; i++) {
-            long index = data.nextBootstrapIndex();
-            BlockPos probe = computeBootstrapProbe(spawnPos, index);
+        long index = data.nextBootstrapIndex();
+        BlockPos probe = computeBootstrapProbe(spawnPos, index);
 
-            BlockPos villageCenter = findNearestVillageCenter(level, probe, BOOTSTRAP_SEARCH_RADIUS_CHUNKS);
-            if (villageCenter == null) continue;
-            if (horizontalDistanceSqr(villageCenter, spawnPos) < minDistanceSqr) continue;
-            if (data.isProcessed(villageCenter)) continue;
+        BlockPos villageCenter = findNearestVillageCenter(level, probe, BOOTSTRAP_SEARCH_RADIUS_CHUNKS);
+        if (villageCenter == null) return;
+        if (horizontalDistanceSqr(villageCenter, spawnPos) < minDistanceSqr) return;
+        if (data.isProcessed(villageCenter)) return;
+        if (state.retryAfter.containsKey(packVillage(villageCenter))) return;
 
-            preloadVillageChunks(level, villageCenter);
-
-            VillageSize villageSize = evaluateVillageSize(level, villageCenter, VILLAGER_COUNT_RADIUS);
-            if (villageSize.adultVillagers() < MIN_ADULT_VILLAGERS) continue;
-            if (villageSize.maxHorizontalDistance() < MIN_VILLAGE_SPREAD_BLOCKS) continue;
-
-            if (hasPortalCoreNear(level, villageCenter, EXISTING_PORTAL_RADIUS)) {
-                data.markProcessed(villageCenter);
-                continue;
-            }
-
-            if (tryPlaceVillagePortal(level, villageCenter)) {
-                data.markProcessed(villageCenter);
-                data.incrementBootstrapGeneratedPortals();
-
-                if (data.getBootstrapGeneratedPortals() >= BOOTSTRAP_TARGET_PORTALS) {
-                    break;
-                }
-            }
-        }
+        state.pendingBootstrapVillage = villageCenter.immutable();
+        state.pendingBootstrapWaitCycles = 0;
+        requestVillageChunks(level, villageCenter);
     }
 
     private static boolean hasAnyOverworldPortal(ServerLevel level) {
@@ -221,6 +312,7 @@ public final class OverworldVillagePortalGenerator {
             int distance = MIN_PORTAL_OFFSET + random.nextInt(MAX_PORTAL_OFFSET - MIN_PORTAL_OFFSET + 1);
             int x = villageCenter.getX() + Mth.floor(Math.cos(angle) * distance);
             int z = villageCenter.getZ() + Mth.floor(Math.sin(angle) * distance);
+            if (!level.hasChunk(x >> 4, z >> 4)) continue;
 
             BlockPos surface = level.getHeightmapPos(
                     Heightmap.Types.MOTION_BLOCKING_NO_LEAVES,

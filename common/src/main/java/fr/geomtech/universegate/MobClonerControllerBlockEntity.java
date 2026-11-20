@@ -313,8 +313,7 @@ public class MobClonerControllerBlockEntity extends net.minecraft.world.level.bl
             cost = computeCloneCost(mobType, mobType.getCategory(), maxHealth);
 
             if (clonerPos != null) {
-                @Nullable Mob preview = createMobFromType(serverLevel, mobType);
-                if (preview != null && canSpawnOnTopOfCloner(serverLevel, clonerPos, preview)) {
+                if (hasSpawnSpaceOnTopOfCloner(serverLevel, clonerPos, mobType)) {
                     flags |= MobClonerControllerMenu.FLAG_SPAWN_SPACE;
                 }
             }
@@ -367,17 +366,37 @@ public class MobClonerControllerBlockEntity extends net.minecraft.world.level.bl
         @Nullable EntityType<?> entityType = DnaSampleItem.getEntityType(dnaStack).orElse(null);
         if (entityType == null) return null;
 
-        @Nullable Mob mob = createMobFromType(level, entityType);
-        if (mob == null) return null;
-        return entityType;
+        return getMobInfo(level, entityType).isMob() ? entityType : null;
     }
 
     private static float estimateMobMaxHealth(ServerLevel level, EntityType<?> entityType) {
+        MobInfo info = getMobInfo(level, entityType);
+        return info.isMob() ? info.maxHealth() : 20.0F;
+    }
+
+    private record MobInfo(boolean isMob, float maxHealth) {}
+
+    /**
+     * The status refresh runs every 10 ticks and used to construct up to three throwaway mobs each
+     * time (with their AI goals and attributes). Whether a type is a mob and its base max health
+     * never change, so compute them once per type.
+     */
+    private static final java.util.Map<EntityType<?>, MobInfo> MOB_INFO_CACHE = new java.util.HashMap<>();
+
+    private static MobInfo getMobInfo(ServerLevel level, EntityType<?> entityType) {
+        MobInfo cached = MOB_INFO_CACHE.get(entityType);
+        if (cached != null) return cached;
+
         @Nullable Mob mob = createMobFromType(level, entityType);
-        if (mob == null) {
-            return 20.0F;
-        }
-        return mob.getMaxHealth();
+        MobInfo info = mob == null ? new MobInfo(false, 20.0F) : new MobInfo(true, mob.getMaxHealth());
+        if (mob != null) mob.discard();
+        MOB_INFO_CACHE.put(entityType, info);
+        return info;
+    }
+
+    private static boolean hasSpawnSpaceOnTopOfCloner(ServerLevel level, BlockPos clonerPos, EntityType<?> entityType) {
+        BlockPos spawnPos = clonerPos.above();
+        return level.noCollision(entityType.getSpawnAABB(spawnPos.getX() + 0.5D, spawnPos.getY(), spawnPos.getZ() + 0.5D));
     }
 
     private void completePendingClone(ServerLevel serverLevel) {
@@ -544,7 +563,7 @@ public class MobClonerControllerBlockEntity extends net.minecraft.world.level.bl
 
             level.sendParticles(ParticleTypes.PORTAL, centerX, y, centerZ, baseCount + 12, spread, 0.24D, spread, 0.08D);
             level.sendParticles(ParticleTypes.ENCHANT, centerX, y, centerZ, baseCount + 8, spread, 0.18D, spread, 0.03D);
-            level.sendParticles(ParticleTypes.END_ROD, centerX, y, centerZ, (baseCount / 2) + 8, spread * 0.85D, 0.16D, spread * 0.85D, 0.0D);
+            level.sendParticles(ModParticles.SPARK, centerX, y, centerZ, (baseCount / 2) + 8, spread * 0.85D, 0.16D, spread * 0.85D, 0.0D);
             level.sendParticles(ParticleTypes.GLOW, centerX, y, centerZ, (baseCount / 2) + 6, spread * 0.75D, 0.16D, spread * 0.75D, 0.0D);
 
             if (((currentChargeTicks + layer) & 1) == 0) {
@@ -558,7 +577,7 @@ public class MobClonerControllerBlockEntity extends net.minecraft.world.level.bl
                 double px = centerX + Math.cos(angle) * ringRadius;
                 double py = y - 0.22D + (i % 3) * 0.14D;
                 double pz = centerZ + Math.sin(angle) * ringRadius;
-                level.sendParticles(ParticleTypes.END_ROD, px, py, pz, 1, 0.0D, 0.015D, 0.0D, 0.0D);
+                level.sendParticles(ModParticles.SPARK, px, py, pz, 1, 0.0D, 0.015D, 0.0D, 0.0D);
             }
         }
     }
@@ -576,7 +595,7 @@ public class MobClonerControllerBlockEntity extends net.minecraft.world.level.bl
 
             level.sendParticles(ParticleTypes.PORTAL, centerX, y, centerZ, 70, spread, 0.30D, spread, 0.11D);
             level.sendParticles(ParticleTypes.ENCHANT, centerX, y, centerZ, 64, spread, 0.22D, spread, 0.04D);
-            level.sendParticles(ParticleTypes.END_ROD, centerX, y, centerZ, 42, spread * 0.85D, 0.20D, spread * 0.85D, 0.0D);
+            level.sendParticles(ModParticles.SPARK, centerX, y, centerZ, 42, spread * 0.85D, 0.20D, spread * 0.85D, 0.0D);
             level.sendParticles(ParticleTypes.GLOW, centerX, y, centerZ, 48, spread * 0.75D, 0.20D, spread * 0.75D, 0.0D);
             level.sendParticles(ParticleTypes.ELECTRIC_SPARK, centerX, y, centerZ, 24, spread * 0.9D, 0.25D, spread * 0.9D, 0.04D);
         }

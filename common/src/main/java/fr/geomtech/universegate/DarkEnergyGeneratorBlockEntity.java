@@ -134,6 +134,8 @@ public class DarkEnergyGeneratorBlockEntity extends BlockEntity implements PosMe
 
                 BlockPos next = current.relative(dir);
                 if (visited.contains(next)) continue;
+                // Never load a chunk synchronously just to follow a conduit.
+                if (!level.isLoaded(next)) continue;
                 
                 BlockState state = level.getBlockState(next);
                 BlockEntity be = level.getBlockEntity(next);

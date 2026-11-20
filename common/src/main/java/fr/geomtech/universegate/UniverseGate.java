@@ -40,6 +40,7 @@ public final class UniverseGate {
 		ModFeatures.register();
 		ModMenuTypes.register();
 		ModSounds.register();
+		ModParticles.register();
 		ModVillagers.register();
 		UniverseGatePoiHelper.registerChargedLightningRodPoi();
 	}
