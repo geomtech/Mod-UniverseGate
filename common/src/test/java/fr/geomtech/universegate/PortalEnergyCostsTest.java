@@ -24,7 +24,7 @@ class PortalEnergyCostsTest {
             assertEquals(1200, PortalEnergyCosts.openCost(0.0D, false, false));
         }
 
-        @ParameterizedTest(name = "{0} blocs -> {1} EU")
+        @ParameterizedTest(name = "{0} blocs -> {1} FE")
         @CsvSource({
                 "1,        1201",
                 "10,       1201",
@@ -41,9 +41,9 @@ class PortalEnergyCostsTest {
 
         @Test
         void fractionalDistanceIsRoundedUpToTheNextBlock() {
-            // Diagonal of 1x1 => sqrt(2) ~ 1.41 blocks, counted as 2 blocks => ceil(0.1) = 1 EU.
+            // Diagonal of 1x1 => sqrt(2) ~ 1.41 blocks, counted as 2 blocks => ceil(0.1) = 1 FE.
             assertEquals(1201, PortalEnergyCosts.openCost(2.0D, false, false));
-            // 20.5 blocks counts as 21 blocks => ceil(1.05) = 2 EU.
+            // 20.5 blocks counts as 21 blocks => ceil(1.05) = 2 FE.
             assertEquals(1202, PortalEnergyCosts.openCost(sq(20.5D), false, false));
         }
 

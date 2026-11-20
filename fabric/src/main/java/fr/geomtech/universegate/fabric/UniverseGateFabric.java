@@ -6,6 +6,7 @@ import fr.geomtech.universegate.UniverseGate;
 import fr.geomtech.universegate.UpdateCheckManager;
 import fr.geomtech.universegate.ZpcStructureLoot;
 import net.fabricmc.api.ModInitializer;
+import net.fabricmc.loader.api.FabricLoader;
 import net.fabricmc.fabric.api.command.v2.CommandRegistrationCallback;
 import net.fabricmc.fabric.api.entity.event.v1.ServerPlayerEvents;
 import net.fabricmc.fabric.api.event.lifecycle.v1.ServerLifecycleEvents;
@@ -20,6 +21,11 @@ public class UniverseGateFabric implements ModInitializer {
 	@Override
 	public void onInitialize() {
 		UniverseGate.registerContent();
+
+		// Optional energy compatibility (Stellaris and other Team Reborn Energy mods).
+		if (FabricLoader.getInstance().isModLoaded("team_reborn_energy")) {
+			fr.geomtech.universegate.fabric.compat.TeamRebornEnergyCompat.register();
+		}
 
 		ServerPlayerEvents.ALLOW_DEATH.register((player, source, amount) -> {
 			RiftDeathRecoveryHandler.onPlayerDeath(player);

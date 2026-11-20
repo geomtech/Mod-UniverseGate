@@ -51,7 +51,7 @@
   "gui.universegate.disconnect": "Déconnexion",
   "gui.universegate.search_portal": "Rechercher un portail",
   "gui.universegate.portal_destination_header": "Destination",
-  "gui.universegate.portal_cost_header": "Coût (EU)",
+  "gui.universegate.portal_cost_header": "Coût (FE)",
   "gui.universegate.portal_cost_free": "GRATUIT",
   "gui.universegate.portal_name": "Nom du portail",
   "gui.universegate.rename": "Renommer",
