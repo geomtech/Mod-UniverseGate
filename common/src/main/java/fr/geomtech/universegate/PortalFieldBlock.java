@@ -21,6 +21,7 @@ import net.minecraft.world.level.Explosion;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.LevelAccessor;
 import net.minecraft.world.level.block.Block;
+import net.minecraft.world.level.block.RenderShape;
 import net.minecraft.world.level.block.EntityBlock;
 import net.minecraft.world.level.block.SimpleWaterloggedBlock;
 import net.minecraft.world.level.block.entity.BlockEntity;
@@ -181,6 +182,12 @@ public class PortalFieldBlock extends Block implements EntityBlock, SimpleWaterl
         *///?} else {
         return super.updateShape(state, direction, neighborState, level, currentPos, neighborPos);
         //?}
+    }
+
+    @Override
+    protected RenderShape getRenderShape(BlockState state) {
+        // La membrane est dessinée par PortalMembraneRenderer, pas par un modèle de bloc.
+        return RenderShape.INVISIBLE;
     }
 
     @Override
