@@ -8,6 +8,10 @@ dependencies {
 	mappings loom.officialMojangMappings()
 	modImplementation "net.fabricmc:fabric-loader:${rootProject.loader_version}"
 	modImplementation "net.fabricmc.fabric-api:fabric-api:${rootProject.fabric_api_version}"
+
+	// Optional energy compat (Stellaris, Tech Reborn...): compile only, never shipped nor required.
+	// The compat class is only loaded when the team_reborn_energy mod is present at runtime.
+	modCompileOnly "teamreborn:energy:${rootProject.team_reborn_energy_version}"
 }
 
 loom {

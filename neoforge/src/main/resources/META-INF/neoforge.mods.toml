@@ -33,3 +33,12 @@ type = "required"
 versionRange = "[1.21.1,1.21.2)"
 ordering = "NONE"
 side = "BOTH"
+
+# Optional: energy compatibility. UniverseGate works fully without Stellaris; when it is present,
+# Stellaris cables connect to the Energy Condenser through NeoForge's energy capability.
+[[dependencies.universegate]]
+modId = "stellaris"
+type = "optional"
+versionRange = "*"
+ordering = "NONE"
+side = "BOTH"

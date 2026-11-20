@@ -67,6 +67,39 @@ public class EnergyCondenserBlockEntity extends BlockEntity {
         return extracted;
     }
 
+    // --- Energy exchange with other mods (Stellaris, any FE / Team Reborn Energy mod) ---
+    // Wired per loader: NeoForge energy capability in the neoforge module, Team Reborn Energy
+    // (only when installed) in the fabric module.
+
+    public int getCapacity() {
+        return CAPACITY;
+    }
+
+    /** Insert energy coming from another mod. Returns the amount accepted. */
+    public int receiveExternal(long maxAmount, boolean simulate) {
+        int accepted = ExternalEnergyTransfer.insertable(maxAmount, storedEnergy, CAPACITY);
+        if (!simulate && accepted > 0) {
+            storedEnergy += accepted;
+            setChanged();
+        }
+        return accepted;
+    }
+
+    /** Give energy to another mod. Returns the amount extracted. */
+    public int extractExternal(long maxAmount, boolean simulate) {
+        int extracted = ExternalEnergyTransfer.extractable(maxAmount, storedEnergy);
+        if (!simulate && extracted > 0) {
+            storedEnergy -= extracted;
+            setChanged();
+        }
+        return extracted;
+    }
+
+    /** Raw restore used by transactional APIs (Team Reborn Energy) to roll back an aborted transfer. */
+    public void restoreStoredEnergy(int value) {
+        storedEnergy = Math.max(0, Math.min(CAPACITY, value));
+    }
+
     @Override
     protected void saveAdditional(CompoundTag tag, HolderLookup.Provider registries) {
         super.saveAdditional(tag, registries);

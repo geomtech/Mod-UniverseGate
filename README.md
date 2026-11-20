@@ -25,6 +25,12 @@ Before building a portal, you need energy.
 4.  Need power at night? A **Combustion Generator** burns any furnace fuel, or **Rift Crystals** (24,000 EU each), and outputs up to **480 EU/s**.
 5.  Place an **Energy Monitor** on the network to check stored energy, total capacity and connected devices.
 
+#### Energy from other mods (optional)
+The **Energy Condenser** speaks the standard energy APIs, so cables from other mods can plug straight into it: **Stellaris**, and any mod using NeoForge energy (FE) or, on Fabric, Team Reborn Energy.
+*   **1 EU = 1 FE**, up to **1,000 per tick** in each direction.
+*   Other mods can fill the condenser (to power portals) or draw from it (to run their machines from your solar panels).
+*   None of these mods is required: without them, UniverseGate works exactly the same.
+
 ### 2. Building a Portal
 1.  Construct a **Portal Frame** with a **3x4 interior** (5x6 outer size).
 2.  Place the **Portal Core** at the **bottom center** of the frame.
@@ -117,6 +123,7 @@ A **ZPC** stores up to **40,000,000,000 EU**.
 - Minecraft **1.21.1**
 - **Fabric**: Fabric Loader and Fabric API
 - **NeoForge**: NeoForge 21.1.x
+- Optional: **Stellaris** (or any FE / Team Reborn Energy mod) to share energy with the Energy Condenser
 
 ## Installation
 

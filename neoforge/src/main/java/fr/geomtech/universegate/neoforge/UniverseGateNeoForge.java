@@ -12,6 +12,7 @@ import net.minecraft.world.level.storage.loot.LootPool;
 import net.neoforged.bus.api.EventPriority;
 import net.neoforged.bus.api.IEventBus;
 import net.neoforged.fml.common.Mod;
+import net.neoforged.neoforge.capabilities.RegisterCapabilitiesEvent;
 import net.neoforged.neoforge.common.NeoForge;
 import net.neoforged.neoforge.event.LootTableLoadEvent;
 import net.neoforged.neoforge.event.RegisterCommandsEvent;
@@ -44,6 +45,8 @@ public final class UniverseGateNeoForge {
         modBus.addListener(EntityAttributeCreationEvent.class, NeoForgePlatformHelper::onEntityAttributeCreation);
         modBus.addListener(RegisterSpawnPlacementsEvent.class, NeoForgePlatformHelper::onRegisterSpawnPlacements);
         modBus.addListener(RegisterPayloadHandlersEvent.class, NeoForgePlatformHelper::onRegisterPayloadHandlers);
+        // FE energy capability on the Energy Condenser (Stellaris and other energy mods, all optional).
+        modBus.addListener(RegisterCapabilitiesEvent.class, NeoForgeEnergyCompat::onRegisterCapabilities);
 
         IEventBus gameBus = NeoForge.EVENT_BUS;
 
