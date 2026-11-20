@@ -40,6 +40,7 @@ public final class PortalFieldCollapseParticles {
 
     /** Appelé côté client à la réception du paquet. */
     public static void spawn(Level level, PortalFieldCollapsePayload payload) {
+        PortalCinematics.collapse(level, payload);
         RandomSource random = level.random;
         int count = payload.unstable() ? 12 : 8;
 

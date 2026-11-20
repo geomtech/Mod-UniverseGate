@@ -114,6 +114,13 @@ public final class PortalConnectionManager {
         a.setOpeningState(connectionId, b.getPortalId(), nowA, openingCompleteA, riftLightningLink, true, sourceMaintenanceEnergyBypass);
         b.setOpeningState(connectionId, a.getPortalId(), nowB, openingCompleteB, riftLightningLink, false, false);
 
+        // Mise en scène de l'accrochage : plus le trajet est lointain, plus il y a de coordonnées à accrocher.
+        int linkSteps = riftLightningLink || EnergyNetworkHelper.isRiftDimension(sourceLevel) || EnergyNetworkHelper.isRiftDimension(targetLevel)
+                ? 7
+                : sourceLevel.dimension().equals(targetLevel.dimension()) ? 4 : 6;
+        a.setLinkSteps(linkSteps);
+        b.setLinkSteps(linkSteps);
+
         setFrameActive(sourceLevel, frameA.get(), sourceCorePos, true, riftLightningLink);
         setFrameActive(targetLevel, frameB.get(), bEntry.pos(), true, riftLightningLink);
         setNearbyKeyboardsLit(sourceLevel, sourceCorePos, true);

@@ -104,11 +104,21 @@ public class PortalCoreBlockEntity extends BlockEntity implements PosMenuProvide
     // Côté client uniquement : PortalAmbientSoundClient (type Object pour ne pas charger
     // de classe client sur un serveur dédié).
     private Object clientAmbientSound;
+    private PortalCinematics.State clientCinematics;
+    // Valeurs synchronisées pour la mise en scène côté client (PortalCinematics).
+    private long clientActiveUntil;
+    private int linkSteps = 4;
 
     public void clientTick() {
         if (level == null || !level.isClientSide()) return;
         if (opening) {
             PortalOpeningParticles.clientTick(level, worldPosition, this);
+        }
+        if (opening || active) {
+            if (clientCinematics == null) clientCinematics = new PortalCinematics.State();
+            PortalCinematics.clientTick(level, this, clientCinematics);
+        } else {
+            clientCinematics = null;
         }
         if (active) {
             if (clientAmbientSound == null) clientAmbientSound = new PortalAmbientSoundClient();
@@ -125,6 +135,15 @@ public class PortalCoreBlockEntity extends BlockEntity implements PosMenuProvide
     }
 
     boolean isClientAmbientUnstable() { return visualUnstable; }
+    long getClientActiveUntil() { return clientActiveUntil; }
+    int getClientLinkSteps() { return linkSteps; }
+
+    /** Nombre de fissures de l'accrochage : dépend du trajet (même dimension, autre dimension, Faille). */
+    void setLinkSteps(int steps) {
+        if (linkSteps == steps) return;
+        linkSteps = steps;
+        syncOpeningToClients();
+    }
 
     @Override
     public void setRemoved() {
@@ -304,6 +323,10 @@ public class PortalCoreBlockEntity extends BlockEntity implements PosMenuProvide
         activeUntilGameTime = now + PER_ENTITY_EXTENSION_TICKS;
         activeUntilEpochMillis = computeEpochDeadlineFromGameTime(now, activeUntilGameTime);
         setChanged();
+        // Le client cale l'effondrement sur cette échéance ; au plus une mise à jour par seconde.
+        if (Math.abs(activeUntilGameTime - lastSyncedActiveUntil) >= 20L) {
+            syncOpeningToClients();
+        }
     }
 
     void onPlayerPassedThrough(long now) {
@@ -572,6 +595,8 @@ public class PortalCoreBlockEntity extends BlockEntity implements PosMenuProvide
             openingCompleteGameTime = opening ? tag.getLong("OpeningComplete") : 0L;
             active = tag.getBoolean("Active");
             visualUnstable = active && tag.getBoolean("VisualUnstable");
+            clientActiveUntil = active ? tag.getLong("ActiveUntil") : 0L;
+            linkSteps = tag.contains("LinkSteps") ? tag.getInt("LinkSteps") : 4;
             return;
         }
 
@@ -626,6 +651,8 @@ public class PortalCoreBlockEntity extends BlockEntity implements PosMenuProvide
         tag.putLong("OpeningComplete", openingCompleteGameTime);
         tag.putBoolean("Active", active);
         tag.putBoolean("VisualUnstable", visualUnstable);
+        tag.putLong("ActiveUntil", activeUntilGameTime);
+        tag.putInt("LinkSteps", linkSteps);
         return tag;
     }
 
@@ -634,8 +661,11 @@ public class PortalCoreBlockEntity extends BlockEntity implements PosMenuProvide
         return ClientboundBlockEntityDataPacket.create(this);
     }
 
+    private long lastSyncedActiveUntil;
+
     private void syncOpeningToClients() {
         if (!(level instanceof ServerLevel sl)) return;
+        lastSyncedActiveUntil = activeUntilGameTime;
         BlockState state = getBlockState();
         sl.sendBlockUpdated(worldPosition, state, state, 3);
     }
