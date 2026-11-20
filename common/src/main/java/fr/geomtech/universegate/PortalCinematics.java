@@ -21,7 +21,7 @@ import java.util.Set;
  *
  * <ul>
  *   <li><b>Accrochage de la Faille</b> (ouverture) : l'énergie part du Portal Core et remonte le cadre
- *   bloc par bloc, puis des fissures violettes se dessinent dans le vide, une par coordonnée accrochée.
+ *   bloc par bloc, puis des fissures lumineuses se dessinent dans le vide, une par coordonnée accrochée.
  *   Le nombre de fissures dépend du trajet (même dimension, autre dimension, Faille).</li>
  *   <li><b>Membrane d'énergie noire</b> (portail ouvert) : des veines lumineuses tournent lentement
  *   autour d'un cœur sombre ; elles se tordent et projettent des étincelles quand quelqu'un traverse.
@@ -170,7 +170,7 @@ public final class PortalCinematics {
             if (elapsed - (CHARGE_END_TICKS + (i * lockSpan) / fissures) > 10L) continue; // arrivé en retard
             List<double[]> pts = fissure(frame, start, i);
             for (double[] p : pts) {
-                level.addParticle(ParticleTypes.REVERSE_PORTAL, p[0], p[1], p[2], 0.0D, 0.0D, 0.0D);
+                level.addParticle(ModParticles.SPARK, p[0], p[1], p[2], 0.0D, 0.0D, 0.0D);
             }
             double[] mid = pts.get(pts.size() / 2);
             for (int n = 0; n < 10; n++) {
@@ -180,12 +180,12 @@ public final class PortalCinematics {
             }
         }
         // Les fissures déjà accrochées restent visibles jusqu'à l'ouverture.
-        if (now % 4L == 0L) {
+        if (now % 12L == 0L) {
             for (int i = 0; i < state.fissuresShown; i++) {
                 List<double[]> pts = fissure(frame, start, i);
                 for (int n = 0; n < pts.size(); n += 2) {
                     double[] p = pts.get(n);
-                    level.addParticle(ParticleTypes.REVERSE_PORTAL, p[0], p[1], p[2], 0.0D, 0.0D, 0.0D);
+                    level.addParticle(ModParticles.SPARK, p[0], p[1], p[2], 0.0D, 0.0D, 0.0D);
                 }
             }
         }
@@ -310,7 +310,7 @@ public final class PortalCinematics {
                     frame.right().getStepX() * du, dv, frame.right().getStepZ() * du);
         }
         for (int i = 0; i < 6; i++) {
-            level.addParticle(ParticleTypes.REVERSE_PORTAL,
+            level.addParticle(ModParticles.SPARK,
                     x + (random.nextDouble() - 0.5D) * 0.4D, y + (random.nextDouble() - 0.5D) * 0.6D,
                     z + (random.nextDouble() - 0.5D) * 0.4D, 0.0D, 0.0D, 0.0D);
         }
