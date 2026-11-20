@@ -74,6 +74,15 @@ public final class EnergyNetworkHelper {
         return new CondenserNetwork(condensers, scan.solarPanels(), scan.parabolas(), scan.zpcInterfaces());
     }
 
+    /** Every Energy Condenser reachable from the given conduit (uses the per-tick scan cache). */
+    public static List<EnergyCondenserBlockEntity> getCondensersOnConduitNetwork(ServerLevel level, BlockPos conduitPos) {
+        if (!level.isLoaded(conduitPos) || !level.getBlockState(conduitPos).is(ModBlocks.ENERGY_CONDUIT)) {
+            return new ArrayList<>();
+        }
+        ConduitScanResult scan = scanConduits(level, Set.of(conduitPos.immutable()));
+        return getCondensers(level, scan.condensers());
+    }
+
     public static BlockPos findNetworkLeader(Set<BlockPos> condensers) {
         return condensers.stream().min(POS_COMPARATOR).orElse(null);
     }

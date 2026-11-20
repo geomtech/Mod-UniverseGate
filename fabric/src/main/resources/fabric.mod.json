@@ -34,5 +34,9 @@
 		"minecraft": "${minecraft_dependency}",
 		"java": ">=21",
 		"fabric-api": "*"
+	},
+	"suggests": {
+		"stellaris": "*",
+		"team_reborn_energy": "*"
 	}
 }
