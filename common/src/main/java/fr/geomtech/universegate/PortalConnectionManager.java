@@ -2,12 +2,9 @@ package fr.geomtech.universegate;
 
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
-import net.minecraft.core.particles.ParticleOptions;
-import net.minecraft.core.particles.ParticleTypes;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.tags.FluidTags;
-import net.minecraft.util.Mth;
 import net.minecraft.util.RandomSource;
 import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.LightningBolt;
@@ -21,10 +18,7 @@ import java.util.UUID;
 public final class PortalConnectionManager {
 
     private static final long ACTIVE_OPEN_DURATION_TICKS = 20L * 60L; // 1 minute
-    private static final long OPENING_DURATION_TICKS = 20L * 9L;
-    private static final long OPENING_BLACKOUT_TICKS = 20L * 2L;
-    private static final double OPENING_PARTICLE_EXPONENT = 4.0D;
-    private static final int OPENING_MAX_PARTICLES_PER_CELL = 7;
+    static final long OPENING_DURATION_TICKS = 20L * 9L;
     private static final int KEYBOARD_RADIUS_XZ = 8;
     private static final int KEYBOARD_RADIUS_Y = 4;
 
@@ -152,7 +146,7 @@ public final class PortalConnectionManager {
             return;
         }
 
-        spawnOpeningParticles(level, frame.get(), now, core);
+        // Les particules d'ouverture sont générées côté client (PortalOpeningParticles).
 
         if (now < core.getOpeningCompleteGameTime()) return;
 
@@ -252,64 +246,6 @@ public final class PortalConnectionManager {
         lightningBolt.moveTo(strikePos.getX() + 0.5D, strikePos.getY(), strikePos.getZ() + 0.5D);
         lightningBolt.setVisualOnly(true);
         level.addFreshEntity(lightningBolt);
-    }
-
-    private static void spawnOpeningParticles(ServerLevel level,
-                                              PortalFrameDetector.FrameMatch match,
-                                              long now,
-                                              PortalCoreBlockEntity core) {
-        long openingStart = core.getOpeningStartedGameTime();
-        long openingEnd = core.getOpeningCompleteGameTime();
-        if (openingEnd <= openingStart) {
-            openingStart = now;
-            openingEnd = now + OPENING_DURATION_TICKS;
-        }
-
-        long duration = Math.max(1L, openingEnd - openingStart);
-        double progress = Mth.clamp((double) (now - openingStart) / (double) duration, 0.0D, 1.0D);
-        double growth = Math.expm1(progress * OPENING_PARTICLE_EXPONENT) / Math.expm1(OPENING_PARTICLE_EXPONENT);
-
-        int baseCount = (int) Math.floor(growth * OPENING_MAX_PARTICLES_PER_CELL);
-        long blackStart = openingEnd - OPENING_BLACKOUT_TICKS;
-        double blackRatio = now <= blackStart
-                ? 0.0D
-                : Mth.clamp((double) (now - blackStart) / (double) Math.max(1L, OPENING_BLACKOUT_TICKS), 0.0D, 1.0D);
-
-        Direction.Axis axis = match.right() == Direction.EAST ? Direction.Axis.X : Direction.Axis.Z;
-        RandomSource random = level.random;
-
-        for (BlockPos p : match.interior()) {
-            int count = baseCount;
-            if (random.nextDouble() < growth) count++;
-            if (count <= 0) continue;
-
-            int blackCount = blackRatio <= 0.0D ? 0 : (int) Math.round(count * blackRatio);
-            blackCount = Math.min(blackCount, count);
-            int whiteCount = count - blackCount;
-
-            if (whiteCount > 0) {
-                sendOpeningParticles(level, p, axis, ModParticles.SPARK, whiteCount, 0.002D);
-            }
-            if (blackCount > 0) {
-                sendOpeningParticles(level, p, axis, ParticleTypes.SQUID_INK, blackCount, 0.01D);
-            }
-        }
-    }
-
-    private static void sendOpeningParticles(ServerLevel level,
-                                             BlockPos pos,
-                                             Direction.Axis axis,
-                                             ParticleOptions particle,
-                                             int count,
-                                             double speed) {
-        double x = pos.getX() + 0.5;
-        double y = pos.getY() + 0.5;
-        double z = pos.getZ() + 0.5;
-        double xSpread = axis == Direction.Axis.X ? 0.43D : 0.06D;
-        double ySpread = 0.46D;
-        double zSpread = axis == Direction.Axis.X ? 0.06D : 0.43D;
-
-        level.sendParticles(particle, x, y, z, count, xSpread, ySpread, zSpread, speed);
     }
 
     /** Ferme un portail (un côté) + tente de fermer le target si chargé. */
