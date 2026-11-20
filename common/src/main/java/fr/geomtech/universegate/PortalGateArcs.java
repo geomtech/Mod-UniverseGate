@@ -87,9 +87,21 @@ public final class PortalGateArcs {
         }
         if (start == null) return;
         List<Vec3> reachable = new ArrayList<>();
+        boolean xAxis = right.getAxis() == Direction.Axis.X;
+        double cu = PortalGateRingLayer.CENTER_H / 16.0D, cv = PortalGateRingLayer.CENTER_V / 16.0D;
+        double outer = PortalGateRingLayer.OUTER_RADIUS / 16.0D;
+        double su = (xAxis ? start.x : start.z) - cu, sv = start.y - cv;
+        double sl = Math.sqrt(su * su + sv * sv);
         for (Vec3 c : candidates) {
             double d = c.distanceTo(start);
-            if (d >= MIN_REACH && d <= MAX_REACH) reachable.add(c);
+            if (d < MIN_REACH || d > MAX_REACH) continue;
+            // Jamais vers l'intérieur du portail : cible hors de l'anneau, et dans la direction qui s'en éloigne.
+            double tu = (xAxis ? c.x : c.z) - cu, tv = c.y - cv;
+            if (Math.sqrt(tu * tu + tv * tv) < outer + 0.2D) continue;
+            double ou = tu - su, ov = tv - sv;
+            double outward = (ou * su + ov * sv) / (sl * Math.max(1.0E-3D, Math.sqrt(ou * ou + ov * ov)));
+            if (outward < 0.35D) continue;
+            reachable.add(c);
         }
         if (reachable.isEmpty()) return;
         Vec3 target = reachable.get(random.nextInt(reachable.size()));
