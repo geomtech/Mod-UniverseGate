@@ -237,28 +237,9 @@ public final class PortalCinematics {
         boolean unstable = core.isClientAmbientUnstable();
         long until = core.getClientActiveUntil();
         long remaining = until > 0L ? until - now : Long.MAX_VALUE;
-        double fade = remaining >= COLLAPSE_WARNING_TICKS ? 1.0D
-                : Mth.clamp((double) remaining / COLLAPSE_WARNING_TICKS, 0.2D, 1.0D);
 
-        // Veines lumineuses en spirale autour d'un cœur sombre.
-        int arms = unstable ? 4 : 3;
-        double spin = now * (unstable ? 0.11D : 0.045D);
-        for (int arm = 0; arm < arms; arm++) {
-            if (random.nextDouble() > fade) continue;
-            double r = Math.sqrt(random.nextDouble());
-            double angle = spin + arm * (Mth.TWO_PI / arms) + r * 2.4D;
-            if (unstable) angle += (random.nextDouble() - 0.5D) * 0.6D;
-            double u = Math.cos(angle) * r * HALF_U;
-            double v = CENTER_V + Math.sin(angle) * r * HALF_V;
-            double tu = -Math.sin(angle) * 0.012D, tv = Math.cos(angle) * 0.012D;
-            level.addParticle(ModParticles.SPARK, frame.x(u), frame.y(v), frame.z(u),
-                    frame.right().getStepX() * tu, tv, frame.right().getStepZ() * tu);
-        }
-        if (now % 3L == 0L && random.nextDouble() < fade) {
-            double r = random.nextDouble() * 0.45D, a = random.nextDouble() * Mth.TWO_PI;
-            double u = Math.cos(a) * r * HALF_U, v = CENTER_V + Math.sin(a) * r * HALF_V;
-            level.addParticle(ParticleTypes.SQUID_INK, frame.x(u), frame.y(v), frame.z(u), 0.0D, 0.0D, 0.0D);
-        }
+        // Les veines et le cœur sombre sont dessinés par PortalMembraneRenderer : pas de particules ici,
+        // seulement des touches ponctuelles (déchirures, passages, effondrement).
         // Portail instable : la membrane grésille et se déchire par endroits.
         if (unstable && random.nextFloat() < 0.2F) {
             double a = random.nextDouble() * Mth.TWO_PI, r = 0.6D + random.nextDouble() * 0.4D;
