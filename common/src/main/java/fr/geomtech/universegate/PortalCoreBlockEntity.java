@@ -4,6 +4,7 @@ import fr.geomtech.universegate.platform.PosMenuProvider;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.HolderLookup;
 import net.minecraft.nbt.CompoundTag;
+import net.minecraft.network.protocol.game.ClientboundBlockEntityDataPacket;
 import net.minecraft.network.chat.Component;
 import net.minecraft.world.level.ChunkPos;
 import net.minecraft.server.level.ServerLevel;
@@ -97,6 +98,11 @@ public class PortalCoreBlockEntity extends BlockEntity implements PosMenuProvide
     }
 
     // ---------- Ticking ----------
+    public void clientTick() {
+        if (level == null || !level.isClientSide || !opening) return;
+        PortalOpeningParticles.clientTick(level, worldPosition, this);
+    }
+
     public void serverTick() {
         if (!(level instanceof ServerLevel sl)) return;
         long now = sl.getGameTime();
@@ -113,6 +119,7 @@ public class PortalCoreBlockEntity extends BlockEntity implements PosMenuProvide
                     openingStartedGameTime = now;
                     openingCompleteGameTime = openingStartedGameTime + OPENING_DURATION_FALLBACK_TICKS;
                     setChanged();
+                    syncOpeningToClients();
                 }
                 PortalConnectionManager.setNearbyKeyboardsLit(sl, worldPosition, true);
             }
@@ -418,6 +425,7 @@ public class PortalCoreBlockEntity extends BlockEntity implements PosMenuProvide
         if (level instanceof ServerLevel sl) {
             syncOutboundChunkForce(sl);
         }
+        syncOpeningToClients();
     }
 
     void finalizeOpeningState(long activeUntilGameTime, long activeStartedGameTime) {
@@ -437,6 +445,7 @@ public class PortalCoreBlockEntity extends BlockEntity implements PosMenuProvide
         if (level instanceof ServerLevel sl) {
             syncOutboundChunkForce(sl);
         }
+        syncOpeningToClients();
     }
 
     void setActiveState(UUID connectionId,
@@ -467,6 +476,7 @@ public class PortalCoreBlockEntity extends BlockEntity implements PosMenuProvide
         if (level instanceof ServerLevel sl) {
             syncOutboundChunkForce(sl);
         }
+        syncOpeningToClients();
     }
 
     void clearActiveState() {
@@ -490,6 +500,7 @@ public class PortalCoreBlockEntity extends BlockEntity implements PosMenuProvide
         if (level instanceof ServerLevel sl) {
             syncOutboundChunkForce(sl);
         }
+        syncOpeningToClients();
     }
 
     // ---------- NBT ----------
@@ -516,9 +527,42 @@ public class PortalCoreBlockEntity extends BlockEntity implements PosMenuProvide
         tag.putInt("DarkEnergyAmount", darkEnergyAmount);
     }
 
+    // ---------- Client sync ----------
+    // Seul l'état d'ouverture est envoyé aux clients : il leur suffit pour animer la séquence
+    // d'ouverture eux-mêmes (voir PortalOpeningParticles), sans paquet de particules à chaque tick.
+    private static final String CLIENT_SYNC_KEY = "UniverseGateClientSync";
+
+    @Override
+    public CompoundTag getUpdateTag(HolderLookup.Provider registries) {
+        CompoundTag tag = new CompoundTag();
+        tag.putBoolean(CLIENT_SYNC_KEY, true);
+        tag.putBoolean("Opening", opening);
+        tag.putLong("OpeningStart", openingStartedGameTime);
+        tag.putLong("OpeningComplete", openingCompleteGameTime);
+        return tag;
+    }
+
+    @Override
+    public ClientboundBlockEntityDataPacket getUpdatePacket() {
+        return ClientboundBlockEntityDataPacket.create(this);
+    }
+
+    private void syncOpeningToClients() {
+        if (!(level instanceof ServerLevel sl)) return;
+        BlockState state = getBlockState();
+        sl.sendBlockUpdated(worldPosition, state, state, 3);
+    }
+
     @Override
     protected void loadAdditional(CompoundTag tag, HolderLookup.Provider registries) {
         super.loadAdditional(tag, registries);
+
+        if (tag.getBoolean(CLIENT_SYNC_KEY)) {
+            opening = tag.getBoolean("Opening");
+            openingStartedGameTime = opening ? tag.getLong("OpeningStart") : 0L;
+            openingCompleteGameTime = opening ? tag.getLong("OpeningComplete") : 0L;
+            return;
+        }
 
         portalId = tag.hasUUID("PortalId") ? tag.getUUID("PortalId") : null;
         portalName = tag.getString("PortalName");

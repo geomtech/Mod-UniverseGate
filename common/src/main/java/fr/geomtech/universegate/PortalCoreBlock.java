@@ -72,7 +72,11 @@ public class PortalCoreBlock extends BaseEntityBlock {
 
     @Override
     public @Nullable <T extends BlockEntity> BlockEntityTicker<T> getTicker(Level level, BlockState state, BlockEntityType<T> type) {
-        if (level.isClientSide) return null;
+        if (level.isClientSide) {
+            return (lvl, p, st, be) -> {
+                if (be instanceof PortalCoreBlockEntity core) core.clientTick();
+            };
+        }
         return (lvl, p, st, be) -> {
             if (be instanceof PortalCoreBlockEntity core) core.serverTick();
         };
