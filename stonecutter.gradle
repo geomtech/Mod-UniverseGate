@@ -29,7 +29,9 @@ configure(nodes) {
 	apply plugin: 'maven-publish'
 
 	version = "${rootProject.mod_version}+${mc}"
-	group = rootProject.maven_group
+	// One group per branch: :common:1.21.1 and :fabric:1.21.1 share name and version, so with the same
+	// group Gradle would see one module and `compileOnly commonProject` would resolve to the loader itself.
+	group = "${rootProject.maven_group}.${project.parent.name}"
 
 	base {
 		archivesName = "${rootProject.archives_base_name}-${project.parent.name}"
