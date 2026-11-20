@@ -1,6 +1,7 @@
 package fr.geomtech.universegate.fabric;
 
 import fr.geomtech.universegate.AncientCityZpcGuarantee;
+import fr.geomtech.universegate.CrocodileClipEntity;
 import fr.geomtech.universegate.RiftDeathRecoveryHandler;
 import fr.geomtech.universegate.UniverseGate;
 import fr.geomtech.universegate.UpdateCheckManager;
@@ -10,6 +11,7 @@ import net.fabricmc.loader.api.FabricLoader;
 import net.fabricmc.fabric.api.command.v2.CommandRegistrationCallback;
 import net.fabricmc.fabric.api.entity.event.v1.ServerPlayerEvents;
 import net.fabricmc.fabric.api.event.lifecycle.v1.ServerLifecycleEvents;
+import net.fabricmc.fabric.api.event.lifecycle.v1.ServerChunkEvents;
 import net.fabricmc.fabric.api.event.lifecycle.v1.ServerTickEvents;
 import net.fabricmc.fabric.api.event.player.UseBlockCallback;
 import net.fabricmc.fabric.api.loot.v3.LootTableEvents;
@@ -21,6 +23,7 @@ public class UniverseGateFabric implements ModInitializer {
 	@Override
 	public void onInitialize() {
 		UniverseGate.registerContent();
+		ServerChunkEvents.CHUNK_LOAD.register((level, chunk) -> CrocodileClipEntity.restoreMissing(chunk));
 
 		// Optional energy compatibility (Stellaris and other Team Reborn Energy mods).
 		if (FabricLoader.getInstance().isModLoaded("team_reborn_energy")) {

@@ -12,6 +12,8 @@ import net.minecraft.world.level.LevelAccessor;
 import net.minecraft.world.level.LevelReader;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.Blocks;
+import net.minecraft.world.level.block.EntityBlock;
+import net.minecraft.world.level.block.RenderShape;
 import net.minecraft.world.level.block.Mirror;
 import net.minecraft.world.level.block.Rotation;
 import net.minecraft.world.level.block.state.BlockState;
@@ -30,7 +32,7 @@ import java.util.Map;
  * A pair of crocodile clips (one red, one blue) biting the block in {@link #FACING}: a portal frame,
  * the portal core, or the lightning antenna. Electric wires plug into it from any side.
  */
-public class CrocodileClipBlock extends Block {
+public class CrocodileClipBlock extends Block implements EntityBlock {
 
     public static final DirectionProperty FACING = BlockStateProperties.FACING;
 
@@ -46,6 +48,16 @@ public class CrocodileClipBlock extends Block {
     public CrocodileClipBlock(Properties properties) {
         super(properties);
         this.registerDefaultState(this.stateDefinition.any().setValue(FACING, Direction.DOWN));
+    }
+
+    @Override
+    public CrocodileClipEntity newBlockEntity(BlockPos pos, BlockState state) {
+        return new CrocodileClipEntity(pos, state);
+    }
+
+    @Override
+    protected RenderShape getRenderShape(BlockState state) {
+        return RenderShape.INVISIBLE;
     }
 
     @Override

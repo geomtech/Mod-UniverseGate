@@ -104,6 +104,7 @@ public class PortalCoreBlockEntity extends BlockEntity implements PosMenuProvide
     }
 
     // ---------- Portail construit (anneau 3D) ----------
+    private net.minecraft.core.Direction formedRight;
     // Quand le cadre est complet, le Core et les blocs du cadre passent en FORMED : ils deviennent invisibles
     // et PortalGateRenderer dessine l'anneau 3D à leur place.
     private void refreshFormation(ServerLevel sl) {
@@ -115,12 +116,15 @@ public class PortalCoreBlockEntity extends BlockEntity implements PosMenuProvide
             if (wasFormed) clearFormation(sl);
             return;
         }
-        applyFormed(sl, right.getClockWise(), false); // l'autre orientation, si le cadre a été reconstruit autrement
+        // Clearing the perpendicular footprint every tick can unform the neighbouring gate's clip support.
+        if (formedRight != null && formedRight != right) applyFormed(sl, formedRight, false);
+        formedRight = right;
         applyFormed(sl, right, true);
         setCoreFormed(sl, true);
     }
 
     private void clearFormation(ServerLevel sl) {
+        formedRight = null;
         applyFormed(sl, net.minecraft.core.Direction.EAST, false);
         applyFormed(sl, net.minecraft.core.Direction.SOUTH, false);
         setCoreFormed(sl, false);

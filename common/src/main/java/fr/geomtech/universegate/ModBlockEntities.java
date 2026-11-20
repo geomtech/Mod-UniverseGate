@@ -88,6 +88,11 @@ public final class ModBlockEntities {
                     type(LightningAntennaBlockEntity::new, ModBlocks.LIGHTNING_ANTENNA)
             );
 
+    public static final BlockEntityType<CrocodileClipEntity> CROCODILE_CLIP =
+            Registry.register(BuiltInRegistries.BLOCK_ENTITY_TYPE,
+                    ResourceLocation.fromNamespaceAndPath(UniverseGate.MOD_ID, "crocodile_clip"),
+                    type(CrocodileClipEntity::new, ModBlocks.CROCODILE_CLIP));
+
     public static final BlockEntityType<MeteorologicalControllerBlockEntity> METEOROLOGICAL_CONTROLLER =
             Registry.register(
                     BuiltInRegistries.BLOCK_ENTITY_TYPE,

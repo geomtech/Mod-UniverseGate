@@ -121,6 +121,7 @@ public final class UniverseGateNeoForgeClient {
             event.registerBlockEntityRenderer(ModBlockEntities.ZPC_INTERFACE_CONTROLLER, ZpcInterfaceControllerRenderer::new);
             event.registerBlockEntityRenderer(ModBlockEntities.FLUID_PIPE, FluidPipeBlockEntityRenderer::new);
             event.registerBlockEntityRenderer(ModBlockEntities.PORTAL_CORE, fr.geomtech.universegate.PortalGateRenderer::new);
+            event.registerBlockEntityRenderer(ModBlockEntities.CROCODILE_CLIP, fr.geomtech.universegate.CrocodileClipRenderer::new);
         });
 
         modBus.addListener(RegisterGuiLayersEvent.class, event ->
