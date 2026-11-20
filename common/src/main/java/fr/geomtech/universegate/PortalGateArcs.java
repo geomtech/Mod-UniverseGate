@@ -2,6 +2,7 @@ package fr.geomtech.universegate;
 
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
+import net.minecraft.sounds.SoundSource;
 import net.minecraft.util.Mth;
 import net.minecraft.util.RandomSource;
 import net.minecraft.world.level.Level;
@@ -108,6 +109,11 @@ public final class PortalGateArcs {
         Arc arc = new Arc(worldAngle - ringAngle, target, 3 + random.nextInt(4));
         jitter(arc, random);
         arcs.add(arc);
+
+        // Crépitement électrique sec, entre l'anneau et le point d'impact.
+        level.playLocalSound(core.getX() + (start.x + target.x) * 0.5D, core.getY() + (start.y + target.y) * 0.5D,
+                core.getZ() + (start.z + target.z) * 0.5D, ModSounds.PORTAL_ARC, SoundSource.BLOCKS,
+                0.45F + random.nextFloat() * 0.25F, 0.9F + random.nextFloat() * 0.3F, false);
 
         // Impact : quelques étincelles du mod là où l'arc touche.
         for (int i = 0; i < 3; i++) {

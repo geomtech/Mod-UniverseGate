@@ -160,7 +160,6 @@
   "block.universegate.mob_cloner_controller": "Mob Cloner Controller",
   "item.universegate.dark_matter_bucket": "Dark Matter Bucket",
   "container.universegate.rift_refiner": "Rift Refiner",
-
   "tooltip.universegate.portal_core": "The heart of a portal gateway",
   "tooltip.universegate.portal_frame": "Structural frame of the portal gateway",
   "tooltip.universegate.portal_keyboard": "Controls the portal destination",
@@ -236,5 +235,6 @@
   "advancement.universegate.zpc_interface.title": "Plug It In",
   "advancement.universegate.zpc_interface.description": "Place a ZPC Interface Controller. Link a Dark Energy Generator to recharge your ZPCs.",
   "advancement.universegate.weather_machine.title": "Rain Maker",
-  "advancement.universegate.weather_machine.description": "Place a Meteorological Controller."
+  "advancement.universegate.weather_machine.description": "Place a Meteorological Controller.",
+  "subtitles.universegate.portal_arc": "Portal arc crackles"
 }

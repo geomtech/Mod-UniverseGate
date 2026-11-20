@@ -21,6 +21,8 @@ public final class ModSounds {
     public static final SoundEvent PORTAL_UNSTABLE = register("portal_unstable");
     /** Échappement de vapeur de l'anneau à la fermeture (son provisoire : à remplacer par un son du mod). */
     public static final SoundEvent PORTAL_VENT = register("portal_vent");
+    /** Crépitement d'un arc électrique de l'anneau (pas la foudre vanilla). */
+    public static final SoundEvent PORTAL_ARC = register("portal_arc");
     public static final SoundEvent PORTAL_ENTITY_GOING_THROUGH = register("portal_entity_going_through");
     public static final SoundEvent METEO_MACHINE = register("meteo_machine");
     public static final SoundEvent BEAM = register("beam");
