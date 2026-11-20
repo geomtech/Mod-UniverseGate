@@ -17,7 +17,7 @@ import java.util.List;
  *     foreign cable can plug in anywhere on the network.</li>
  *     <li>ZPC Interface: out only (ZPCs are only recharged with dark energy).</li>
  * </ul>
- * Each port moves at most {@link ExternalEnergyTransfer#MAX_TRANSFER_PER_CALL} per call. 1 EU = 1 FE.
+ * Each port moves at most {@link ExternalEnergyTransfer#MAX_TRANSFER_PER_CALL} per call. 1 FE = 1 E.
  */
 public interface ExternalEnergyPort {
 

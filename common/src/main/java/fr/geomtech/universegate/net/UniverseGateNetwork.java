@@ -100,7 +100,7 @@ public final class UniverseGateNetwork {
                         if (!consumed) {
                             PortalConnectionManager.forceCloseOneSide(level, corePos);
                             ModSounds.playAt(level, payload.keyboardPos(), ModSounds.PORTAL_ERROR, 0.9F, 1.0F);
-                            sendPortalConnectionError(player, "Énergie insuffisante pour l'ouverture du portail (" + openEnergyCost + " EU requis).");
+                            sendPortalConnectionError(player, "Énergie insuffisante pour l'ouverture du portail (" + openEnergyCost + " FE requis).");
                         }
                     }
                 } else {

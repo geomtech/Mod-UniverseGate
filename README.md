@@ -19,17 +19,17 @@ UniverseGate is a portal-focused mod for **Fabric** and **NeoForge** that introd
 ### 1. Power Generation
 Before building a portal, you need energy.
 1.  Craft **Solar Panels**.
-2.  Place an **Energy Condenser**. This acts as a battery (20,000 EU) and network controller.
+2.  Place an **Energy Condenser**. This acts as a battery (20,000 FE) and network controller.
 3.  Connect Solar Panels to the Condenser using **Energy Conduits**.
     *   *Note: Panels must see the sky and only work during the day.*
-4.  Need power at night? A **Combustion Generator** burns any furnace fuel, or **Rift Crystals** (24,000 EU each), and outputs up to **480 EU/s**.
+4.  Need power at night? A **Combustion Generator** burns any furnace fuel, or **Rift Crystals** (24,000 FE each), and outputs up to **480 FE/s**.
 5.  Place an **Energy Monitor** on the network to check stored energy, total capacity and connected devices.
 
 #### Energy from other mods (optional)
-UniverseGate energy (EU) speaks the standard energy APIs, so cables from other mods plug straight into it: **Stellaris**, and any mod using NeoForge energy (FE) or, on Fabric, Team Reborn Energy.
+UniverseGate energy is measured in **FE** (Forge Energy) and speaks the standard energy APIs, so cables from other mods plug straight into it: **Stellaris**, and any mod using NeoForge energy (FE) or, on Fabric, Team Reborn Energy (1 FE = 1 E).
 *   **Energy Condenser** and **Energy Conduit**: in and out. A conduit shares the energy of every condenser on its network, so a foreign cable can join the network anywhere.
 *   **ZPC Interface**: out only (ZPCs are still recharged with dark energy only).
-*   **1 EU = 1 FE**, up to **1,000 per tick** per connected block.
+*   Up to **1,000 FE per tick** per connected block.
 *   Dark energy keeps its own network and does not connect to other mods.
 *   None of these mods is required: without them, UniverseGate works exactly the same.
 
@@ -37,8 +37,8 @@ UniverseGate energy (EU) speaks the standard energy APIs, so cables from other m
 1.  Construct a **Portal Frame** with a **3x4 interior** (5x6 outer size).
 2.  Place the **Portal Core** at the **bottom center** of the frame.
 3.  Connect the Portal Core (or Frame) to your energy network using Conduits.
-    *   *Opening a portal uses a dynamic cost: base **1200 EU**, then increases with distance and if dimensions differ.*
-    *   *Maintaining the connection costs **120 EU/s** (more while the vortex is unstable).*
+    *   *Opening a portal uses a dynamic cost: base **1200 FE**, then increases with distance and if dimensions differ.*
+    *   *Maintaining the connection costs **120 FE/s** (more while the vortex is unstable).*
 4.  Place a **Portal Controller** nearby (within 8 blocks).
 5.  Optional: craft a **Mobile Portal Controller** to dial from your hand while standing near a portal.
 
@@ -67,9 +67,9 @@ Build the Meteorological Machine to change the weather.
     *   Place a **Meteorological Controller**.
     *   Next to it (within 1 block), stack **2 Meteorological Condensers** to form a tower.
     *   Place a **Meteorological Catalyst** on top of the tower and insert an **Energy Crystal** in it.
-2.  **Power**: Connect the tower to your energy network with Energy Conduits, and add a **Parabola** on the same network. The Parabola draws **120 EU/s** while powered.
+2.  **Power**: Connect the tower to your energy network with Energy Conduits, and add a **Parabola** on the same network. The Parabola draws **120 FE/s** while powered.
 3.  **Charge**: Once everything is in place, the controller charges for **5 minutes**.
-4.  **Activate**: Choose **Clear**, **Rain** or **Thunder**. Activation costs **2500 EU** and consumes the catalyst's Energy Crystal. The chosen weather lasts **10 minutes**.
+4.  **Activate**: Choose **Clear**, **Rain** or **Thunder**. Activation costs **2500 FE** and consumes the catalyst's Energy Crystal. The chosen weather lasts **10 minutes**.
     *   *Thunder is the easiest way to strike your Portal Lightning Rods.*
 - Operators can skip the charge time with `/universegate weather_machine charge [pos]`.
 
@@ -98,13 +98,13 @@ The UniverseGate advancement tab follows the whole progression, from your first 
 Once a Portal Core has stored **400 units of Dark Energy** and stays linked to a running Dark Energy Generator, the **Dark Dimension** entry unlocks in its Portal Controller. It opens a link to the Rift without waiting for a lightning strike. Until then, it shows as `???` and cannot be dialed.
 
 ### ZPC (Zero Point Cell)
-A **ZPC** stores up to **40,000,000,000 EU**.
+A **ZPC** stores up to **40,000,000,000 FE**.
 - **Where to find one**:
     *   Each **Ancient City** holds one guaranteed ZPC, placed in the first loot chest you open there.
     *   Any vanilla loot chest has a very small chance (0.35%) to contain one.
     *   Found ZPCs are charged between 1% and 30%.
     *   A ZPC can also be crafted (Rift Crystals, Energy Crystals and a **Rift Core**), but it comes out **empty**.
-- **Recharging**: Link a running **Dark Energy Generator** to the ZPC Interface Controller (adjacent or through Dark Energy Conduits). Each unit of Dark Energy adds **10,000,000 EU** to the emptiest installed ZPC.
+- **Recharging**: Link a running **Dark Energy Generator** to the ZPC Interface Controller (adjacent or through Dark Energy Conduits). Each unit of Dark Energy adds **10,000,000 FE** to the emptiest installed ZPC.
 - **ZPC Interface Controller**: Holds up to **3 ZPCs** and feeds them into the energy network it is connected to.
     *   Right-click with a ZPC to insert it.
     *   Sneak + right-click to engage the inserted ZPCs (short insertion animation). Only engaged ZPCs supply energy.
@@ -118,14 +118,14 @@ A **ZPC** stores up to **40,000,000,000 EU**.
 2.  **DNA Sample**: Stores the mob type (and its custom name). A sample has **100 uses**, plus **50 per level of Unbreaking** (apply it with an anvil, max Unbreaking III).
 3.  **Mob Cloner**: Place the **Mob Cloner** and a **Mob Cloner Controller** on the same energy network (Energy Conduits). The Cloner must also be linked to a running **Dark Energy Generator** with Dark Energy Conduits, and needs free space above it.
 4.  **Cloning**: Insert the DNA into the Controller and start the process. After an **8 second** charge, the clone appears on top of the Cloner.
-    *   *Cost: at least **1,000,000,000 EU** per clone, higher for monsters, high-health mobs and bosses (Wither, Ender Dragon, Warden, Elder Guardian). A ZPC is practically required.*
+    *   *Cost: at least **1,000,000,000 FE** per clone, higher for monsters, high-health mobs and bosses (Wither, Ender Dragon, Warden, Elder Guardian). A ZPC is practically required.*
 
 ## Requirements
 
 - Minecraft **1.21.1**
 - **Fabric**: Fabric Loader and Fabric API
 - **NeoForge**: NeoForge 21.1.x
-- Optional: **Stellaris** (or any FE / Team Reborn Energy mod) to share energy with the Energy Condenser
+- Optional: **Stellaris** (or any FE / Team Reborn Energy mod) to share energy with UniverseGate's network
 
 ## Installation
 
