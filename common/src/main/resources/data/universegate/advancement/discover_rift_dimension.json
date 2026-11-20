@@ -1,5 +1,5 @@
 {
-  "parent": "universegate:portal_keyboard_placed",
+  "parent": "universegate:charged_rod",
   "criteria": {
     "entered_rift": {
       "conditions": {

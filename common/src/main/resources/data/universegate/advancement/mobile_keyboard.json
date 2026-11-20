@@ -1,0 +1,37 @@
+{
+  "parent": "universegate:portal_keyboard_placed",
+  "criteria": {
+    "has_portal_mobile_keyboard": {
+      "trigger": "minecraft:inventory_changed",
+      "conditions": {
+        "items": [
+          {
+            "items": "universegate:portal_mobile_keyboard"
+          }
+        ]
+      }
+    }
+  },
+  "display": {
+    "announce_to_chat": false,
+    "description": {
+      "translate": "advancement.universegate.mobile_keyboard.description"
+    },
+    "frame": "task",
+    "hidden": false,
+    "icon": {
+      "count": 1,
+      "id": "universegate:portal_mobile_keyboard"
+    },
+    "show_toast": true,
+    "title": {
+      "translate": "advancement.universegate.mobile_keyboard.title"
+    }
+  },
+  "requirements": [
+    [
+      "has_portal_mobile_keyboard"
+    ]
+  ],
+  "sends_telemetry_event": true
+}

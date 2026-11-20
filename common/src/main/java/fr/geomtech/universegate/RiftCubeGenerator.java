@@ -156,26 +156,23 @@ public final class RiftCubeGenerator {
     private static boolean fillRiftCubeContainer(Container container, RandomSource random) {
         boolean inserted = false;
 
-        inserted |= addItem(container, random, 0.90F, new ItemStack(Items.COAL, randBetween(random, 4, 18)));
-        inserted |= addItem(container, random, 0.70F, new ItemStack(Items.CHORUS_FRUIT, randBetween(random, 2, 8)));
+        // Rift resources and mod components
+        inserted |= addItem(container, random, 0.85F, new ItemStack(ModItems.RIFT_CRYSTAL, randBetween(random, 4, 12)));
+        inserted |= addItem(container, random, 0.55F, new ItemStack(ModItems.ENERGY_CRYSTAL, randBetween(random, 1, 3)));
+        inserted |= addItem(container, random, 0.45F, new ItemStack(ModItems.ENERGY_CONDUIT_ITEM, randBetween(random, 4, 12)));
+        inserted |= addItem(container, random, 0.35F, new ItemStack(ModItems.KELO_LOG_ITEM, randBetween(random, 4, 10)));
+        inserted |= addItem(container, random, 0.30F, new ItemStack(ModItems.COOKED_RIFT_MEAT, randBetween(random, 2, 6)));
+        inserted |= addItem(container, random, 0.20F, new ItemStack(ModItems.DARK_MATTER_BUCKET));
+        inserted |= addItem(container, random, 0.15F, new ItemStack(ModItems.DARK_ENERGY_CONDUIT_ITEM, randBetween(random, 2, 6)));
 
         // Rare valuables
-        inserted |= addItem(container, random, 0.16F, new ItemStack(Items.DIAMOND, randBetween(random, 1, 3)));
-        inserted |= addItem(container, random, 0.28F, new ItemStack(Items.ENDER_PEARL, randBetween(random, 1, 2)));
-        inserted |= addItem(container, random, 0.003F, ZpcItem.createChargedStack(randBetween(random, 1, 30)));
-
-        // Useless / filler loot
-        inserted |= addItem(container, random, 0.55F, new ItemStack(Items.STICK, randBetween(random, 3, 14)));
-        inserted |= addItem(container, random, 0.50F, new ItemStack(Items.ROTTEN_FLESH, randBetween(random, 2, 10)));
-        inserted |= addItem(container, random, 0.45F, new ItemStack(Items.BONE, randBetween(random, 1, 8)));
-        inserted |= addItem(container, random, 0.40F, new ItemStack(Items.STRING, randBetween(random, 1, 8)));
-        inserted |= addItem(container, random, 0.35F, new ItemStack(Items.FLINT, randBetween(random, 1, 4)));
-        inserted |= addItem(container, random, 0.30F, new ItemStack(Items.COBBLED_DEEPSLATE, randBetween(random, 4, 16)));
-        inserted |= addItem(container, random, 0.22F, new ItemStack(Items.DEAD_BUSH, randBetween(random, 1, 3)));
-        inserted |= addItem(container, random, 0.20F, new ItemStack(Items.FEATHER, randBetween(random, 1, 5)));
+        inserted |= addItem(container, random, 0.25F, new ItemStack(Items.DIAMOND, randBetween(random, 1, 3)));
+        inserted |= addItem(container, random, 0.35F, new ItemStack(Items.ENDER_PEARL, randBetween(random, 1, 4)));
+        inserted |= addItem(container, random, 0.15F, new ItemStack(Items.CHORUS_FRUIT, randBetween(random, 2, 8)));
+        inserted |= addItem(container, random, 0.03F, ZpcItem.createChargedStack(randBetween(random, 5, 40)));
 
         if (!inserted) {
-            inserted = placeInRandomEmptySlot(container, random, new ItemStack(Items.COAL, randBetween(random, 4, 8)));
+            inserted = placeInRandomEmptySlot(container, random, new ItemStack(ModItems.RIFT_CRYSTAL, randBetween(random, 2, 6)));
         }
 
         return inserted;

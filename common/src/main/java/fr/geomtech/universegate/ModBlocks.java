@@ -231,6 +231,15 @@ public final class ModBlocks {
                     .requiresCorrectToolForDrops())
     );
 
+    public static final Block RIFT_CRYSTAL_CLUSTER = register(
+            "rift_crystal_cluster",
+            new net.minecraft.world.level.block.AmethystClusterBlock(7.0F, 3.0F,
+                    BlockBehaviour.Properties.ofFullCopy(Blocks.AMETHYST_CLUSTER)
+                            .strength(1.5F)
+                            .requiresCorrectToolForDrops()
+                            .lightLevel(state -> 6))
+    );
+
     private static Block register(String id, Block block) {
         return Registry.register(
                 BuiltInRegistries.BLOCK,

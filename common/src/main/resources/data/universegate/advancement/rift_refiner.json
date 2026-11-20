@@ -1,0 +1,38 @@
+{
+  "parent": "universegate:rift_crystal",
+  "criteria": {
+    "placed_rift_refiner": {
+      "trigger": "minecraft:placed_block",
+      "conditions": {
+        "location": [
+          {
+            "condition": "minecraft:block_state_property",
+            "block": "universegate:rift_refiner"
+          }
+        ]
+      }
+    }
+  },
+  "display": {
+    "announce_to_chat": false,
+    "description": {
+      "translate": "advancement.universegate.rift_refiner.description"
+    },
+    "frame": "task",
+    "hidden": false,
+    "icon": {
+      "count": 1,
+      "id": "universegate:rift_refiner"
+    },
+    "show_toast": true,
+    "title": {
+      "translate": "advancement.universegate.rift_refiner.title"
+    }
+  },
+  "requirements": [
+    [
+      "placed_rift_refiner"
+    ]
+  ],
+  "sends_telemetry_event": true
+}

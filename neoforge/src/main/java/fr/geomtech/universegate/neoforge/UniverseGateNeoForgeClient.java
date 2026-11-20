@@ -60,6 +60,7 @@ public final class UniverseGateNeoForgeClient {
             ItemBlockRenderTypes.setRenderLayer(ModFluids.FLOWING_DARK_MATTER, RenderType.translucent());
             ItemBlockRenderTypes.setRenderLayer(ModBlocks.PORTAL_FIELD, RenderType.translucent());
             ItemBlockRenderTypes.setRenderLayer(ModBlocks.FLUID_PIPE, RenderType.translucent());
+            ItemBlockRenderTypes.setRenderLayer(ModBlocks.RIFT_CRYSTAL_CLUSTER, RenderType.cutout());
         }));
 
         modBus.addListener(RegisterParticleProvidersEvent.class, event ->

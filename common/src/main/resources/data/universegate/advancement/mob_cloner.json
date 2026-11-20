@@ -1,0 +1,41 @@
+{
+  "parent": "universegate:dna_sample",
+  "criteria": {
+    "placed_mob_cloner": {
+      "trigger": "minecraft:placed_block",
+      "conditions": {
+        "location": [
+          {
+            "condition": "minecraft:block_state_property",
+            "block": "universegate:mob_cloner"
+          }
+        ]
+      }
+    }
+  },
+  "display": {
+    "announce_to_chat": true,
+    "description": {
+      "translate": "advancement.universegate.mob_cloner.description"
+    },
+    "frame": "challenge",
+    "hidden": false,
+    "icon": {
+      "count": 1,
+      "id": "universegate:mob_cloner"
+    },
+    "show_toast": true,
+    "title": {
+      "translate": "advancement.universegate.mob_cloner.title"
+    }
+  },
+  "requirements": [
+    [
+      "placed_mob_cloner"
+    ]
+  ],
+  "rewards": {
+    "experience": 200
+  },
+  "sends_telemetry_event": true
+}

@@ -49,6 +49,8 @@ public final class ModItemGroups {
                 output.accept(ModItems.COOKED_RIFT_MEAT);
                 output.accept(ModItems.ENERGY_CRYSTAL);
                 output.accept(ModItems.RIFT_CRYSTAL);
+                output.accept(ModItems.RIFT_CRYSTAL_CLUSTER_ITEM);
+                output.accept(ModItems.RIFT_CORE);
                 output.accept(ModItems.DNA_EXTRACTOR);
                 output.accept(ModItems.DNA);
                 output.accept(ModItems.ZPC);

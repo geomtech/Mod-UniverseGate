@@ -1,0 +1,38 @@
+{
+  "parent": "universegate:first_power",
+  "criteria": {
+    "placed_meteorological_controller": {
+      "trigger": "minecraft:placed_block",
+      "conditions": {
+        "location": [
+          {
+            "condition": "minecraft:block_state_property",
+            "block": "universegate:meteorological_controller"
+          }
+        ]
+      }
+    }
+  },
+  "display": {
+    "announce_to_chat": true,
+    "description": {
+      "translate": "advancement.universegate.weather_machine.description"
+    },
+    "frame": "goal",
+    "hidden": false,
+    "icon": {
+      "count": 1,
+      "id": "universegate:meteorological_controller"
+    },
+    "show_toast": true,
+    "title": {
+      "translate": "advancement.universegate.weather_machine.title"
+    }
+  },
+  "requirements": [
+    [
+      "placed_meteorological_controller"
+    ]
+  ],
+  "sends_telemetry_event": true
+}

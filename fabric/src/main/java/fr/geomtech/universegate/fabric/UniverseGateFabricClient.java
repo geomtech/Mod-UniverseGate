@@ -77,6 +77,7 @@ public class UniverseGateFabricClient implements ClientModInitializer {
 		BlockEntityRenderers.register(ModBlockEntities.ZPC_INTERFACE_CONTROLLER, ZpcInterfaceControllerRenderer::new);
 		BlockEntityRenderers.register(ModBlockEntities.FLUID_PIPE, FluidPipeBlockEntityRenderer::new);
 		BlockRenderLayerMap.INSTANCE.putBlock(ModBlocks.FLUID_PIPE, RenderType.translucent());
+		BlockRenderLayerMap.INSTANCE.putBlock(ModBlocks.RIFT_CRYSTAL_CLUSTER, RenderType.cutout());
 		UniverseGateClientNetwork.registerClient();
 		ItemTooltipCallback.EVENT.register((stack, context, type, lines) -> ModTooltips.appendTooltip(stack, lines));
 		HudRenderCallback.EVENT.register((guiGraphics, deltaTracker) -> DnaExtractionHudOverlay.render(guiGraphics));

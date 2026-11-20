@@ -1,0 +1,50 @@
+{
+  "parent": "universegate:root",
+  "criteria": {
+    "placed_solar_panel": {
+      "trigger": "minecraft:placed_block",
+      "conditions": {
+        "location": [
+          {
+            "condition": "minecraft:block_state_property",
+            "block": "universegate:solar_panel"
+          }
+        ]
+      }
+    },
+    "placed_combustion_generator": {
+      "trigger": "minecraft:placed_block",
+      "conditions": {
+        "location": [
+          {
+            "condition": "minecraft:block_state_property",
+            "block": "universegate:combustion_generator"
+          }
+        ]
+      }
+    }
+  },
+  "display": {
+    "announce_to_chat": false,
+    "description": {
+      "translate": "advancement.universegate.first_power.description"
+    },
+    "frame": "task",
+    "hidden": false,
+    "icon": {
+      "count": 1,
+      "id": "universegate:solar_panel"
+    },
+    "show_toast": true,
+    "title": {
+      "translate": "advancement.universegate.first_power.title"
+    }
+  },
+  "requirements": [
+    [
+      "placed_solar_panel",
+      "placed_combustion_generator"
+    ]
+  ],
+  "sends_telemetry_event": true
+}
