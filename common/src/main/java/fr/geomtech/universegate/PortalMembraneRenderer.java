@@ -15,9 +15,9 @@ import org.joml.Matrix4f;
  * Membrane d'énergie noire d'un portail ouvert, dessinée par le code en pixel art (16 px par bloc).
  *
  * <p>Une seule case du champ (en bas à gauche) dessine toute la surface 3x4, pixel par pixel, avec la
- * identité du mod (noir et blanc lumineux) : fond noir, bandes grises qui s'éclairent en blanc et
- * tournent lentement en spirale autour d'un cœur noir, et quelques points blancs qui scintillent comme ceux du cadre.
- * Un portail instable tourne plus vite, scintille davantage et sa transparence saute par rangées.</p>
+ * identité du mod (noir et blanc lumineux) et le motif du bloc de cadre : fond noir, fissures grises en
+ * diagonale où court parfois une lueur blanche, et carrés blancs 2x2 qui s'allument puis s'éteignent.
+ * Un portail instable s'agite plus vite, scintille davantage et sa transparence saute par rangées.</p>
  */
 public class PortalMembraneRenderer extends ImmediateBlockEntityRenderer<PortalFieldBlockEntity> {
 
@@ -28,7 +28,8 @@ public class PortalMembraneRenderer extends ImmediateBlockEntityRenderer<PortalF
 
     // Identité du mod : noir profond et blanc lumineux (cadre, Core, champ d'origine).
     private static final int[] BLACK = {0, 0, 0};
-    private static final int[] DARK = {58, 58, 58};
+    private static final int[] FAINT = {20, 20, 20};
+    private static final int[] DARK = {43, 43, 43};
     private static final int[] MID = {205, 205, 205};
     private static final int[] WHITE = {255, 255, 255};
 
@@ -83,27 +84,45 @@ public class PortalMembraneRenderer extends ImmediateBlockEntityRenderer<PortalF
 
     private static final int[] UNSTABLE_ALPHAS = {102, 153, 217, 217};
 
+    /** Écart (en pixels, mesuré en travers) entre deux fissures possibles. */
+    private static final int VEIN_PERIOD = 19;
+
     /**
-     * Un pixel de la membrane : fond noir, bandes grises qui tournent lentement en spirale autour
-     * d'un cœur noir, et quelques points blancs qui scintillent le long des bandes.
+     * Un pixel de la membrane, dans le style du cadre : fond noir traversé de fissures grises en diagonale
+     * (comme les veines du bloc de cadre), une lueur blanche qui court de temps en temps le long d'une fissure,
+     * et des carrés blancs 2x2 qui s'allument puis s'éteignent, comme les points du cadre.
      */
     private static int[] pixelColor(int px, int py, float time, long tick, float phase, boolean unstable) {
-        float x = ((px + 0.5F) / PIXELS_U - 0.5F) * 2.0F;
-        float y = ((py + 0.5F) / PIXELS_V - 0.5F) * 2.0F;
-        float r = Mth.sqrt(x * x + y * y * 0.75F);
-        if (r < 0.18F) return BLACK;
+        // Carrés blancs 2x2 : une case sur ~16 s'allume brièvement à son propre rythme.
+        int cx = px >> 1, cy = py >> 1;
+        long cellSeed = hash(cx, cy, 11L);
+        long period = unstable ? 40L : 90L;
+        long cycle = (tick + cellSeed % period) / period;
+        if (hash(cx, cy, cycle) % 1000L < (unstable ? 110L : 65L)) {
+            long life = (tick + cellSeed % period) % period;
+            if (life < 3L || (life >= 11L && life < 14L)) return MID;
+            if (life < 11L) return WHITE;
+        }
 
-        float angle = (float) Mth.atan2(y, x);
-        float spiral = Mth.sin(3.0F * angle + r * 6.0F - time * 0.04F + phase);
+        // Fissures en diagonale (même pente que les veines du cadre) qui dérivent lentement.
+        float drift = time * 0.025F + phase * 4.0F;
+        int across = Mth.floor(px + 2 * py + drift);
+        int band = Math.floorDiv(across, VEIN_PERIOD);
+        long bandSeed = hash(band, 5L, 29L);
+        if (bandSeed % 3L == 0L) return BLACK; // toutes les bandes n'ont pas de fissure
+        // Petits décrochages tous les 4 pixels pour un tracé de fissure plutôt que de règle.
+        int along = 2 * px - py;
+        int jitter = (int) (hash(band, Math.floorDiv(along, 4), 31L) % 3L) - 1;
+        int d = Math.floorMod(across, VEIN_PERIOD) - (int) (bandSeed % 5L) - jitter;
+        if (d != 0 && d != 1) return BLACK;
 
-        boolean onBand = spiral > 0.86F && r < 1.05F;
-        // Points blancs : rares, plus fréquents sur les bandes, et chacun ne dure que quelques ticks.
-        long twinkle = hash(px, py, (tick + (hash(px, py, 3L) % 16L)) / 16L) % 1000L;
-        if (twinkle < (onBand ? 22L : (unstable ? 6L : 2L))) return WHITE;
-
-        if (spiral > 0.97F && r > 0.3F && r < 0.95F) return MID;
-        if (onBand) return DARK;
-        return BLACK;
+        // Une lueur blanche parcourt parfois la fissure.
+        float speed = unstable ? 1.6F : 0.7F;
+        float pulse = Math.floorMod((long) (time * speed) + bandSeed % 400L, 400L);
+        float gap = Math.abs(along + 64 - pulse);
+        if (d == 0 && gap < 1.5F) return WHITE;
+        if (gap < 4.0F) return MID;
+        return d == 0 ? DARK : FAINT;
     }
 
     private static long hash(long a, long b, long c) {
