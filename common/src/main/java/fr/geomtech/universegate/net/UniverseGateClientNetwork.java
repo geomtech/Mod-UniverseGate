@@ -41,6 +41,14 @@ public final class UniverseGateClientNetwork {
             });
         });
 
+        ClientServices.CLIENT.registerClientReceiver(PortalFieldCollapsePayload.TYPE, payload -> {
+            Minecraft.getInstance().execute(() -> {
+                var level = Minecraft.getInstance().level;
+                if (level != null) {
+                    fr.geomtech.universegate.PortalFieldCollapseParticles.spawn(level, payload);
+                }
+            });
+        });
         ClientServices.CLIENT.registerClientReceiver(PortalConnectionErrorPayload.TYPE, payload -> {
             Minecraft.getInstance().execute(() -> {
                 Minecraft client = Minecraft.getInstance();

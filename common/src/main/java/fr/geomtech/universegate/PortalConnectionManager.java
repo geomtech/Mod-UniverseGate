@@ -7,7 +7,6 @@ import net.minecraft.core.Direction;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.tags.FluidTags;
-import net.minecraft.util.RandomSource;
 import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.LightningBolt;
 import net.minecraft.world.level.Level;
@@ -231,8 +230,6 @@ public final class PortalConnectionManager {
         ModSounds.playPortalOpenedAt(targetLevel, targetEntry.pos(), unstableB);
         triggerRiftOpeningLightning(sourceLevel, sourceCorePos);
         triggerRiftOpeningLightning(targetLevel, targetEntry.pos());
-        sourceCore.onPortalAmbientStarted(sourceLevel.getGameTime());
-        targetCore.onPortalAmbientStarted(targetLevel.getGameTime());
 
         sourceCore.setChanged();
         targetCore.setChanged();
@@ -401,6 +398,9 @@ public final class PortalConnectionManager {
     }
 
     private static void removeField(ServerLevel level, PortalFrameDetector.FrameMatch match) {
+        java.util.List<BlockPos> collapsed = new java.util.ArrayList<>();
+        Direction.Axis collapseAxis = axisFromMatch(match);
+        boolean collapseUnstable = false;
         for (BlockPos p : match.interior()) {
             var state = level.getBlockState(p);
             if (state.is(ModBlocks.PORTAL_FIELD)) {
@@ -409,7 +409,9 @@ public final class PortalConnectionManager {
                         : axisFromMatch(match);
                 boolean unstable = state.hasProperty(PortalFieldBlock.UNSTABLE)
                         && state.getValue(PortalFieldBlock.UNSTABLE);
-                spawnFieldCollapseParticles(level, p, axis, unstable);
+                collapsed.add(p.immutable());
+                collapseAxis = axis;
+                collapseUnstable |= unstable;
                 boolean waterlogged = state.hasProperty(PortalFieldBlock.WATERLOGGED)
                         && state.getValue(PortalFieldBlock.WATERLOGGED);
                 level.setBlockAndUpdate(
@@ -420,6 +422,7 @@ public final class PortalConnectionManager {
                 );
             }
         }
+        PortalFieldCollapseParticles.send(level, collapsed, collapseAxis, collapseUnstable);
     }
 
     private static Direction.Axis axisFromMatch(PortalFrameDetector.FrameMatch match) {
@@ -461,6 +464,9 @@ public final class PortalConnectionManager {
     }
 
     private static void removeFieldArea(ServerLevel level, BlockPos corePos, net.minecraft.core.Direction right) {
+        java.util.List<BlockPos> collapsed = new java.util.ArrayList<>();
+        Direction.Axis collapseAxis = right == Direction.EAST ? Direction.Axis.X : Direction.Axis.Z;
+        boolean collapseUnstable = false;
         for (int dy = 1; dy <= PortalFrameDetector.INNER_HEIGHT; dy++) {
             for (int dx = -PortalFrameDetector.INNER_WIDTH / 2; dx <= PortalFrameDetector.INNER_WIDTH / 2; dx++) {
                 BlockPos p = corePos.offset(right.getStepX() * dx, dy, right.getStepZ() * dx);
@@ -473,7 +479,9 @@ public final class PortalConnectionManager {
                             : net.minecraft.core.Direction.Axis.Z);
                     boolean unstable = state.hasProperty(PortalFieldBlock.UNSTABLE)
                             && state.getValue(PortalFieldBlock.UNSTABLE);
-                    spawnFieldCollapseParticles(level, p, axis, unstable);
+                    collapsed.add(p.immutable());
+                    collapseAxis = axis;
+                    collapseUnstable |= unstable;
                     boolean waterlogged = state.hasProperty(PortalFieldBlock.WATERLOGGED)
                             && state.getValue(PortalFieldBlock.WATERLOGGED);
                     level.setBlockAndUpdate(
@@ -485,33 +493,7 @@ public final class PortalConnectionManager {
                 }
             }
         }
-    }
-
-    private static void spawnFieldCollapseParticles(ServerLevel level,
-                                                    BlockPos pos,
-                                                    net.minecraft.core.Direction.Axis axis,
-                                                    boolean unstable) {
-        RandomSource random = level.random;
-        int count = unstable ? 12 : 8;
-
-        for (int i = 0; i < count; i++) {
-            double x = pos.getX() + 0.5;
-            double y = pos.getY() + random.nextDouble();
-            double z = pos.getZ() + 0.5;
-
-            if (axis == net.minecraft.core.Direction.Axis.X) {
-                x += (random.nextDouble() - 0.5) * 0.9;
-                z += (random.nextDouble() - 0.5) * 0.12;
-            } else {
-                x += (random.nextDouble() - 0.5) * 0.12;
-                z += (random.nextDouble() - 0.5) * 0.9;
-            }
-
-            double vx = (random.nextDouble() - 0.5) * 0.05;
-            double vy = (random.nextDouble() - 0.5) * 0.04;
-            double vz = (random.nextDouble() - 0.5) * 0.05;
-            level.sendParticles(ModParticles.SPARK, x, y, z, 1, vx, vy, vz, 0.0);
-        }
+        PortalFieldCollapseParticles.send(level, collapsed, collapseAxis, collapseUnstable);
     }
 
     private static void setFrameActive(ServerLevel level,

@@ -36,14 +36,10 @@ public final class ModSounds {
         level.playSound(null, pos, sound, SoundSource.BLOCKS, volume, pitch);
     }
 
-    public static void playPortalAmbientAt(ServerLevel level, BlockPos pos, boolean unstable) {
-        playAt(level, pos, unstable ? PORTAL_UNSTABLE : PORTAL_IDLE, 0.35F, 1.0F);
-    }
-
     public static void playPortalOpenedAt(ServerLevel level, BlockPos pos, boolean unstable) {
         stopPortalOpeningNear(level, pos);
         playAt(level, pos, PORTAL_OPENING_END, 1.0F, 1.0F);
-        playPortalAmbientAt(level, pos, unstable);
+        // L'ambiance du portail ouvert est jouée par le client (PortalAmbientSoundClient).
     }
 
     public static void playPortalDialingAt(ServerLevel level, BlockPos pos) {
@@ -73,23 +69,9 @@ public final class ModSounds {
         stopSoundNear(level, pos, PORTAL_OPENING_END);
     }
 
-    public static void stopPortalAmbientNear(ServerLevel level, BlockPos pos) {
-        stopSoundNear(level, pos, PORTAL_IDLE);
-        stopSoundNear(level, pos, PORTAL_UNSTABLE);
-    }
-
-    public static void stopPortalAmbientNear(ServerLevel level, BlockPos pos, boolean unstable) {
-        stopSoundNear(level, pos, unstable ? PORTAL_UNSTABLE : PORTAL_IDLE);
-    }
-
+    /** L'ambiance du portail ouvert s'arrête côté client ; seule la séquence d'ouverture est coupée ici. */
     public static void stopPortalLifecycleNear(ServerLevel level, BlockPos pos) {
         stopPortalOpeningNear(level, pos);
-        stopPortalAmbientNear(level, pos);
-    }
-
-    public static void stopPortalLifecycleNear(ServerLevel level, BlockPos pos, boolean unstable) {
-        stopPortalOpeningNear(level, pos);
-        stopPortalAmbientNear(level, pos, unstable);
     }
 
     private static void stopSoundNear(ServerLevel level, BlockPos pos, SoundEvent sound) {
