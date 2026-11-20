@@ -1,0 +1,17 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "pattern": [
+    "VDV",
+    "VRV",
+    "VDV"
+  ],
+  "key": {
+    "V": "universegate:void_block",
+    "D": "minecraft:diamond",
+    "R": "minecraft:redstone_block"
+  },
+  "result": {
+    "id": "universegate:dark_energy_generator",
+    "count": 1
+  }
+}

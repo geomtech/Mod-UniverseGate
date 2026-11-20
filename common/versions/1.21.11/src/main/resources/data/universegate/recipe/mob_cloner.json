@@ -1,0 +1,20 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "pattern": [
+    "DGD",
+    "RPR",
+    "OEO"
+  ],
+  "key": {
+    "D": "universegate:dark_energy_conduit",
+    "G": "universegate:dark_energy_generator",
+    "R": "universegate:rift_crystal",
+    "P": "minecraft:piston",
+    "O": "minecraft:obsidian",
+    "E": "universegate:energy_conduit"
+  },
+  "result": {
+    "id": "universegate:mob_cloner",
+    "count": 1
+  }
+}

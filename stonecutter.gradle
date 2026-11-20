@@ -96,6 +96,15 @@ configure(nodes) {
 		targetCompatibility = JavaVersion.VERSION_21
 	}
 
+	// A resource in <branch>/versions/<mc>/src/main/resources replaces the shared one with the same
+	// path: that source dir comes first and the first copy wins.
+	tasks.withType(ProcessResources).configureEach {
+		duplicatesStrategy = DuplicatesStrategy.EXCLUDE
+	}
+	tasks.matching { it.name == 'sourcesJar' }.configureEach {
+		duplicatesStrategy = DuplicatesStrategy.EXCLUDE
+	}
+
 	tasks.withType(JavaCompile).configureEach {
 		it.options.release = 21
 		it.options.encoding = 'UTF-8'

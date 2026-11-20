@@ -1,0 +1,17 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "pattern": [
+    "III",
+    "IEI",
+    "IRI"
+  ],
+  "key": {
+    "I": "minecraft:stone",
+    "E": "minecraft:ender_pearl",
+    "R": "minecraft:redstone"
+  },
+  "result": {
+    "count": 1,
+    "id": "universegate:portal_core"
+  }
+}

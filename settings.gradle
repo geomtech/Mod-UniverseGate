@@ -27,7 +27,7 @@ rootProject.name = 'universegate'
 
 // Supported Minecraft versions. Each one needs a versions/<mc>.properties file.
 // The first one (1.21.1) is the "VCS version": the code committed to git is always written for it.
-def minecraftVersions = ['1.21.1']
+def minecraftVersions = ['1.21.1', '1.21.11']
 
 // common   : loader-independent code and resources (compiled against vanilla Minecraft)
 // fabric   : Fabric entrypoints + Fabric API glue  -> universegate-fabric-<version>+<mc>.jar

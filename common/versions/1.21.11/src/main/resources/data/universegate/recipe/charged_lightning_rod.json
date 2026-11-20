@@ -1,0 +1,11 @@
+{
+  "type": "minecraft:crafting_shapeless",
+  "ingredients": [
+    "minecraft:lightning_rod",
+    "minecraft:end_rod"
+  ],
+  "result": {
+    "count": 1,
+    "id": "universegate:charged_lightning_rod"
+  }
+}

@@ -1,0 +1,19 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "pattern": [
+    "ICI",
+    "RGR",
+    "IBI"
+  ],
+  "key": {
+    "I": "minecraft:iron_ingot",
+    "C": "universegate:energy_condenser",
+    "R": "minecraft:redstone",
+    "G": "minecraft:glass",
+    "B": "minecraft:polished_blackstone"
+  },
+  "result": {
+    "id": "universegate:zpc_interface_controller",
+    "count": 1
+  }
+}

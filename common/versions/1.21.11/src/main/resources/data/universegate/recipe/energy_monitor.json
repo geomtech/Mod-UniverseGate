@@ -1,0 +1,17 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "pattern": [
+    " R ",
+    "GIG",
+    " R "
+  ],
+  "key": {
+    "R": "minecraft:redstone",
+    "G": "minecraft:glass_pane",
+    "I": "minecraft:iron_ingot"
+  },
+  "result": {
+    "id": "universegate:energy_monitor",
+    "count": 1
+  }
+}

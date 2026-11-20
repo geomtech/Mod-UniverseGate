@@ -1,0 +1,17 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "pattern": [
+    " R ",
+    "QGQ",
+    " R "
+  ],
+  "key": {
+    "R": "minecraft:redstone",
+    "Q": "minecraft:quartz",
+    "G": "minecraft:gold_ingot"
+  },
+  "result": {
+    "id": "universegate:energy_crystal",
+    "count": 1
+  }
+}
