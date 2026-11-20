@@ -34,12 +34,13 @@ public final class WireNetwork {
         Set<BlockPos> visited = new HashSet<>();
         ArrayDeque<BlockPos> queue = new ArrayDeque<>();
 
+        if (!level.isLoaded(start)) return new Scan(List.of(), List.of(), List.of());
         BlockState startState = level.getBlockState(start);
         BlockPos first = startState.is(ModBlocks.LIGHTNING_ANTENNA) ? LightningAntennaBlock.basePos(start, startState) : start;
         queue.add(first.immutable());
         visited.add(first.immutable());
 
-        while (!queue.isEmpty() && visited.size() < MAX_NODES) {
+        while (!queue.isEmpty()) {
             BlockPos pos = queue.poll();
             BlockState state = level.getBlockState(pos);
 
@@ -60,8 +61,7 @@ public final class WireNetwork {
                     if (grippedState.is(ModBlocks.PORTAL_CORE)) {
                         cores.add(gripped.immutable());
                     } else if (grippedState.is(ModBlocks.PORTAL_FRAME)) {
-                        BlockPos core = findCoreOfFrame(level, gripped);
-                        if (core != null) cores.add(core);
+                        PortalFrameDetector.findCoreOfFrame(level, gripped).ifPresent(cores::add);
                     } else if (grippedState.is(ModBlocks.LIGHTNING_ANTENNA)) {
                         visit(level, LightningAntennaBlock.basePos(gripped, grippedState), visited, queue);
                     }
@@ -69,19 +69,23 @@ public final class WireNetwork {
                 for (Direction direction : Direction.values()) {
                     if (direction == facing) continue;
                     BlockPos next = pos.relative(direction);
-                    if (level.isLoaded(next) && ElectricWireBlock.isWire(level.getBlockState(next))) {
+                    if (wirePointsBack(level, next, direction)) {
                         visit(level, next, visited, queue);
                     }
                 }
             } else if (LightningAntennaBlock.isBase(state)) {
                 antennas.add(pos);
-                for (Direction direction : Direction.values()) {
-                    if (direction == Direction.UP) continue;
-                    BlockPos next = pos.relative(direction);
-                    if (!level.isLoaded(next)) continue;
-                    BlockState nextState = level.getBlockState(next);
-                    if (ElectricWireBlock.isWire(nextState) || nextState.is(ModBlocks.CROCODILE_CLIP)) {
-                        visit(level, next, visited, queue);
+                for (int height = 0; height < LightningAntennaBlock.HEIGHT; height++) {
+                    BlockPos part = pos.above(height);
+                    for (Direction direction : Direction.values()) {
+                        BlockPos next = part.relative(direction);
+                        if (!level.isLoaded(next)) continue;
+                        BlockState neighbor = level.getBlockState(next);
+                        boolean gripsMast = neighbor.is(ModBlocks.CROCODILE_CLIP)
+                                && neighbor.getValue(CrocodileClipBlock.FACING) == direction.getOpposite();
+                        if (gripsMast || (height == 0 && wirePointsBack(level, next, direction))) {
+                            visit(level, next, visited, queue);
+                        }
                     }
                 }
             }
@@ -91,24 +95,14 @@ public final class WireNetwork {
 
     private static void visit(Level level, BlockPos pos, Set<BlockPos> visited, ArrayDeque<BlockPos> queue) {
         BlockPos immutable = pos.immutable();
-        if (!level.isLoaded(immutable)) return;
+        if (visited.size() >= MAX_NODES || !level.isLoaded(immutable)) return;
         if (visited.add(immutable)) queue.add(immutable);
     }
 
-    /** The core of the portal whose frame contains {@code framePos}, or null. */
-    public static BlockPos findCoreOfFrame(Level level, BlockPos framePos) {
-        // The core sits at the bottom centre of a 5x6 frame: at most 2 blocks sideways and 5 below.
-        for (int dy = 0; dy <= 5; dy++) {
-            for (int dx = -2; dx <= 2; dx++) {
-                for (int dz = -2; dz <= 2; dz++) {
-                    if (dx != 0 && dz != 0) continue;
-                    BlockPos candidate = framePos.offset(dx, -dy, dz);
-                    if (!level.isLoaded(candidate)) continue;
-                    if (!level.getBlockState(candidate).is(ModBlocks.PORTAL_CORE)) continue;
-                    if (PortalFrameDetector.find(level, candidate).isPresent()) return candidate.immutable();
-                }
-            }
-        }
-        return null;
+    private static boolean wirePointsBack(Level level, BlockPos next, Direction direction) {
+        if (!level.isLoaded(next)) return false;
+        BlockState wire = level.getBlockState(next);
+        return ElectricWireBlock.isWire(wire)
+                && wire.getValue(ElectricWireBlock.sideProperty(direction.getOpposite())) != RedstoneSide.NONE;
     }
 }

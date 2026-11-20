@@ -8,6 +8,7 @@ import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.world.item.context.BlockPlaceContext;
 import net.minecraft.world.level.BlockGetter;
+import net.minecraft.world.level.Level;
 import net.minecraft.world.level.LevelAccessor;
 import net.minecraft.world.level.LevelReader;
 import net.minecraft.world.level.block.Block;
@@ -170,6 +171,7 @@ public class ElectricWireBlock extends Block {
      */
     public static @Nullable Link link(BlockGetter level, BlockPos pos, Direction attach, Direction direction) {
         BlockPos next = pos.relative(direction);
+        if (level instanceof Level world && !world.isLoaded(next)) return null;
         BlockState nextState = level.getBlockState(next);
 
         // Same surface, or the wire continues on the face this one runs into (inner corner, upper side).
@@ -181,6 +183,7 @@ public class ElectricWireBlock extends Block {
 
         // Inner corner, lower side: the wire climbs the face in front of it, inside this block.
         BlockPos inside = pos.relative(attach.getOpposite());
+        if (level instanceof Level world && !world.isLoaded(inside)) return null;
         BlockState insideState = level.getBlockState(inside);
         if (isWire(insideState) && insideState.getValue(FACING) == direction) {
             return new Link(RedstoneSide.UP, inside);
@@ -189,6 +192,7 @@ public class ElectricWireBlock extends Block {
         if (nextState.isRedstoneConductor(level, next)) {
             // Step up: the wire climbs the step and goes on on top of it.
             BlockPos above = next.relative(attach.getOpposite());
+            if (level instanceof Level world && !world.isLoaded(above)) return null;
             BlockState aboveState = level.getBlockState(above);
             if (isWire(aboveState) && aboveState.getValue(FACING) == attach
                     && !insideState.isRedstoneConductor(level, inside)) {
@@ -197,6 +201,7 @@ public class ElectricWireBlock extends Block {
         } else {
             // Outer corner (the wire wraps around the edge) or step down.
             BlockPos below = next.relative(attach);
+            if (level instanceof Level world && !world.isLoaded(below)) return null;
             BlockState belowState = level.getBlockState(below);
             if (isWire(belowState)) {
                 Direction belowAttach = belowState.getValue(FACING);

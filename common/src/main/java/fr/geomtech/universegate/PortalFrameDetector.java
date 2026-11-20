@@ -38,6 +38,24 @@ public final class PortalFrameDetector {
         return Optional.empty();
     }
 
+    /** Finds a loaded, complete frame whose border actually contains the clipped block. */
+    static Optional<BlockPos> findCoreOfFrame(Level level, BlockPos framePos) {
+        for (Direction right : List.of(Direction.EAST, Direction.SOUTH)) {
+            for (int dy = 0; dy <= TOP_Y; dy++) {
+                for (int dx = -HALF_OUTER_WIDTH; dx <= HALF_OUTER_WIDTH; dx++) {
+                    if (dy != 0 && dy != TOP_Y && Math.abs(dx) != HALF_OUTER_WIDTH) continue;
+                    BlockPos core = offset(framePos, right, -dx, -dy);
+                    if (!level.isLoaded(core) || !level.getBlockState(core).is(ModBlocks.PORTAL_CORE)) continue;
+                    // This five-block row spans at most two chunks; every row is directly above it.
+                    if (!level.isLoaded(core.relative(right, -HALF_OUTER_WIDTH))
+                            || !level.isLoaded(core.relative(right, HALF_OUTER_WIDTH))) continue;
+                    if (tryMatch(level, core, right).isPresent()) return Optional.of(core);
+                }
+            }
+        }
+        return Optional.empty();
+    }
+
     private static Optional<FrameMatch> tryMatch(Level level, BlockPos corePos, Direction right) {
         List<BlockPos> interior = new ArrayList<>();
 

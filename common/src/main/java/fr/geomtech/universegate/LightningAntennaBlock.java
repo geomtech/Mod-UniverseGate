@@ -143,7 +143,8 @@ public class LightningAntennaBlock extends BaseEntityBlock {
         BlockPos belowPos = pos.below();
         BlockState below = level.getBlockState(belowPos);
         if (part == Part.BASE) {
-            return below.isFaceSturdy(level, belowPos, Direction.UP);
+            return !below.is(ModBlocks.PORTAL_FRAME) && !below.is(ModBlocks.PORTAL_CORE)
+                    && below.isFaceSturdy(level, belowPos, Direction.UP);
         }
         return below.is(this) && below.getValue(PART).ordinal() == part.ordinal() - 1;
     }
