@@ -12,8 +12,8 @@ import net.minecraft.world.level.block.state.BlockState;
  * Animation de l'anneau 3D d'un portail construit, entièrement côté client.
  *
  * <p>L'anneau tourne sur lui-même : il accélère pendant l'ouverture, garde une rotation lente tant que le
- * portail est ouvert (plus nerveuse s'il est instable) et ralentit jusqu'à l'arrêt une fois fermé. À la
- * fermeture, l'anneau se refroidit : jets de vapeur et fumée par ses évents, avec un « pssshhh ».</p>
+ * portail est ouvert (plus nerveuse s'il est instable). À la fermeture, il repart en sens inverse jusqu'à sa
+ * position d'origine, puis se refroidit : jets de vapeur et fumée par ses évents, avec un « pssshhh ».</p>
  *
  * <p>Les couches de rendu ({@link PortalGateLayer}) lisent l'angle ici, ce qui permet d'ajouter d'autres
  * effets sans toucher à l'animation.</p>
@@ -24,10 +24,12 @@ public final class PortalGateAnimator {
     private static final float ACTIVE_SPEED = 1.2F;
     private static final float UNSTABLE_SPEED = 3.5F;
     private static final int VENT_TICKS = 60;
+    private static final float REWIND_MAX_SPEED = 6.0F;
 
     private float angle;
     private float speed;
     private boolean wasRunning;
+    private boolean rewinding;
     private int ventTicks;
     private Direction right;
 
@@ -37,23 +39,50 @@ public final class PortalGateAnimator {
         boolean active = core.isActive();
         boolean unstable = active && core.isClientAmbientUnstable();
 
-        float target = opening ? OPENING_SPEED : unstable ? UNSTABLE_SPEED : active ? ACTIVE_SPEED : 0.0F;
-        // Montée en régime lente à l'ouverture, freinage progressif à la fermeture.
-        speed += (target - speed) * (target > speed ? 0.04F : 0.025F);
-        if (unstable) speed += (level.random.nextFloat() - 0.5F) * 0.8F;
-        if (Math.abs(speed) < 0.01F && target == 0.0F) speed = 0.0F;
-        angle = (angle + speed) % 360.0F;
-
         boolean running = opening || active;
         if (wasRunning && !running) {
-            ventTicks = VENT_TICKS;
+            rewinding = true; // fermeture : retour en arrière vers la position d'origine, puis vapeur
+        }
+        if (running) {
+            rewinding = false;
         }
         wasRunning = running;
+
+        if (rewinding) {
+            tickRewind();
+        } else {
+            float target = opening ? OPENING_SPEED : unstable ? UNSTABLE_SPEED : active ? ACTIVE_SPEED : 0.0F;
+            // Montée en régime lente à l'ouverture.
+            speed += (target - speed) * (target > speed ? 0.04F : 0.025F);
+            if (unstable) speed += (level.random.nextFloat() - 0.5F) * 0.8F;
+            if (Math.abs(speed) < 0.01F && target == 0.0F) speed = 0.0F;
+            angle = wrap(angle + speed);
+        }
 
         if (ventTicks > 0) {
             tickVent(level, core.getBlockPos(), VENT_TICKS - ventTicks);
             ventTicks--;
         }
+    }
+
+    /** Recul jusqu'à 0° : vite au début, en douceur à l'arrivée, puis déclenche la vapeur. */
+    private void tickRewind() {
+        float remaining = angle; // l'anneau recule : il doit parcourir « angle » degrés vers 0
+        float step = Math.max(0.5F, Math.min(REWIND_MAX_SPEED, remaining * 0.06F));
+        speed = -step;
+        if (angle + speed <= 0.0F) {
+            angle = 0.0F;
+            speed = 0.0F;
+            rewinding = false;
+            ventTicks = VENT_TICKS;
+            return;
+        }
+        angle += speed;
+    }
+
+    private static float wrap(float degrees) {
+        float a = degrees % 360.0F;
+        return a < 0.0F ? a + 360.0F : a;
     }
 
     /** Angle de l'anneau en degrés, interpolé entre deux ticks. */

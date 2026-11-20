@@ -2,11 +2,23 @@ package fr.geomtech.universegate;
 
 import com.mojang.blaze3d.vertex.PoseStack;
 import com.mojang.blaze3d.vertex.VertexConsumer;
+import net.minecraft.client.Minecraft;
+import net.minecraft.client.renderer.LightTexture;
 import net.minecraft.client.renderer.MultiBufferSource;
+import net.minecraft.client.renderer.texture.OverlayTexture;
+import net.minecraft.core.BlockPos;
+import net.minecraft.core.Direction;
+import net.minecraft.world.level.Level;
+import net.minecraft.world.level.LightLayer;
+import net.minecraft.world.level.block.RenderShape;
+import net.minecraft.world.level.block.state.BlockState;
 
 /**
  * Socle fixe du portail : une base en trapèze qui tient l'anneau, habillée du motif du cadre, avec au centre la
  * plaque du Core (motif de sa texture) dont les traits blancs s'allument quand le portail s'ouvre.
+ *
+ * <p>Si le bas du portail est enterré (sol devant et derrière), le socle laisse place au terrain : la rangée du
+ * bas est dessinée avec le bloc de sol voisin, et l'anneau a l'air de s'enfoncer dans le sol.</p>
  */
 final class PortalGateBaseLayer implements PortalGateLayer {
 
@@ -20,8 +32,51 @@ final class PortalGateBaseLayer implements PortalGateLayer {
 
     @Override
     public void render(PortalGateRenderContext ctx, PoseStack poseStack, MultiBufferSource buffer) {
+        if (renderBuried(ctx, poseStack, buffer)) return;
         VertexConsumer consumer = buffer.getBuffer(PortalGateRenderTypes.GATE_SOLID);
         BASE.render(consumer, poseStack.last().pose(), ctx.xAxis(), 0.0F, (tag, base, angle) -> coreColor(ctx));
+    }
+
+    /**
+     * Portail enterré : chaque bloc de la rangée du bas (Core compris) prend l'apparence du sol voisin.
+     *
+     * @return true si le socle a été remplacé par le terrain
+     */
+    private static boolean renderBuried(PortalGateRenderContext ctx, PoseStack poseStack, MultiBufferSource buffer) {
+        Level level = ctx.level();
+        Direction right = ctx.right();
+        Direction depth = right.getClockWise();
+        BlockPos core = ctx.corePos();
+        if (groundAt(level, core.relative(depth)) == null || groundAt(level, core.relative(depth.getOpposite())) == null) {
+            return false;
+        }
+
+        var blockRenderer = Minecraft.getInstance().getBlockRenderer();
+        for (int dx = -2; dx <= 2; dx++) {
+            BlockPos pos = core.relative(right, dx);
+            BlockState ground = groundAt(level, pos.relative(depth));
+            if (ground == null) ground = groundAt(level, pos.relative(depth.getOpposite()));
+            if (ground == null) ground = groundAt(level, pos.below());
+            if (ground == null) continue;
+
+            BlockPos lightPos = pos.above();
+            int light = LightTexture.pack(level.getBrightness(LightLayer.BLOCK, lightPos),
+                    level.getBrightness(LightLayer.SKY, lightPos));
+            poseStack.pushPose();
+            poseStack.translate(right.getStepX() * dx, 0.0D, right.getStepZ() * dx);
+            blockRenderer.renderSingleBlock(ground, poseStack, buffer, light, OverlayTexture.NO_OVERLAY);
+            poseStack.popPose();
+        }
+        return true;
+    }
+
+    /** Bloc de terrain plein (herbe, terre, pierre...), ou null. */
+    private static BlockState groundAt(Level level, BlockPos pos) {
+        BlockState state = level.getBlockState(pos);
+        if (state.is(ModBlocks.PORTAL_FRAME) || state.is(ModBlocks.PORTAL_CORE)) return null;
+        if (state.getRenderShape() != RenderShape.MODEL) return null;
+        if (!state.isCollisionShapeFullBlock(level, pos)) return null;
+        return state;
     }
 
     private static int coreColor(PortalGateRenderContext ctx) {
@@ -37,8 +92,12 @@ final class PortalGateBaseLayer implements PortalGateLayer {
                 int i = y * WIDTH + x;
                 int h = x + ORIGIN_H;
                 if (h >= 0 && h < 16) {
-                    // Plaque du Core : exactement à la place du bloc du Core.
-                    if (PortalGatePatterns.core(h, y) > 0x80) {
+                    // Plaque du Core : exactement à la place du bloc du Core, à hauteur du socle.
+                    if (y >= PLINTH_HEIGHT) {
+                        color[i] = PortalGateMesh.EMPTY;
+                    } else if (y == PLINTH_HEIGHT - 1 || h == 0 || h == 15) {
+                        color[i] = 0x3A3A3A;
+                    } else if (PortalGatePatterns.core(h, y + 2) > 0x80) {
                         color[i] = 0xFFFFFF;
                         tag[i] = TAG_CORE;
                     } else {
