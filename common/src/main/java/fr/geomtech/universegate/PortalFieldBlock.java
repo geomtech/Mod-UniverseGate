@@ -2,7 +2,6 @@ package fr.geomtech.universegate;
 
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
-import net.minecraft.core.particles.ParticleTypes;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.util.RandomSource;
 import net.minecraft.world.entity.Entity;
@@ -197,7 +196,7 @@ public class PortalFieldBlock extends Block implements EntityBlock, SimpleWaterl
                     pvx += side * normalSpeed;
                 }
 
-                level.addParticle(ParticleTypes.END_ROD, px, py, pz, pvx, pvy, pvz);
+                level.addParticle(ModParticles.SPARK, px, py, pz, pvx, pvy, pvz);
             }
         }
     }

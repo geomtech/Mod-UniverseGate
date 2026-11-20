@@ -1,7 +1,6 @@
 package fr.geomtech.universegate;
 
 import net.minecraft.core.BlockPos;
-import net.minecraft.core.particles.ParticleTypes;
 import net.minecraft.util.RandomSource;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.entity.BlockEntity;
@@ -68,7 +67,7 @@ public class LightBeamEmitterBlockEntity extends BlockEntity {
     private static void burst(Level level, RandomSource random, double x, double y, double z,
                               int count, double dx, double dy, double dz) {
         for (int n = 0; n < count; n++) {
-            level.addParticle(ParticleTypes.END_ROD,
+            level.addParticle(ModParticles.SPARK,
                     x + random.nextGaussian() * dx,
                     y + random.nextGaussian() * dy,
                     z + random.nextGaussian() * dz,

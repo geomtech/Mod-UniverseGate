@@ -563,7 +563,7 @@ public class MobClonerControllerBlockEntity extends net.minecraft.world.level.bl
 
             level.sendParticles(ParticleTypes.PORTAL, centerX, y, centerZ, baseCount + 12, spread, 0.24D, spread, 0.08D);
             level.sendParticles(ParticleTypes.ENCHANT, centerX, y, centerZ, baseCount + 8, spread, 0.18D, spread, 0.03D);
-            level.sendParticles(ParticleTypes.END_ROD, centerX, y, centerZ, (baseCount / 2) + 8, spread * 0.85D, 0.16D, spread * 0.85D, 0.0D);
+            level.sendParticles(ModParticles.SPARK, centerX, y, centerZ, (baseCount / 2) + 8, spread * 0.85D, 0.16D, spread * 0.85D, 0.0D);
             level.sendParticles(ParticleTypes.GLOW, centerX, y, centerZ, (baseCount / 2) + 6, spread * 0.75D, 0.16D, spread * 0.75D, 0.0D);
 
             if (((currentChargeTicks + layer) & 1) == 0) {
@@ -577,7 +577,7 @@ public class MobClonerControllerBlockEntity extends net.minecraft.world.level.bl
                 double px = centerX + Math.cos(angle) * ringRadius;
                 double py = y - 0.22D + (i % 3) * 0.14D;
                 double pz = centerZ + Math.sin(angle) * ringRadius;
-                level.sendParticles(ParticleTypes.END_ROD, px, py, pz, 1, 0.0D, 0.015D, 0.0D, 0.0D);
+                level.sendParticles(ModParticles.SPARK, px, py, pz, 1, 0.0D, 0.015D, 0.0D, 0.0D);
             }
         }
     }
@@ -595,7 +595,7 @@ public class MobClonerControllerBlockEntity extends net.minecraft.world.level.bl
 
             level.sendParticles(ParticleTypes.PORTAL, centerX, y, centerZ, 70, spread, 0.30D, spread, 0.11D);
             level.sendParticles(ParticleTypes.ENCHANT, centerX, y, centerZ, 64, spread, 0.22D, spread, 0.04D);
-            level.sendParticles(ParticleTypes.END_ROD, centerX, y, centerZ, 42, spread * 0.85D, 0.20D, spread * 0.85D, 0.0D);
+            level.sendParticles(ModParticles.SPARK, centerX, y, centerZ, 42, spread * 0.85D, 0.20D, spread * 0.85D, 0.0D);
             level.sendParticles(ParticleTypes.GLOW, centerX, y, centerZ, 48, spread * 0.75D, 0.20D, spread * 0.75D, 0.0D);
             level.sendParticles(ParticleTypes.ELECTRIC_SPARK, centerX, y, centerZ, 24, spread * 0.9D, 0.25D, spread * 0.9D, 0.04D);
         }

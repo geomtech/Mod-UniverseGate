@@ -2,7 +2,6 @@ package fr.geomtech.universegate;
 
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
-import net.minecraft.core.particles.ParticleTypes;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.util.RandomSource;
 import net.minecraft.world.level.BlockGetter;
@@ -91,7 +90,7 @@ public class PortalFrameBlock extends Block implements EntityBlock {
                 double vx = (random.nextDouble() - 0.5) * 0.03;
                 double vy = (random.nextDouble() - 0.5) * 0.03;
                 double vz = (random.nextDouble() - 0.5) * 0.03;
-                level.addParticle(ParticleTypes.END_ROD, x, y, z, vx, vy, vz);
+                level.addParticle(ModParticles.SPARK, x, y, z, vx, vy, vz);
             }
             return;
         }
@@ -103,7 +102,7 @@ public class PortalFrameBlock extends Block implements EntityBlock {
         double vx = (random.nextDouble() - 0.5) * 0.01;
         double vy = 0.005 + random.nextDouble() * 0.01;
         double vz = (random.nextDouble() - 0.5) * 0.01;
-        level.addParticle(ParticleTypes.END_ROD, x, y, z, vx, vy, vz);
+        level.addParticle(ModParticles.SPARK, x, y, z, vx, vy, vz);
     }
 
     @Override

@@ -7,7 +7,6 @@ import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.chat.Component;
 import net.minecraft.world.level.ChunkPos;
 import net.minecraft.server.level.ServerLevel;
-import net.minecraft.core.particles.ParticleTypes;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.tags.FluidTags;
 import net.minecraft.world.entity.player.Player;
@@ -148,7 +147,7 @@ public class PortalCoreBlockEntity extends BlockEntity implements PosMenuProvide
         double x = worldPosition.getX() + 0.5;
         double y = worldPosition.getY() + 1.2;
         double z = worldPosition.getZ() + 0.5;
-        level.sendParticles(ParticleTypes.END_ROD, x, y, z, 4, 0.35, 0.5, 0.35, 0.0);
+        level.sendParticles(ModParticles.SPARK, x, y, z, 4, 0.35, 0.5, 0.35, 0.0);
     }
 
     private boolean restoreActiveState(ServerLevel sl) {
