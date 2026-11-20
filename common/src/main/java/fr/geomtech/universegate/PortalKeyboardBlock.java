@@ -44,10 +44,11 @@ public class PortalKeyboardBlock extends BaseEntityBlock {
     public static final DirectionProperty FACING = BlockStateProperties.HORIZONTAL_FACING;
     public static final BooleanProperty LIT = BlockStateProperties.LIT;
 
+    // Socle octogonal, pied et pupitre incliné avec le cadran (même style que l'anneau 3D du portail).
     private static final VoxelShape SHAPE_NORTH = Shapes.or(
-            Block.box(1.0D, 0.0D, 1.0D, 15.0D, 2.0D, 15.0D),
-            Block.box(5.0D, 2.0D, 5.0D, 11.0D, 9.0D, 11.0D),
-            Block.box(1.0D, 9.0D, 2.0D, 15.0D, 13.0D, 16.0D)
+            Block.box(1.0D, 0.0D, 1.0D, 15.0D, 3.0D, 15.0D),
+            Block.box(5.0D, 3.0D, 5.0D, 11.0D, 8.0D, 11.0D),
+            Block.box(2.0D, 8.0D, 1.0D, 14.0D, 13.0D, 15.0D)
     );
     private static final VoxelShape SHAPE_EAST = rotate90Y(SHAPE_NORTH);
     private static final VoxelShape SHAPE_SOUTH = rotate90Y(SHAPE_EAST);
