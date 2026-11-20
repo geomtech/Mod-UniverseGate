@@ -124,8 +124,8 @@ Each release ships two jars. Pick the one that matches your loader:
 
 | Loader | Jar |
 | --- | --- |
-| Fabric | `universegate-fabric-<version>.jar` (requires **Fabric API**) |
-| NeoForge | `universegate-neoforge-<version>.jar` |
+| Fabric | `universegate-fabric-<version>+<minecraft>.jar` (requires **Fabric API**) |
+| NeoForge | `universegate-neoforge-<version>+<minecraft>.jar` |
 
 1.  Download the jar for your loader.
 2.  Place it in your `mods` folder.
@@ -139,7 +139,9 @@ The project is a multi-loader Gradle build:
 - `fabric/`: Fabric entrypoints and Fabric API glue.
 - `neoforge/`: NeoForge entrypoints and NeoForge glue.
 
-Run `./gradlew build` (JDK 21+). The jars end up in `fabric/build/libs/` and `neoforge/build/libs/`. Dev servers: `./gradlew :fabric:runServer` or `./gradlew :neoforge:runServer`.
+The build uses [Stonecutter](https://stonecutter.kikugie.dev/) so the same code can target several Minecraft versions (see [versions/README.md](versions/README.md)).
+
+Run `./gradlew build` (JDK 21+). The jars end up in `fabric/versions/<mc>/build/libs/` and `neoforge/versions/<mc>/build/libs/`. Dev servers: `./gradlew :fabric:1.21.1:runServer` or `./gradlew :neoforge:1.21.1:runServer`.
 
 ## License
 
