@@ -32,6 +32,7 @@ public final class PortalGateAnimator {
     private boolean rewinding;
     private int ventTicks;
     private Direction right;
+    private final PortalGateArcs arcs = new PortalGateArcs();
 
     void tick(Level level, PortalCoreBlockEntity core) {
         right = resolveRight(level, core.getBlockPos());
@@ -58,6 +59,8 @@ public final class PortalGateAnimator {
             if (Math.abs(speed) < 0.01F && target == 0.0F) speed = 0.0F;
             angle = wrap(angle + speed);
         }
+
+        arcs.tick(level, core.getBlockPos(), right, angle, opening, active, unstable);
 
         if (ventTicks > 0) {
             tickVent(level, core.getBlockPos(), VENT_TICKS - ventTicks);
@@ -90,11 +93,16 @@ public final class PortalGateAnimator {
         return angle + speed * partialTick;
     }
 
+    /** Arcs électriques en cours entre les cristaux de l'anneau et les blocs voisins. */
+    public PortalGateArcs arcs() {
+        return arcs;
+    }
+
     public float speed() {
         return speed;
     }
 
-    /** Refroidissement : deux bouffées de vapeur, puis de la fumée qui s'élève doucement. */
+    /** Refroidissement : deux jets de vapeur, puis quelques volutes de vapeur qui s'élèvent (pas de fumée). */
     private void tickVent(Level level, BlockPos core, int age) {
         if (right == null) return;
         RandomSource random = level.random;
@@ -117,10 +125,9 @@ public final class PortalGateAnimator {
             if (jet) {
                 double[] v = toVelocity(out * (0.12D + random.nextDouble() * 0.08D), 0.02D + random.nextDouble() * 0.04D);
                 level.addParticle(ParticleTypes.CLOUD, p[0], p[1], p[2], v[0], v[1], v[2]);
-            } else if (random.nextInt(5) == 0) {
-                level.addParticle(ParticleTypes.CAMPFIRE_COSY_SMOKE, p[0], p[1], p[2],
-                        (random.nextDouble() - 0.5D) * 0.01D, 0.03D + random.nextDouble() * 0.02D,
-                        (random.nextDouble() - 0.5D) * 0.01D);
+            } else if (random.nextInt(4) == 0) {
+                double[] v = toVelocity(out * 0.02D, 0.05D + random.nextDouble() * 0.03D);
+                level.addParticle(ParticleTypes.CLOUD, p[0], p[1], p[2], v[0], v[1], v[2]);
             }
         }
     }

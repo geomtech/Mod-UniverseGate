@@ -9,7 +9,8 @@ public final class PortalGateLayers {
     private static final List<PortalGateLayer> LAYERS = new CopyOnWriteArrayList<>(List.of(
             new PortalGateBaseLayer(),
             new PortalGateRingLayer(),
-            new PortalMembraneLayer()
+            new PortalMembraneLayer(),
+            new PortalArcLayer()
     ));
 
     private PortalGateLayers() {}
