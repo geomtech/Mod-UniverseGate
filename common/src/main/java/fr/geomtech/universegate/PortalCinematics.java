@@ -5,8 +5,6 @@ import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.core.particles.BlockParticleOption;
 import net.minecraft.core.particles.ParticleTypes;
-import net.minecraft.sounds.SoundEvents;
-import net.minecraft.sounds.SoundSource;
 import net.minecraft.util.Mth;
 import net.minecraft.util.RandomSource;
 import net.minecraft.world.entity.Entity;
@@ -31,6 +29,8 @@ import java.util.Set;
  *   <li><b>Effondrement</b> (fermeture) : 10 s avant la fin, les veines faiblissent et l'énergie
  *   redescend le cadre vers le Core ; à la fermeture, la membrane implose et se brise en éclats.</li>
  * </ul>
+ *
+ * <p>Aucun son n'est ajouté : seuls les sons du mod accompagnent ces effets.</p>
  *
  * <p>Tout est piloté par l'état synchronisé du Portal Core et par le temps de jeu, avec des tirages
  * déterministes pour la forme des fissures : chaque joueur voit la même chose au même moment.</p>
@@ -85,7 +85,6 @@ public final class PortalCinematics {
         int chargeStepsShown = 0;
         int fissuresShown = 0;
         long chargeForOpeningStart = Long.MIN_VALUE;
-        long warnedForUntil = Long.MIN_VALUE;
         final Set<Integer> entitiesInside = new HashSet<>();
     }
 
@@ -150,11 +149,6 @@ public final class PortalCinematics {
                     }
                 }
             }
-            if (!lateJoin) {
-                BlockPos sound = chargePair(path, k).get(0);
-                level.playLocalSound(sound.getX() + 0.5D, sound.getY() + 0.5D, sound.getZ() + 0.5D,
-                        SoundEvents.AMETHYST_BLOCK_RESONATE, SoundSource.BLOCKS, 0.55F, 0.7F + k * 0.09F, false);
-            }
         }
         // Les blocs déjà chargés crépitent doucement.
         for (int k = 0; k < state.chargeStepsShown; k++) {
@@ -184,8 +178,6 @@ public final class PortalCinematics {
                         (random.nextDouble() - 0.5D) * 0.25D, (random.nextDouble() - 0.5D) * 0.25D,
                         (random.nextDouble() - 0.5D) * 0.25D);
             }
-            level.playLocalSound(mid[0], mid[1], mid[2], SoundEvents.AMETHYST_BLOCK_CHIME, SoundSource.BLOCKS,
-                    0.9F, 1.1F + 0.6F * i / Math.max(1, fissures - 1), false);
         }
         // Les fissures déjà accrochées restent visibles jusqu'à l'ouverture.
         if (now % 4L == 0L) {
@@ -282,14 +274,6 @@ public final class PortalCinematics {
 
         // Effondrement : avertissement 10 s avant la fin, puis l'énergie redescend le cadre.
         if (until > 0L && remaining <= COLLAPSE_WARNING_TICKS && remaining > 0L) {
-            if (state.warnedForUntil != until) {
-                state.warnedForUntil = until;
-                if (remaining > COLLAPSE_WARNING_TICKS - 10L) {
-                    BlockPos c = frame.core();
-                    level.playLocalSound(c.getX() + 0.5D, c.getY() + CENTER_V, c.getZ() + 0.5D,
-                            SoundEvents.BEACON_DEACTIVATE, SoundSource.BLOCKS, 0.9F, 0.6F, false);
-                }
-            }
             List<BlockPos> path = frame.path();
             int steps = (path.size() + 1) / 2;
             if (now % 3L == 0L) {
@@ -359,6 +343,5 @@ public final class PortalCinematics {
                     (random.nextDouble() - 0.5D) * 0.12D, (random.nextDouble() - 0.5D) * 0.12D,
                     (random.nextDouble() - 0.5D) * 0.12D);
         }
-        level.playLocalSound(cx, cy, cz, SoundEvents.AMETHYST_CLUSTER_BREAK, SoundSource.BLOCKS, 1.0F, 0.6F, false);
     }
 }
