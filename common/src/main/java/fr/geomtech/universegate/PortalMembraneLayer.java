@@ -28,8 +28,8 @@ final class PortalMembraneLayer implements PortalGateLayer {
 
     @Override
     public void render(PortalGateRenderContext ctx, PoseStack poseStack, MultiBufferSource buffer) {
-        // La membrane n'existe que tant que le champ du portail est là.
-        if (!ctx.level().getBlockState(ctx.corePos().above()).is(ModBlocks.PORTAL_FIELD)) return;
+        // La case au-dessus du cœur peut contenir un câble même lorsque le champ est actif.
+        if (!ctx.active()) return;
 
         boolean unstable = ctx.unstable();
         long tick = ctx.tick();

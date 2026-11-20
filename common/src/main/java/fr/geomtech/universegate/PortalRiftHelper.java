@@ -30,83 +30,21 @@ public final class PortalRiftHelper {
 
     private record PendingRiftCollapse(BlockPos corePos, long startTick, long explodeTick) {}
 
+    /**
+     * Used to find a charged lightning rod near a portal. The lightning antenna replaced it and shows its
+     * own sparks on the portals it is wired to, so nothing is found here any more.
+     */
+    @Deprecated
     public static Optional<ChargedLightningRodBlockEntity> findNearestChargedRod(ServerLevel level, BlockPos portalPos, int radius) {
-        BlockPos fixed = portalPos.above(6);
-        if (level.getBlockEntity(fixed) instanceof ChargedLightningRodBlockEntity fixedRod && fixedRod.hasCharge()) {
-            return Optional.of(fixedRod);
-        }
-        // Walk the block entities of the already-loaded chunks in range instead of probing every
-        // position of the (2r+1)^3 cube: this runs every 10 ticks for every portal core.
-        ChargedLightningRodBlockEntity best = null;
-        double bestDist = Double.MAX_VALUE;
-        int minChunkX = (portalPos.getX() - radius) >> 4;
-        int maxChunkX = (portalPos.getX() + radius) >> 4;
-        int minChunkZ = (portalPos.getZ() - radius) >> 4;
-        int maxChunkZ = (portalPos.getZ() + radius) >> 4;
-        for (int cx = minChunkX; cx <= maxChunkX; cx++) {
-            for (int cz = minChunkZ; cz <= maxChunkZ; cz++) {
-                var chunk = level.getChunkSource().getChunkNow(cx, cz);
-                if (chunk == null) continue;
-                for (var blockEntity : chunk.getBlockEntities().values()) {
-                    if (!(blockEntity instanceof ChargedLightningRodBlockEntity be)) continue;
-                    BlockPos p = be.getBlockPos();
-                    if (Math.abs(p.getX() - portalPos.getX()) > radius
-                            || Math.abs(p.getY() - portalPos.getY()) > radius
-                            || Math.abs(p.getZ() - portalPos.getZ()) > radius) {
-                        continue;
-                    }
-                    if (be.isRemoved() || !be.hasCharge()) continue;
-                    double dist = p.distSqr(portalPos);
-                    if (dist < bestDist) {
-                        bestDist = dist;
-                        best = be;
-                    }
-                }
-            }
-        }
-        return Optional.ofNullable(best);
+        return Optional.empty();
     }
 
-    public static boolean tryConsumeChargeAndOpenRift(ServerLevel level, BlockPos corePos, int radius) {
-        Optional<ChargedLightningRodBlockEntity> rod = findNearestChargedRod(level, corePos, radius);
-        if (rod.isEmpty()) return false;
-        boolean opened = openRiftPortal(level, corePos);
-        if (opened) rod.get().consumeCharge(1);
-        return opened;
-    }
-
-    public static void tryOpenRiftFromRod(ServerLevel level, BlockPos rodPos, int radius) {
-        UniverseGate.LOGGER.info("Rift rod strike at {}", rodPos);
-        BlockPos corePos = null;
-        BlockPos below = rodPos.below();
-        if (level.getBlockState(below).is(ModBlocks.PORTAL_FRAME)) {
-            UniverseGate.LOGGER.info("Rod is on portal frame at {}", below);
-            corePos = findCoreNear(level, below, radius, 5);
-        }
-        if (corePos == null) {
-            BlockPos candidate = rodPos.below(6);
-            if (level.getBlockState(candidate).is(ModBlocks.PORTAL_CORE)) {
-                UniverseGate.LOGGER.info("Rod is 6 blocks above core at {}", candidate);
-                corePos = candidate;
-            } else {
-                corePos = findCoreNear(level, rodPos, radius, 5);
-                UniverseGate.LOGGER.info("Fallback core search near rod -> {}", corePos);
-            }
-        }
-        if (corePos == null) {
-            UniverseGate.LOGGER.warn("No portal core found near rod.");
-            return;
-        }
-        if (!(level.getBlockEntity(corePos) instanceof PortalCoreBlockEntity core)) return;
-        if (core.isActiveOrOpening()) return;
-
-        if (!(level.getBlockEntity(rodPos) instanceof ChargedLightningRodBlockEntity be)) return;
-        if (!be.hasCharge()) return;
-
-        UniverseGate.LOGGER.info("Attempting to open rift from core at {}", corePos);
-        boolean opened = openRiftPortal(level, corePos);
-        UniverseGate.LOGGER.info("Rift open result: {}", opened);
-        if (opened) be.consumeCharge(1);
+    /** Opens the Rift through the portal at {@code corePos}, powered by a lightning antenna wired to it. */
+    public static boolean tryOpenRiftFromAntenna(ServerLevel level, BlockPos corePos) {
+        if (!(level.getBlockEntity(corePos) instanceof PortalCoreBlockEntity core)) return false;
+        if (core.isActiveOrOpening()) return false;
+        UniverseGate.LOGGER.info("Lightning antenna opens the Rift from core at {}", corePos);
+        return openRiftPortal(level, corePos);
     }
 
     public static boolean openRiftPortal(ServerLevel sourceLevel, BlockPos sourceCorePos) {
@@ -374,17 +312,5 @@ public final class PortalRiftHelper {
                 }
             }
         }
-    }
-
-    private static BlockPos findCoreNear(ServerLevel level, BlockPos center, int rXZ, int rY) {
-        for (int dy = -rY; dy <= rY; dy++) {
-            for (int dx = -rXZ; dx <= rXZ; dx++) {
-                for (int dz = -rXZ; dz <= rXZ; dz++) {
-                    BlockPos p = center.offset(dx, dy, dz);
-                    if (level.getBlockState(p).is(ModBlocks.PORTAL_CORE)) return p;
-                }
-            }
-        }
-        return null;
     }
 }

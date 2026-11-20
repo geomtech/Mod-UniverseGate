@@ -1,0 +1,31 @@
+{
+  "variants": {
+    "facing=down": {
+      "model": "universegate:block/crocodile_clip"
+    },
+    "facing=up": {
+      "model": "universegate:block/crocodile_clip",
+      "x": 180,
+      "y": 180
+    },
+    "facing=north": {
+      "model": "universegate:block/crocodile_clip",
+      "x": 270
+    },
+    "facing=south": {
+      "model": "universegate:block/crocodile_clip",
+      "x": 270,
+      "y": 180
+    },
+    "facing=west": {
+      "model": "universegate:block/crocodile_clip",
+      "x": 270,
+      "y": 270
+    },
+    "facing=east": {
+      "model": "universegate:block/crocodile_clip",
+      "x": 270,
+      "y": 90
+    }
+  }
+}

@@ -15,14 +15,18 @@ public final class UniverseGatePoiHelper {
 
     private UniverseGatePoiHelper() {}
 
-    public static void registerChargedLightningRodPoi() {
+    public static void registerLightningAntennaPoi() {
         Optional<Holder.Reference<PoiType>> holder = Compat.getHolder(BuiltInRegistries.POINT_OF_INTEREST_TYPE, PoiTypes.LIGHTNING_ROD);
         if (holder.isEmpty()) {
-            UniverseGate.LOGGER.warn("POI type for lightning rod not found; charged rod won't attract lightning.");
+            UniverseGate.LOGGER.warn("POI type for lightning rod not found; the lightning antenna won't attract lightning.");
             return;
         }
 
-        HashSet<BlockState> states = new HashSet<>(ModBlocks.CHARGED_LIGHTNING_ROD.getStateDefinition().getPossibleStates());
+        // Only the top of the antenna is a lightning rod: vanilla strikes the block above it.
+        HashSet<BlockState> states = new HashSet<>();
+        for (BlockState state : ModBlocks.LIGHTNING_ANTENNA.getStateDefinition().getPossibleStates()) {
+            if (state.getValue(LightningAntennaBlock.PART) == LightningAntennaBlock.Part.TOP) states.add(state);
+        }
         PoiTypesAccessor.universegate$registerBlockStates(holder.get(), states);
     }
 }

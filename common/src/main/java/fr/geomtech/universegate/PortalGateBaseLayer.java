@@ -47,7 +47,7 @@ final class PortalGateBaseLayer implements PortalGateLayer {
         Direction right = ctx.right();
         Direction depth = right.getClockWise();
         BlockPos core = ctx.corePos();
-        if (groundAt(level, core.relative(depth)) == null || groundAt(level, core.relative(depth.getOpposite())) == null) {
+        if (!isBuried(level, core, right)) {
             return false;
         }
 
@@ -73,6 +73,11 @@ final class PortalGateBaseLayer implements PortalGateLayer {
         }
         renderSockets(ctx, poseStack, buffer);
         return true;
+    }
+
+    static boolean isBuried(Level level, BlockPos core, Direction right) {
+        Direction depth = right.getClockWise();
+        return groundAt(level, core.relative(depth)) != null && groundAt(level, core.relative(depth.getOpposite())) != null;
     }
 
     private static final float GROUND_SCALE = 0.996F;

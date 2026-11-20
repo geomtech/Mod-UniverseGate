@@ -1,0 +1,28 @@
+{
+  "type": "minecraft:block",
+  "pools": [
+    {
+      "rolls": 1.0,
+      "bonus_rolls": 0.0,
+      "conditions": [
+        {
+          "condition": "minecraft:survives_explosion"
+        },
+        {
+          "condition": "minecraft:block_state_property",
+          "block": "universegate:lightning_antenna",
+          "properties": {
+            "part": "base"
+          }
+        }
+      ],
+      "entries": [
+        {
+          "type": "minecraft:item",
+          "name": "universegate:lightning_antenna"
+        }
+      ]
+    }
+  ],
+  "random_sequence": "universegate:blocks/lightning_antenna"
+}

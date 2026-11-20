@@ -25,7 +25,9 @@ public final class ModItemGroups {
                 output.accept(ModItems.PORTAL_KEYBOARD_ITEM);
                 output.accept(ModItems.PORTAL_NATURAL_KEYBOARD_ITEM);
                 output.accept(ModItems.PORTAL_MOBILE_KEYBOARD);
-                output.accept(ModItems.CHARGED_LIGHTNING_ROD_ITEM);
+                output.accept(ModItems.LIGHTNING_ANTENNA_ITEM);
+                output.accept(ModItems.ELECTRIC_WIRE_ITEM);
+                output.accept(ModItems.CROCODILE_CLIP_ITEM);
                 output.accept(ModItems.LIGHT_BEAM_EMITTER_ITEM);
                 output.accept(ModItems.ENERGY_CONDENSER_ITEM);
                 output.accept(ModItems.METEOROLOGICAL_CONDENSER_ITEM);

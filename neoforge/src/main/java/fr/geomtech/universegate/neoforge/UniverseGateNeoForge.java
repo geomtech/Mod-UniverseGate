@@ -1,12 +1,14 @@
 package fr.geomtech.universegate.neoforge;
 
 import fr.geomtech.universegate.AncientCityZpcGuarantee;
+import fr.geomtech.universegate.CrocodileClipEntity;
 import fr.geomtech.universegate.RiftDeathRecoveryHandler;
 import fr.geomtech.universegate.UniverseGate;
 import fr.geomtech.universegate.UpdateCheckManager;
 import fr.geomtech.universegate.ZpcStructureLoot;
 import net.minecraft.core.registries.Registries;
 import net.minecraft.server.level.ServerLevel;
+import net.minecraft.world.level.chunk.LevelChunk;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.level.storage.loot.LootPool;
 import net.neoforged.bus.api.EventPriority;
@@ -15,6 +17,7 @@ import net.neoforged.fml.common.Mod;
 import net.neoforged.neoforge.capabilities.RegisterCapabilitiesEvent;
 import net.neoforged.neoforge.common.NeoForge;
 import net.neoforged.neoforge.event.LootTableLoadEvent;
+import net.neoforged.neoforge.event.level.ChunkEvent;
 import net.neoforged.neoforge.event.RegisterCommandsEvent;
 import net.neoforged.neoforge.event.entity.EntityAttributeCreationEvent;
 import net.neoforged.neoforge.event.entity.RegisterSpawnPlacementsEvent;
@@ -49,6 +52,11 @@ public final class UniverseGateNeoForge {
         modBus.addListener(RegisterCapabilitiesEvent.class, NeoForgeEnergyCompat::onRegisterCapabilities);
 
         IEventBus gameBus = NeoForge.EVENT_BUS;
+        gameBus.addListener(ChunkEvent.Load.class, event -> {
+            if (event.getLevel() instanceof ServerLevel && event.getChunk() instanceof LevelChunk chunk) {
+                CrocodileClipEntity.restoreMissing(chunk);
+            }
+        });
 
         gameBus.addListener(EventPriority.LOWEST, LivingDeathEvent.class, event -> {
             if (!event.isCanceled() && event.getEntity() instanceof ServerPlayer player) {

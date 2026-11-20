@@ -141,6 +141,21 @@ public final class ModItems {
             new PortalMobileKeyboardItem(properties("portal_mobile_keyboard"))
     );
 
+    public static final Item LIGHTNING_ANTENNA_ITEM = register(
+            "lightning_antenna",
+            new BlockItem(ModBlocks.LIGHTNING_ANTENNA, blockItemProperties("lightning_antenna"))
+    );
+
+    public static final Item ELECTRIC_WIRE_ITEM = register(
+            "electric_wire",
+            new BlockItem(ModBlocks.ELECTRIC_WIRE, blockItemProperties("electric_wire"))
+    );
+
+    public static final Item CROCODILE_CLIP_ITEM = register(
+            "crocodile_clip",
+            new BlockItem(ModBlocks.CROCODILE_CLIP, blockItemProperties("crocodile_clip"))
+    );
+
     public static final Item CHARGED_LIGHTNING_ROD_ITEM = register(
             "charged_lightning_rod",
             new BlockItem(ModBlocks.CHARGED_LIGHTNING_ROD, blockItemProperties("charged_lightning_rod"))

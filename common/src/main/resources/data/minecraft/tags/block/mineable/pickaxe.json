@@ -20,6 +20,8 @@
     "universegate:portal_frame",
     "universegate:portal_keyboard",
     "universegate:charged_lightning_rod",
-    "universegate:rift_crystal_cluster"
+    "universegate:rift_crystal_cluster",
+    "universegate:lightning_antenna",
+    "universegate:crocodile_clip"
   ]
 }

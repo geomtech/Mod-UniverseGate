@@ -1,0 +1,158 @@
+import groovy.json.JsonOutput
+import java.awt.geom.Point2D
+
+// Generate vanilla baked models. Long stationary cable runs then cost no block entities or render ticks.
+class WireModels {
+    static final def FACES = ['west', 'east', 'down', 'up', 'north', 'south']
+    static final double HEIGHT = 0.72, LANE = 1.45, RADIUS = 0.62
+    final File assets
+    final List parts = []
+
+    WireModels(File assets) { this.assets = assets }
+
+    void json(String path, Object value) {
+        def file = new File(assets, path + '.json')
+        file.parentFile.mkdirs()
+        file.setText(JsonOutput.toJson(value), 'UTF-8')
+    }
+
+    static Point2D.Double pt(double x, double y) { new Point2D.Double(x, y) }
+
+    // Positive tangent axes always point in positive world coordinates. Opposing ports therefore
+    // agree on the position of each conductor, including where a cable changes supporting face.
+    static List xyz(int normal, double depth, Point2D p) {
+        def v = [0d, 0d, 0d]
+        v[normal] = depth
+        v[(normal + 1) % 3] = p.x
+        v[(normal + 2) % 3] = p.y
+        v.collect { Math.round(it * 1000) / 1000d }
+    }
+
+    static Point2D port(int side, int lane) {
+        double edge = side % 2 == 0 ? 0 : 16
+        double offset = 8 + LANE * lane
+        side < 2 ? pt(edge, offset) : pt(offset, edge)
+    }
+
+    static Point2D along(Point2D p, int side, double length) {
+        double step = side % 2 == 0 ? length : -length
+        side < 2 ? pt(p.x + step, p.y) : pt(p.x, p.y + step)
+    }
+
+    static void segment(List elements, Point2D a, Point2D b, int normal, double depth, int lane) {
+        double dx = b.x - a.x, dy = b.y - a.y
+        double angle = Math.toDegrees(Math.atan2(dy, dx))
+        boolean vertical = Math.abs(dy) > Math.abs(dx)
+        if (vertical) angle -= 90
+        while (angle > 90) angle -= 180
+        while (angle < -90) angle += 180
+        // Vanilla 1.21.1 allows element rotations in steps of 22.5 degrees.
+        angle = Math.round(angle / 22.5d) * 22.5d
+        double half = Math.hypot(dx, dy) * 0.5 + 0.13
+        double u = (a.x + b.x) / 2, v = (a.y + b.y) / 2
+        double du = vertical ? RADIUS : half, dv = vertical ? half : RADIUS
+        def face = [texture: lane > 0 ? '#red' : '#blue', uv: [1.25, 1.25, 1.75, 1.75]]
+        def element = [from: xyz(normal, depth - RADIUS, pt(u-du, v-dv)),
+                       to: xyz(normal, depth + RADIUS, pt(u+du, v+dv)),
+                       faces: FACES.collectEntries { [(it): face] }]
+        if (angle != 0) element.rotation = [origin: xyz(normal, depth, pt(u,v)), axis: 'xyz'[normal], angle: angle]
+        elements << element
+    }
+
+    static void curve(List elements, int face, int lane, int steps, Closure path, Closure lift) {
+        int normal = face.intdiv(2)
+        Point2D previous = path(0d)
+        for (int i = 1; i <= steps; i++) {
+            double t = i / (double) steps
+            Point2D next = path(t)
+            double height = HEIGHT + lift((i - 0.5d) / steps)
+            segment(elements, previous, next, normal, face % 2 == 0 ? height : 16-height, lane)
+            previous = next
+        }
+    }
+
+    static Point2D bezier(Point2D a, Point2D b, Point2D c, Point2D d, double t) {
+        double s = 1 - t
+        pt(s*s*s*a.x + 3*s*s*t*b.x + 3*s*t*t*c.x + t*t*t*d.x,
+           s*s*s*a.y + 3*s*s*t*b.y + 3*s*t*t*c.y + t*t*t*d.y)
+    }
+
+    static List surface(int face, List<Integer> sides, double slack) {
+        def elements = []
+        for (int lane : [-1, 1]) {
+            if (sides.size() == 2) {
+                int first = sides[0], last = sides[1]
+                def a = port(first, lane), d = port(last, lane)
+                def b = along(a, first, 5.2), c = along(d, last, 5.2)
+                boolean bend = first.intdiv(2) != last.intdiv(2)
+                boolean cross = bend && first % 2 != last % 2
+                curve(elements, face, lane, 9, { t ->
+                    def p = bezier(a,b,c,d,t)
+                    double bow = slack * Math.sin(Math.PI*2*t) * Math.sin(Math.PI*t)
+                    first < 2 ? pt(p.x, p.y+bow) : pt(p.x+bow, p.y)
+                }, { t -> cross && lane > 0 ? 1.6 * Math.pow(Math.sin(Math.PI*t), 2) : 0d })
+            } else if (sides.empty) {
+                // A loose pair of leads curling back on themselves before another piece is connected.
+                curve(elements, face, lane, 12, { t ->
+                    double angle = -0.75 + 4.65*t
+                    double radius = 4 + lane*0.85 + t*0.5
+                    pt(8+radius*Math.cos(angle), 8+radius*Math.sin(angle))
+                }, { 0d })
+            } else {
+                for (int side : sides) {
+                    def a = port(side, lane)
+                    def end = pt(8+lane*LANE,8+lane*LANE)
+                    def c = side < 2 ? pt(end.x-1, end.y+slack*2) : pt(end.x+slack*2, end.y-1)
+                    curve(elements, face, lane, 5, { t -> bezier(a,along(a,side,3),c,end,t) }, { 0d })
+                }
+            }
+        }
+        elements
+    }
+
+    def model(String name, List elements) {
+        json('models/block/wire/' + name, [textures: [particle: 'universegate:block/crocodile_clip_red',
+             red: 'universegate:block/crocodile_clip_red', blue: 'universegate:block/crocodile_clip_blue'], elements: elements])
+        [model: 'universegate:block/wire/' + name]
+    }
+
+    void generate() {
+        for (int face = 0; face < 6; face++) {
+            int normal = face.intdiv(2)
+            def axes = [(normal+1)%3,(normal+2)%3]
+            def directions = axes.collectMany { [2*it,2*it+1] }
+            for (int mask = 0; mask < 16; mask++) {
+                def sides = (0..<4).findAll { (mask & (1 << it)) != 0 }
+                def when = [facing: FACES[face]]
+                directions.eachWithIndex { dir, side -> when[FACES[dir]] = side in sides ? 'side|up' : 'none' }
+                def shape = FACES[face] + '_' + mask
+                def apply = model(shape, surface(face, sides, 0.92))
+                if (sides.size() == 2) apply = [apply, model(shape + '_slack', surface(face, sides, -1.05))]
+                parts << [when: when, apply: apply]
+            }
+            directions.each { int dir ->
+                // The extra leg lies on the face in front of this wire and spans the entire step.
+                int riserNormal = dir.intdiv(2)
+                int span = (riserNormal+1)%3 == normal ? 0 : 1
+                def elements = []
+                for (int lane : [-1,1]) {
+                    def a = port(2*span,lane), b = port(2*span+1,lane)
+                    curve(elements, dir, lane, 6, { t ->
+                        double bow = 0.65*Math.pow(Math.sin(Math.PI*t),2)
+                        pt(a.x+(b.x-a.x)*t+(span==1?bow:0), a.y+(b.y-a.y)*t+(span==0?bow:0))
+                    }, { 0d })
+                }
+                parts << [when: [facing: FACES[face], (FACES[dir]): 'up'],
+                          apply: model('riser_' + face + '_' + dir, elements)]
+            }
+        }
+        json('blockstates/electric_wire', [multipart: parts])
+    }
+}
+
+tasks.register('generateWireModels') {
+    def destination = layout.buildDirectory.dir('generated/wire-resources')
+    inputs.file(rootProject.file('gradle/wire-models.gradle'))
+    outputs.dir(destination)
+    doLast { new WireModels(new File(destination.get().asFile, 'assets/universegate')).generate() }
+}

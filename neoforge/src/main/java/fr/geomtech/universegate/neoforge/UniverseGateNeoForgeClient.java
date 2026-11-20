@@ -65,12 +65,18 @@ public final class UniverseGateNeoForgeClient {
             ItemBlockRenderTypes.setRenderLayer(ModBlocks.PORTAL_FIELD, ChunkSectionLayer.TRANSLUCENT);
             ItemBlockRenderTypes.setRenderLayer(ModBlocks.FLUID_PIPE, ChunkSectionLayer.TRANSLUCENT);
             ItemBlockRenderTypes.setRenderLayer(ModBlocks.RIFT_CRYSTAL_CLUSTER, ChunkSectionLayer.CUTOUT);
+            ItemBlockRenderTypes.setRenderLayer(ModBlocks.ELECTRIC_WIRE, ChunkSectionLayer.CUTOUT);
+            ItemBlockRenderTypes.setRenderLayer(ModBlocks.CROCODILE_CLIP, ChunkSectionLayer.CUTOUT);
+            ItemBlockRenderTypes.setRenderLayer(ModBlocks.LIGHTNING_ANTENNA, ChunkSectionLayer.CUTOUT);
             *///?} else {
             ItemBlockRenderTypes.setRenderLayer(ModFluids.STILL_DARK_MATTER, RenderType.translucent());
             ItemBlockRenderTypes.setRenderLayer(ModFluids.FLOWING_DARK_MATTER, RenderType.translucent());
             ItemBlockRenderTypes.setRenderLayer(ModBlocks.PORTAL_FIELD, RenderType.translucent());
             ItemBlockRenderTypes.setRenderLayer(ModBlocks.FLUID_PIPE, RenderType.translucent());
             ItemBlockRenderTypes.setRenderLayer(ModBlocks.RIFT_CRYSTAL_CLUSTER, RenderType.cutout());
+            ItemBlockRenderTypes.setRenderLayer(ModBlocks.ELECTRIC_WIRE, RenderType.cutout());
+            ItemBlockRenderTypes.setRenderLayer(ModBlocks.CROCODILE_CLIP, RenderType.cutout());
+            ItemBlockRenderTypes.setRenderLayer(ModBlocks.LIGHTNING_ANTENNA, RenderType.cutout());
             //?}
         }));
 
@@ -115,6 +121,8 @@ public final class UniverseGateNeoForgeClient {
             event.registerBlockEntityRenderer(ModBlockEntities.ZPC_INTERFACE_CONTROLLER, ZpcInterfaceControllerRenderer::new);
             event.registerBlockEntityRenderer(ModBlockEntities.FLUID_PIPE, FluidPipeBlockEntityRenderer::new);
             event.registerBlockEntityRenderer(ModBlockEntities.PORTAL_CORE, fr.geomtech.universegate.PortalGateRenderer::new);
+            event.registerBlockEntityRenderer(ModBlockEntities.CROCODILE_CLIP, fr.geomtech.universegate.CableTerminalRenderer::new);
+            event.registerBlockEntityRenderer(ModBlockEntities.LIGHTNING_ANTENNA, fr.geomtech.universegate.CableTerminalRenderer::new);
         });
 
         modBus.addListener(RegisterGuiLayersEvent.class, event ->

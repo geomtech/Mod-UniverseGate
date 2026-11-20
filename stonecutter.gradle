@@ -51,6 +51,7 @@ stonecutter.parameters {
 }
 
 // Stonecutter nodes: one project per branch and Minecraft version (:common:1.21.1, :fabric:1.21.1, ...).
+apply from: rootProject.file('gradle/wire-models.gradle')
 def nodes = subprojects.findAll { it.parent != rootProject }
 def nodeOf = { String branch, String mc -> project(":${branch}:${mc}") }
 
@@ -67,6 +68,10 @@ configure(nodes) {
 
 	apply plugin: 'java'
 	apply plugin: 'maven-publish'
+
+	if (project.parent.name == 'common') {
+		sourceSets.main.resources.srcDir(rootProject.tasks.named('generateWireModels'))
+	}
 
 	version = "${rootProject.mod_version}+${mc}"
 	// One group per branch: :common:1.21.1 and :fabric:1.21.1 share name and version, so with the same
