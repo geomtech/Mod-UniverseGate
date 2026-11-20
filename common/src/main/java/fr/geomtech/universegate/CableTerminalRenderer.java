@@ -16,6 +16,7 @@ import net.minecraft.world.phys.Vec3;
 import org.joml.Matrix4f;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.WeakHashMap;
@@ -56,7 +57,8 @@ public final class CableTerminalRenderer<T extends BlockEntity> extends Immediat
         // A core across a chunk boundary can arrive later than the clip and its immediate neighbours.
         if (!changed && level.getGameTime() >= geometry.retryAt) {
             changed = geometry.waitingForCore || (geometry.corePos != null
-                    && geometry.buried != PortalGateBaseLayer.isBuried(level, geometry.corePos, geometry.right));
+                    && (geometry.buried != PortalGateBaseLayer.isBuried(level, geometry.corePos, geometry.right)
+                    || geometry.terrain.entrySet().stream().anyMatch(e -> level.getBlockState(e.getKey()) != e.getValue())));
             geometry.retryAt = level.getGameTime() + 20;
         }
         if (changed) {
@@ -68,6 +70,9 @@ public final class CableTerminalRenderer<T extends BlockEntity> extends Immediat
 
     private record Bite(Vec3 lip, Vec3 back, Vec3 opening, double gap, double lean) {}
     private record Lug(Vec3 sleeve, Vec3 contact) {}
+    private record WirePort(Vec3 center, Vec3 inward, Vec3 transverse, Direction mount) {
+        Vec3 start(int lane) { return center.add(transverse.scale(lane * 1.45 / 16)); }
+    }
 
     private static Vec3 vector(Direction d) {
         return new Vec3(d.getStepX(), d.getStepY(), d.getStepZ());
@@ -76,6 +81,7 @@ public final class CableTerminalRenderer<T extends BlockEntity> extends Immediat
     private static final class Geometry {
         private final BlockState[] neighbors = new BlockState[6];
         private final List<Quad> quads = new ArrayList<>();
+        private final Map<BlockPos, BlockState> terrain = new HashMap<>();
         private Direction grip;
         private BlockPos corePos;
         private Direction right;
@@ -86,6 +92,7 @@ public final class CableTerminalRenderer<T extends BlockEntity> extends Immediat
         void rebuild(Level level, BlockPos pos, Direction facing, boolean antenna) {
             grip = facing;
             quads.clear();
+            terrain.clear();
             BlockPos supportPos = pos.relative(grip);
             BlockState support = neighbors[grip.ordinal()];
             boolean core = !antenna && support.is(ModBlocks.PORTAL_CORE) && support.getValue(PortalCoreBlock.FORMED);
@@ -100,44 +107,31 @@ public final class CableTerminalRenderer<T extends BlockEntity> extends Immediat
             Vec3 mast = antenna ? Vec3.ZERO : onMast
                     ? Vec3.atLowerCornerOf(LightningAntennaBlock.basePos(supportPos,support).subtract(pos)) : null;
             Direction mastFacing = onMast ? support.getValue(LightningAntennaBlock.FACING) : facing;
-            Vec3 foot = null, front = null, across = null;
+            List<WirePort> ports = new ArrayList<>();
+            for (Direction side : DIRECTIONS) {
+                if (!antenna && side == grip) continue;
+                BlockState wire = neighbors[side.ordinal()];
+                if (!ElectricWireBlock.isWire(wire) ||
+                        wire.getValue(ElectricWireBlock.sideProperty(side.getOpposite())) == RedstoneSide.NONE) continue;
+                Direction mount = wire.getValue(ElectricWireBlock.FACING);
+                if (side.getAxis() == mount.getAxis()) continue;
+                Vec3 transverse = vector(side).cross(vector(mount));
+                // Match the exact ports of the baked models, on floors, walls and ceilings.
+                Vec3 center = CENTER.add(vector(side).scale(.5)).add(vector(mount).scale(.5 - .72/16));
+                ports.add(new WirePort(center, vector(side).reverse(), new Vec3(Math.abs(transverse.x),
+                        Math.abs(transverse.y), Math.abs(transverse.z)), mount));
+            }
             if (right != null) {
-                across = vector(right);
-                front = vector(right.getClockWise());
-                Vec3 origin = Vec3.atLowerCornerOf(corePos.subtract(pos)).add(.5,0,.5);
-                Vec3 relative = CENTER.subtract(origin);
-                if (relative.dot(front) < 0) front = front.reverse();
-                double lateral = relative.dot(across) < 0 ? -1.53 : 1.53;
-                foot = origin.add(across.scale(lateral)).add(front.scale(.472))
-                        .add(0, buried ? 1 + 1.5/16 : .75, 0);
-                collar(foot, across, front);
+                portalTerminal(level, pos, ports);
+                return;
             }
             for (int lane : new int[]{1, -1}) {
                 int color = lane > 0 ? RED : BLUE;
-                Bite bite = mast == null && foot == null ? surfaceBite(lane) : null;
+                Bite bite = mast == null ? surfaceBite(lane) : null;
                 Vec3 socket = bite == null ? null : hardware(bite, color);
-                Lug lug = foot == null ? null : bindingPost(foot, across, front, lane);
-                boolean connected = false;
-                for (Direction side : DIRECTIONS) {
-                    if (!antenna && side == grip) continue;
-                    BlockState wire = neighbors[side.ordinal()];
-                    if (!ElectricWireBlock.isWire(wire) ||
-                            wire.getValue(ElectricWireBlock.sideProperty(side.getOpposite())) == RedstoneSide.NONE) continue;
-                    Direction mount = wire.getValue(ElectricWireBlock.FACING);
-                    if (side.getAxis() == mount.getAxis()) continue;
-                    // Same face centre, height and transverse lane as the baked model in wire-models.gradle.
-                    Vec3 inward = vector(side).reverse();
-                    Vec3 transverse = vector(side).cross(vector(mount));
-                    transverse = new Vec3(Math.abs(transverse.x), Math.abs(transverse.y), Math.abs(transverse.z));
-                    Vec3 start = CENTER.add(vector(side).scale(.5)).add(vector(mount).scale(.5 - .72/16))
-                            .add(transverse.scale(lane*1.45/16));
-                    if (mast != null) mastLead(start, inward, mast, mastFacing, lane, color, mount);
-                    else if (lug != null) {
-                        if (!connected) stripped(lug.sleeve, lug.contact, across);
-                        connected = true;
-                        footLead(start, inward, lug.sleeve, front, across, pos, color, mount, lane);
-                    }
-                    else lead(start, inward, socket, bite, color, mount);
+                for (WirePort port : ports) {
+                    if (mast != null) mastLead(port.start(lane), port.inward, mast, mastFacing, lane, color, port.mount);
+                    else lead(port.start(lane), port.inward, socket, bite, color, port.mount);
                 }
             }
         }
@@ -152,15 +146,15 @@ public final class CableTerminalRenderer<T extends BlockEntity> extends Immediat
             }
         }
 
-        private Lug bindingPost(Vec3 foot, Vec3 across, Vec3 front, int lane) {
+        private Lug bindingPost(Vec3 foot, Vec3 across, Vec3 approach, int lane) {
             Vec3 post = foot.add(across.scale(lane*.16)).add(0,.06,0);
             solid(post,post.add(0,.055,0),across,.091,.091,.086,.086,8,RUBBER);
             Vec3 washer = post.add(0,.056,0);
             solid(washer,washer.add(0,.022,0),across,.074,.074,.074,.074,12,COPPER);
             Vec3 screw = washer.add(0,.02,0);
             solid(screw,screw.add(0,.043,0),across,.054,.054,.054,.054,6,STEEL);
-            Vec3 entry = washer.add(front.scale(.24)).add(0,-.015,0);
-            return new Lug(entry, washer.add(front.scale(.024)).add(0,.012,0));
+            Vec3 contact = washer.add(approach.scale(.048)).add(0,.012,0);
+            return new Lug(contact.add(approach.scale(.088)).add(0,-.022,0), contact);
         }
 
         private void stripped(Vec3 start, Vec3 end, Vec3 across) {
@@ -189,22 +183,139 @@ public final class CableTerminalRenderer<T extends BlockEntity> extends Immediat
             quads.add(new Quad(bottom[3],bottom[2],bottom[1],bottom[0],color));
         }
 
-        private void footLead(Vec3 start, Vec3 inward, Vec3 end, Vec3 front, Vec3 across,
-                              BlockPos pos, int color, Direction mount, int lane) {
-            List<Vec3> path = new ArrayList<>();
-            path.add(start);
-            path.add(start.add(inward.scale(.17)));
-            if (start.y > end.y + 1.25) {
-                // Bring elevated runs around the ring and down in front of the stationary foot.
-                Vec3 center = Vec3.atLowerCornerOf(corePos.subtract(pos)).add(.5,0,.5);
-                double sign = end.subtract(center).dot(across) < 0 ? -1 : 1;
-                Vec3 guide = center.add(across.scale(sign*(3.13 + lane*.055))).add(front.scale(.75));
-                path.add(new Vec3(guide.x,start.y,guide.z));
-                path.add(new Vec3(guide.x,end.y+.10,guide.z));
+        private void portalTerminal(Level level, BlockPos pos, List<WirePort> ports) {
+            Vec3 across = vector(right), front = vector(right.getClockWise());
+            Vec3 origin = Vec3.atLowerCornerOf(corePos.subtract(pos)).add(.5,0,.5);
+            WirePort feed = ports.isEmpty() ? null : ports.getFirst();
+            Vec3 incoming = feed == null ? CENTER : feed.center;
+            Vec3 relative = incoming.subtract(origin);
+            double face = CENTER.subtract(origin).dot(front);
+            if ((face == 0 ? relative.dot(front) : face) < 0) front = front.reverse();
+            double side = relative.dot(across) < 0 ? -1 : 1;
+            double floor = buried ? 1 + 1.5/16 : .75;
+            Vec3 seat = origin.add(across.scale(side*1.53)).add(front.scale(.472)).add(0,floor,0);
+            if (Math.abs(CENTER.subtract(origin).dot(across)) < .5 && CENTER.y - origin.y <= floor + .9) {
+                // A clip on the core can bolt straight through its top, including a flush buried core.
+                seat = origin.add(front.scale(.10)).add(0, buried ? 1 : floor, 0);
+            } else if (!buried) {
+                // The exposed plinth has a continuous top. Put the saddle under the actual clip.
+                double lateral = Math.clamp(CENTER.subtract(origin).dot(across), -1.52, 1.52);
+                seat = origin.add(across.scale(lateral)).add(front.scale(.472)).add(0,floor,0);
             }
-            path.add(end.add(front.scale(.24)).add(0,-.045,0));
-            path.add(end);
-            route(path, vector(mount).cross(inward), color);
+            collar(seat, across, front);
+            Vec3 delta = incoming.subtract(seat);
+            // Angle the cable entries towards the feed but keep the copper on the outer face.
+            Vec3 approach = across.scale(Math.clamp(delta.dot(across), -.85, .85))
+                    .add(front.scale(Math.max(.45, delta.dot(front)))).normalize();
+            Vec3 contactSide = across;
+            if (feed != null) {
+                double sourceOrder = UP.cross(feed.inward).dot(feed.transverse);
+                double targetOrder = UP.cross(approach.reverse()).dot(across);
+                if (sourceOrder * targetOrder < 0 || (sourceOrder == 0 && feed.transverse.dot(across) < 0))
+                    contactSide = across.reverse();
+            }
+            for (int lane : new int[]{1, -1}) {
+                Lug lug = bindingPost(seat, contactSide, approach, lane);
+                if (ports.isEmpty()) continue;
+                Vec3 strandSide = UP.cross(approach).normalize();
+                stripped(lug.sleeve, lug.contact, strandSide);
+                for (WirePort port : ports) {
+                    portalLead(level, pos, port, lug.sleeve, contactSide, approach, front, lane);
+                }
+            }
+        }
+
+        // Sample actual collision boxes so both leads can settle on slabs, stairs or a full floor.
+        private double restingHeight(Level level, BlockPos pos, Vec3 point, double ceiling) {
+            Vec3 world = Vec3.atLowerCornerOf(pos).add(point);
+            int x = (int)Math.floor(world.x), z = (int)Math.floor(world.z);
+            int top = (int)Math.floor(pos.getY()+ceiling);
+            for (int y=top; y>=corePos.getY()-3; y--) {
+                BlockPos block = new BlockPos(x,y,z);
+                BlockState state = level.getBlockState(block);
+                terrain.put(block, state);
+                if (state.is(ModBlocks.PORTAL_FRAME) || state.is(ModBlocks.PORTAL_CORE)) continue;
+                double height = Double.NEGATIVE_INFINITY;
+                for (AABB box : state.getCollisionShape(level, block).toAabbs()) {
+                    if (world.x-x >= box.minX && world.x-x <= box.maxX && world.z-z >= box.minZ && world.z-z <= box.maxZ
+                            && y+box.maxY <= pos.getY()+ceiling+.001) height = Math.max(height, y+box.maxY);
+                }
+                if (Double.isFinite(height)) return height-pos.getY()+.042;
+            }
+            return Double.NEGATIVE_INFINITY;
+        }
+
+        private void portalLead(Level level, BlockPos pos, WirePort port, Vec3 end, Vec3 across,
+                                Vec3 approach, Vec3 front, int lane) {
+            Vec3 start = port.center;
+            end = end.subtract(across.scale(lane*.16));
+            double ceiling = Math.max(start.y, end.y) + .05;
+            Vec3 entry = port.start(lane);
+            List<Vec3> run = new ArrayList<>();
+            boolean hanging = start.y > end.y + .5;
+            if (hanging) {
+                // Clear the lip, drop almost vertically, then turn onto the ground outside the plinth.
+                Vec3 lip = start.add(port.inward.scale(.20));
+                Vec3 landing = lip.add(front.scale(Math.max(.12, .88 - lip.subtract(end).dot(front))));
+                double ground = restingHeight(level, pos, landing, start.y-.09);
+                // Across a void only pay out a short free bight.
+                if (!Double.isFinite(ground)) ground = end.y-.44;
+                ground = Math.min(ground, start.y-.10);
+                Vec3 floorDirection = end.subtract(landing).multiply(1,0,1).normalize();
+                Vec3 lateral = UP.cross(floorDirection);
+                if (lateral.dot(port.transverse) < -.001 ||
+                        (Math.abs(lateral.dot(port.transverse)) <= .001 && lateral.dot(across) < 0)) lateral = lateral.reverse();
+                Vec3 groundCenter = new Vec3(landing.x,ground,landing.z);
+                Vec3 touch = groundCenter.add(lateral.scale(lane*1.45/16));
+                Vec3 shoulder = lip.add(port.transverse.scale(lane*1.45/16));
+                Vec3 knee = touch.subtract(floorDirection.scale(.23));
+                run.add(entry);
+                run.add(shoulder);
+                run.add(shoulder.lerp(knee,.14).add(0,-Math.min(.25,(entry.y-ground)*.15),0));
+                run.add(new Vec3(knee.x,ground + Math.min(.25,(entry.y-ground)*.32),knee.z));
+                run.add(touch);
+                port = new WirePort(groundCenter, floorDirection, lateral, Direction.DOWN);
+                start = groundCenter;
+            }
+            double span = start.distanceTo(end);
+            Vec3 b = start.add(port.inward.scale(Math.min(.27, span*.30)));
+            Vec3 c = end.add(approach.scale(Math.min(.35, span*.34))).add(0,-Math.min(.08,span*.07),0);
+            // Ease out of the baked port, and arrive tangent to the stripped copper.
+            // At a junction one incoming pair may approach the common posts in reverse order.
+            double handedness = UP.cross(port.inward).dot(port.transverse);
+            Vec3 exitNormal = UP.cross(approach.reverse()).scale(handedness);
+            boolean crossover = exitNormal.dot(across) < 0;
+            Vec3[] path = new Vec3[17];
+            for (int i=0; i<path.length; i++) {
+                double t = i/(double)(path.length-1), s = 1-t;
+                Vec3 center = start.scale(s*s*s).add(b.scale(3*s*s*t)).add(c.scale(3*s*t*t)).add(end.scale(t*t*t));
+                double blend = t*t*(3-2*t);
+                Vec3 offset = port.transverse.scale(1.45/16).lerp(across.scale(.16), blend);
+                if (handedness != 0 && !crossover) {
+                    // Offset the pair across each bend before spreading it to the screw spacing.
+                    Vec3 tangent = b.subtract(start).scale(s*s).add(c.subtract(b).scale(2*s*t)).add(end.subtract(c).scale(t*t));
+                    Vec3 normal = UP.cross(tangent).normalize().scale(handedness);
+                    offset = normal.scale((1-blend)*1.45/16 + blend*.16)
+                            .add(across.subtract(exitNormal).scale(blend*.16));
+                }
+                Vec3 p = center.add(offset.scale(lane));
+                double ground = restingHeight(level, pos, p, ceiling);
+                if (Double.isFinite(ground)) {
+                    // Settle early and lift only the last few centimetres as the wire reaches its lug.
+                    double drop = Math.clamp(t/.25,0,1), rise = Math.clamp((t-.58)/.42,0,1);
+                    double weight = drop*drop*(3-2*drop)*(1-rise*rise*(3-2*rise));
+                    p = new Vec3(p.x, Math.max(ground, p.y+(ground-p.y)*weight), p.z);
+                } else if (hanging) {
+                    p = p.add(0,-.10*16*s*s*t*t,0);
+                }
+                path[i] = p;
+                if (crossover && lane == 1) path[i] = path[i].add(0,.12*16*s*s*t*t,0);
+            }
+            // Fillet the knee together with the floor run to keep a continuous sleeve at touchdown.
+            if (hanging) {
+                for (int i=1; i<path.length; i++) run.add(path[i]);
+                route(run, port.transverse, lane > 0 ? RED : BLUE);
+            } else tube(path, vector(port.mount).cross(port.inward), lane > 0 ? RED : BLUE);
         }
 
         private void mastLead(Vec3 start, Vec3 inward, Vec3 offset, Direction facing, int lane, int color, Direction mount) {
