@@ -15,8 +15,8 @@ import org.joml.Matrix4f;
  * Membrane d'énergie noire d'un portail ouvert, dessinée par le code en pixel art (16 px par bloc).
  *
  * <p>Une seule case du champ (en bas à gauche) dessine toute la surface 3x4, pixel par pixel, avec la
- * palette de la Faille : fond presque noir, bandes violettes et magenta qui tournent lentement en
- * spirale autour d'un cœur noir, et quelques points blancs qui scintillent comme ceux du cadre.
+ * identité du mod (noir et blanc lumineux) : fond noir, bandes grises qui s'éclairent en blanc et
+ * tournent lentement en spirale autour d'un cœur noir, et quelques points blancs qui scintillent comme ceux du cadre.
  * Un portail instable tourne plus vite, scintille davantage et sa transparence saute par rangées.</p>
  */
 public class PortalMembraneRenderer extends ImmediateBlockEntityRenderer<PortalFieldBlockEntity> {
@@ -26,10 +26,10 @@ public class PortalMembraneRenderer extends ImmediateBlockEntityRenderer<PortalF
     private static final int PIXELS_V = PortalFrameDetector.INNER_HEIGHT * 16;
     private static final float DEPTH = 0.5F;
 
-    // Palette des textures de la Faille (rift_crystal_cluster, rift_core) et des points blancs du cadre.
-    private static final int[] BLACK = {8, 0, 12};
-    private static final int[] DARK = {72, 35, 96};
-    private static final int[] MID = {170, 60, 230};
+    // Identité du mod : noir profond et blanc lumineux (cadre, Core, champ d'origine).
+    private static final int[] BLACK = {0, 0, 0};
+    private static final int[] DARK = {58, 58, 58};
+    private static final int[] MID = {205, 205, 205};
     private static final int[] WHITE = {255, 255, 255};
 
     public PortalMembraneRenderer(BlockEntityRendererProvider.Context context) {}
@@ -70,7 +70,7 @@ public class PortalMembraneRenderer extends ImmediateBlockEntityRenderer<PortalF
             int rowAlpha = unstable ? UNSTABLE_ALPHAS[(int) (hash(py, tick / 3L, 7L) % UNSTABLE_ALPHAS.length)] : 217;
             for (int px = 0; px < PIXELS_U; px++) {
                 int[] color = pixelColor(px, py, time, tick, phase, unstable);
-                int alpha = color == WHITE ? 255 : rowAlpha;
+                int alpha = color == WHITE || color == MID ? 255 : rowAlpha;
                 float h0 = px / 16.0F, h1 = (px + 1) / 16.0F;
                 float v0 = py / 16.0F, v1 = (py + 1) / 16.0F;
                 vertex(consumer, matrix, axis, h0, v0, color, alpha);
