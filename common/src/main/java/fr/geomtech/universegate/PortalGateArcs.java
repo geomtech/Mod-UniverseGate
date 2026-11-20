@@ -13,28 +13,30 @@ import java.util.List;
 
 /**
  * Arcs électriques du portail 3D (côté client) : tant que le portail s'ouvre ou est ouvert, de brefs arcs
- * blancs jaillissent des cristaux de l'anneau vers le sol et les blocs voisins, dans le plan du portail. Plus fréquents s'il est instable.
+ * blancs jaillissent de n'importe quel point de l'anneau hors sol vers le sol et les blocs voisins, dans le plan du portail. Plus fréquents s'il est instable.
  *
  * <p>Positions en blocs depuis le coin du Core (x, y, z du monde), dessinées par {@link PortalArcLayer}.</p>
  */
 public final class PortalGateArcs {
 
     static final int POINTS = 10;
-    private static final float[] CRYSTAL_ANGLES = {90.0F, 210.0F, 330.0F};
-    private static final float CRYSTAL_RADIUS = 42.0F; // px, bord extérieur des cristaux
+    private static final float START_RADIUS = PortalGateRingLayer.OUTER_RADIUS - 0.5F; // px, bord extérieur
+    /** Hauteur minimale du point de départ (en blocs) : jamais depuis la partie enterrée ou dans le socle. */
+    private static final double MIN_START_HEIGHT = 1.15D;
     private static final int MAX_ARCS = 3;
     private static final double MIN_REACH = 0.8D;
     private static final double MAX_REACH = 4.5D;
 
     public static final class Arc {
-        final int crystal;
+        /** Point de départ sur l'anneau, en degrés dans le repère de l'anneau (il tourne avec lui). */
+        final float ringAngle;
         final Vec3 target;
         final int life;
         int age;
         final float[] jitter = new float[POINTS * 3];
 
-        Arc(int crystal, Vec3 target, int life) {
-            this.crystal = crystal;
+        Arc(float ringAngle, Vec3 target, int life) {
+            this.ringAngle = ringAngle;
             this.target = target;
             this.life = life;
         }
@@ -75,8 +77,15 @@ public final class PortalGateArcs {
     }
 
     private void spawn(Level level, BlockPos core, Direction right, float ringAngle, RandomSource random) {
-        int crystal = random.nextInt(CRYSTAL_ANGLES.length);
-        Vec3 start = crystalPoint(right, crystal, ringAngle);
+        // Point de départ au hasard sur le bord de l'anneau, au-dessus du sol.
+        float worldAngle = 0.0F;
+        Vec3 start = null;
+        for (int attempt = 0; attempt < 8 && start == null; attempt++) {
+            worldAngle = random.nextFloat() * 360.0F;
+            Vec3 p = ringPoint(right, worldAngle);
+            if (p.y >= MIN_START_HEIGHT) start = p;
+        }
+        if (start == null) return;
         List<Vec3> reachable = new ArrayList<>();
         for (Vec3 c : candidates) {
             double d = c.distanceTo(start);
@@ -84,7 +93,7 @@ public final class PortalGateArcs {
         }
         if (reachable.isEmpty()) return;
         Vec3 target = reachable.get(random.nextInt(reachable.size()));
-        Arc arc = new Arc(crystal, target, 3 + random.nextInt(4));
+        Arc arc = new Arc(worldAngle - ringAngle, target, 3 + random.nextInt(4));
         jitter(arc, random);
         arcs.add(arc);
 
@@ -102,11 +111,16 @@ public final class PortalGateArcs {
         }
     }
 
-    /** Point de départ d'un arc : bord du cristal, qui tourne avec l'anneau. */
-    static Vec3 crystalPoint(Direction right, int crystal, float ringAngle) {
-        float a = (CRYSTAL_ANGLES[crystal] + ringAngle) * Mth.DEG_TO_RAD;
-        double h = (PortalGateRingLayer.CENTER_H + Mth.cos(a) * CRYSTAL_RADIUS) / 16.0D;
-        double v = (PortalGateRingLayer.CENTER_V + Mth.sin(a) * CRYSTAL_RADIUS) / 16.0D;
+    /** Point de départ d'un arc, qui tourne avec l'anneau. */
+    static Vec3 startPoint(Direction right, Arc arc, float ringAngle) {
+        return ringPoint(right, arc.ringAngle + ringAngle);
+    }
+
+    /** Point du bord extérieur de l'anneau à l'angle donné (degrés, repère du monde). */
+    static Vec3 ringPoint(Direction right, float worldAngleDeg) {
+        float a = worldAngleDeg * Mth.DEG_TO_RAD;
+        double h = (PortalGateRingLayer.CENTER_H + Mth.cos(a) * START_RADIUS) / 16.0D;
+        double v = (PortalGateRingLayer.CENTER_V + Mth.sin(a) * START_RADIUS) / 16.0D;
         return right.getAxis() == Direction.Axis.X ? new Vec3(h, v, 0.5D) : new Vec3(0.5D, v, h);
     }
 

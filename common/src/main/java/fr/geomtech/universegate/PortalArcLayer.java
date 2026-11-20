@@ -21,7 +21,7 @@ final class PortalArcLayer implements PortalGateLayer {
         Matrix4f matrix = poseStack.last().pose();
 
         for (PortalGateArcs.Arc arc : animator.arcs().active()) {
-            Vec3 start = PortalGateArcs.crystalPoint(ctx.right(), arc.crystal, ctx.ringAngle());
+            Vec3 start = PortalGateArcs.startPoint(ctx.right(), arc, ctx.ringAngle());
             Vec3 end = arc.target;
             double length = start.distanceTo(end);
             float amp = (float) Math.min(0.6D, length * 0.18D);
