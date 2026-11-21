@@ -246,6 +246,11 @@ public final class PortalTeleportHandler {
         }
 
         ModSounds.playAt(targetLevel, targetEntry.pos(), ModSounds.PORTAL_ENTITY_GOING_THROUGH, 0.9F, 1.05F);
+        // Même onde côté sortie, là où l'entité ressort de la membrane.
+        if (targetMatch.isPresent()) {
+            PortalCinematics.ripple(targetLevel, targetEntry.pos(), targetMatch.get().right(),
+                    x, y + entity.getBbHeight() * 0.5D, z);
+        }
         if (entity instanceof ServerPlayer) {
             core.onPlayerPassedThrough(now);
         } else {
