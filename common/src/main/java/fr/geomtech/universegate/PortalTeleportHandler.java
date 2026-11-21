@@ -201,6 +201,10 @@ public final class PortalTeleportHandler {
             }
         }
 
+        // Même onde d'étincelles qu'au passage dans le mauvais sens, au point d'entrée sur la membrane.
+        sourceMatch.ifPresent(match -> PortalCinematics.ripple(sourceLevel, corePos, match.right(),
+                entity.getX(), entity.getY() + entity.getBbHeight() * 0.5D, entity.getZ()));
+
         if (entity instanceof ServerPlayer player) {
             pursuingMobIds = collectPursuingMobIds(sourceLevel, corePos, player);
         }
