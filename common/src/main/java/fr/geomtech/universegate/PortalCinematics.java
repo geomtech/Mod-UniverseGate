@@ -5,6 +5,7 @@ import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.core.particles.BlockParticleOption;
 import net.minecraft.core.particles.ParticleTypes;
+import net.minecraft.server.level.ServerLevel;
 import net.minecraft.util.Mth;
 import net.minecraft.util.RandomSource;
 import net.minecraft.world.entity.Entity;
@@ -272,20 +273,35 @@ public final class PortalCinematics {
     }
 
     private static void ripple(Level level, Frame frame, double x, double y, double z) {
+        ripple(level, frame.core(), frame.right(), x, y, z);
+    }
+
+    /**
+     * Onde d'étincelles au point d'entrée sur la membrane. Côté serveur (passage dans le bon sens : l'entité est
+     * téléportée avant que le client ne la voie dans la membrane), les mêmes particules sont envoyées aux joueurs.
+     */
+    static void ripple(Level level, BlockPos core, Direction right, double x, double y, double z) {
         RandomSource random = level.random;
         // Projeté sur le plan du portail.
-        double cx = frame.x(0.0D), cz = frame.z(0.0D);
-        if (frame.right().getStepX() != 0) z = cz; else x = cx;
+        double cx = core.getX() + 0.5D, cz = core.getZ() + 0.5D;
+        if (right.getStepX() != 0) z = cz; else x = cx;
         for (int i = 0; i < 18; i++) {
             double a = i * (Mth.TWO_PI / 18.0D);
             double du = Math.cos(a) * 0.14D, dv = Math.sin(a) * 0.14D;
-            level.addParticle(ModParticles.SPARK, x, y, z,
-                    frame.right().getStepX() * du, dv, frame.right().getStepZ() * du);
+            spark(level, x, y, z, right.getStepX() * du, dv, right.getStepZ() * du);
         }
         for (int i = 0; i < 6; i++) {
-            level.addParticle(ModParticles.SPARK,
-                    x + (random.nextDouble() - 0.5D) * 0.4D, y + (random.nextDouble() - 0.5D) * 0.6D,
+            spark(level, x + (random.nextDouble() - 0.5D) * 0.4D, y + (random.nextDouble() - 0.5D) * 0.6D,
                     z + (random.nextDouble() - 0.5D) * 0.4D, 0.0D, 0.0D, 0.0D);
+        }
+    }
+
+    private static void spark(Level level, double x, double y, double z, double vx, double vy, double vz) {
+        if (level instanceof ServerLevel server) {
+            // count = 0 : les « offsets » servent de vitesse, comme addParticle côté client.
+            server.sendParticles(ModParticles.SPARK, x, y, z, 0, vx, vy, vz, 1.0D);
+        } else {
+            level.addParticle(ModParticles.SPARK, x, y, z, vx, vy, vz);
         }
     }
 
