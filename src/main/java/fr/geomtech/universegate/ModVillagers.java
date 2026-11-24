@@ -40,21 +40,14 @@ public final class ModVillagers {
         Set<BlockState> keyboardStates = new HashSet<>(ModBlocks.PORTAL_KEYBOARD.getStateDefinition().getPossibleStates());
         keyboardStates.addAll(ModBlocks.PORTAL_NATURAL_KEYBOARD.getStateDefinition().getPossibleStates());
 
-        PORTAL_KEYBOARD_POI = Registry.register(
-                BuiltInRegistries.POINT_OF_INTEREST_TYPE,
+        PORTAL_KEYBOARD_POI = NeoForgeRegistryBootstrap.register(
+                BuiltInRegistries.POINT_OF_INTEREST_TYPE.key(),
                 PORTAL_KEYBOARD_POI_KEY.location(),
                 new PoiType(keyboardStates, 1, 1)
         );
 
-        Optional<Holder.Reference<PoiType>> poiHolder = BuiltInRegistries.POINT_OF_INTEREST_TYPE.getHolder(PORTAL_KEYBOARD_POI_KEY);
-        if (poiHolder.isPresent()) {
-            PoiTypesAccessor.universegate$registerBlockStates(poiHolder.get(), keyboardStates);
-        } else {
-            UniverseGate.LOGGER.warn("Portal keyboard POI holder missing; engineer villagers may fail to acquire workstation.");
-        }
-
-        ENGINEER = Registry.register(
-                BuiltInRegistries.VILLAGER_PROFESSION,
+        ENGINEER = NeoForgeRegistryBootstrap.register(
+                BuiltInRegistries.VILLAGER_PROFESSION.key(),
                 ENGINEER_KEY.location(),
                 new VillagerProfession(
                         "engineer",

@@ -139,7 +139,7 @@ public class ZpcInterfaceControllerBlock extends BaseEntityBlock {
         }
 
         if (!level.isClientSide && !player.isShiftKeyDown() && player instanceof ServerPlayer sp) {
-            sp.openMenu(controller);
+            MenuOpening.openAt(sp, controller, pos);
         }
         return ItemInteractionResult.sidedSuccess(level.isClientSide);
     }
@@ -164,7 +164,7 @@ public class ZpcInterfaceControllerBlock extends BaseEntityBlock {
                     }
                 }
             } else if (player instanceof ServerPlayer sp) {
-                sp.openMenu(controller);
+                MenuOpening.openAt(sp, controller, pos);
             }
         }
 

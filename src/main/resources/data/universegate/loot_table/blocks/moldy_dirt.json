@@ -1,0 +1,15 @@
+{
+  "type": "minecraft:block",
+  "pools": [
+    {
+      "rolls": 1.0,
+      "entries": [
+        {
+          "type": "minecraft:item",
+          "name": "universegate:moldy_dirt"
+        }
+      ]
+    }
+  ],
+  "random_sequence": "universegate:blocks/moldy_dirt"
+}

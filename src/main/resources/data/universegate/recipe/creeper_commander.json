@@ -1,0 +1,12 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "pattern": ["CRC", "GAG", " S "],
+  "key": {
+    "C": {"item":"minecraft:copper_ingot"},
+    "R": {"item":"minecraft:redstone"},
+    "G": {"item":"minecraft:gunpowder"},
+    "A": {"item":"universegate:acid_rain_bucket"},
+    "S": {"item":"minecraft:stick"}
+  },
+  "result": {"id":"universegate:creeper_commander", "count":1}
+}

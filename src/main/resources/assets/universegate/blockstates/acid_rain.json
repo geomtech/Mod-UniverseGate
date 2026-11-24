@@ -1,0 +1,20 @@
+{
+  "variants": {
+    "level=0": { "model": "universegate:block/acid_rain" },
+    "level=1": { "model": "universegate:block/acid_rain" },
+    "level=2": { "model": "universegate:block/acid_rain" },
+    "level=3": { "model": "universegate:block/acid_rain" },
+    "level=4": { "model": "universegate:block/acid_rain" },
+    "level=5": { "model": "universegate:block/acid_rain" },
+    "level=6": { "model": "universegate:block/acid_rain" },
+    "level=7": { "model": "universegate:block/acid_rain" },
+    "level=8": { "model": "universegate:block/acid_rain" },
+    "level=9": { "model": "universegate:block/acid_rain" },
+    "level=10": { "model": "universegate:block/acid_rain" },
+    "level=11": { "model": "universegate:block/acid_rain" },
+    "level=12": { "model": "universegate:block/acid_rain" },
+    "level=13": { "model": "universegate:block/acid_rain" },
+    "level=14": { "model": "universegate:block/acid_rain" },
+    "level=15": { "model": "universegate:block/acid_rain" }
+  }
+}

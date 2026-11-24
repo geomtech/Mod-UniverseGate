@@ -1,0 +1,12 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "pattern": ["L L", "ISI", "CBC"],
+  "key": {
+    "L": {"item":"universegate:laser_rifle"},
+    "I": {"item":"minecraft:iron_ingot"},
+    "S": {"item":"minecraft:saddle"},
+    "C": {"item":"minecraft:copper_block"},
+    "B": {"item":"universegate:acid_battery"}
+  },
+  "result": {"id":"universegate:horse_laser_harness", "count":1}
+}

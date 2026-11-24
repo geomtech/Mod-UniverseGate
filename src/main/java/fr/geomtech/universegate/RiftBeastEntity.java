@@ -77,6 +77,19 @@ public class RiftBeastEntity extends Animal {
         return FOOD_ITEMS.test(stack);
     }
 
+    @Override
+    public boolean removeWhenFarAway(double distanceToClosestPlayer) {
+        if (this.getType() == ModEntityTypes.ACID_RIFT_BEAST) {
+            return distanceToClosestPlayer > 48.0D;
+        }
+        return super.removeWhenFarAway(distanceToClosestPlayer);
+    }
+
+    @Override
+    protected int getBaseExperienceReward() {
+        return this.getType() == ModEntityTypes.ACID_RIFT_BEAST ? 0 : super.getBaseExperienceReward();
+    }
+
     @Nullable
     @Override
     public AgeableMob getBreedOffspring(ServerLevel level, AgeableMob otherParent) {

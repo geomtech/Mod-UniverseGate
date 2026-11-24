@@ -8,13 +8,13 @@ import net.minecraft.world.level.levelgen.feature.configurations.NoneFeatureConf
 
 public final class ModFeatures {
 
-    public static final Feature<NoneFeatureConfiguration> KELO_DEAD_TREE = Registry.register(
+    public static final Feature<NoneFeatureConfiguration> KELO_DEAD_TREE = NeoForgeRegistryBootstrap.register(
             BuiltInRegistries.FEATURE,
             ResourceLocation.fromNamespaceAndPath(UniverseGate.MOD_ID, "kelo_dead_tree"),
             new KeloDeadTreeFeature(NoneFeatureConfiguration.CODEC)
     );
 
-    public static final Feature<NoneFeatureConfiguration> RIFT_CUBE = Registry.register(
+    public static final Feature<NoneFeatureConfiguration> RIFT_CUBE = NeoForgeRegistryBootstrap.register(
             BuiltInRegistries.FEATURE,
             ResourceLocation.fromNamespaceAndPath(UniverseGate.MOD_ID, "rift_cube"),
             new RiftCubeFeature(NoneFeatureConfiguration.CODEC)

@@ -1,0 +1,7 @@
+{
+  "parent": "minecraft:block/beacon",
+  "textures": {
+    "beacon": "minecraft:block/emerald_block",
+    "obsidian": "minecraft:block/oxidized_copper"
+  }
+}

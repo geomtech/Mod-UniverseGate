@@ -41,8 +41,8 @@ public class RiftRefinerBlock extends BaseEntityBlock {
     protected InteractionResult useWithoutItem(BlockState state, Level level, BlockPos pos, Player player, BlockHitResult hit) {
         if (!level.isClientSide) {
             BlockEntity be = level.getBlockEntity(pos);
-            if (be instanceof RiftRefinerBlockEntity refiner) {
-                player.openMenu(refiner);
+            if (be instanceof RiftRefinerBlockEntity refiner && player instanceof ServerPlayer serverPlayer) {
+                MenuOpening.openAt(serverPlayer, refiner, pos);
             }
         }
         return InteractionResult.SUCCESS;

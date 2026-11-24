@@ -83,7 +83,7 @@ public class PortalCoreBlock extends BaseEntityBlock {
         if (!level.isClientSide) {
             BlockEntity be = level.getBlockEntity(pos);
             if (be instanceof MenuProvider provider && player instanceof ServerPlayer sp) {
-                sp.openMenu(provider);
+                MenuOpening.openAt(sp, provider, pos);
                 fr.geomtech.universegate.net.UniverseGateNetwork.sendPortalCoreNameToPlayer(sp, pos);
             }
         }
@@ -96,7 +96,7 @@ public class PortalCoreBlock extends BaseEntityBlock {
 
         BlockEntity be = level.getBlockEntity(pos);
         if (be instanceof MenuProvider provider && player instanceof ServerPlayer sp) {
-            sp.openMenu(provider);
+            MenuOpening.openAt(sp, provider, pos);
             fr.geomtech.universegate.net.UniverseGateNetwork.sendPortalCoreNameToPlayer(sp, pos);
         }
         return InteractionResult.CONSUME;

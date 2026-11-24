@@ -171,7 +171,7 @@ public class PortalKeyboardBlock extends BaseEntityBlock {
 
         BlockEntity be = level.getBlockEntity(pos);
         if (be instanceof MenuProvider provider && player instanceof ServerPlayer sp) {
-            sp.openMenu(provider);
+            MenuOpening.openAt(sp, provider, pos);
             fr.geomtech.universegate.net.UniverseGateNetwork.sendPortalListToPlayer(sp, pos);
             fr.geomtech.universegate.net.UniverseGateNetwork.sendPortalKeyboardStatusToPlayer(sp, pos);
         }

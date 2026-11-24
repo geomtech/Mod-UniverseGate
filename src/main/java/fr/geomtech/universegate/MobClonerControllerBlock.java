@@ -68,7 +68,7 @@ public class MobClonerControllerBlock extends BaseEntityBlock {
         }
 
         if (!level.isClientSide && player instanceof ServerPlayer sp) {
-            sp.openMenu(controller);
+            MenuOpening.openAt(sp, controller, pos);
         }
         return ItemInteractionResult.sidedSuccess(level.isClientSide);
     }
@@ -80,7 +80,7 @@ public class MobClonerControllerBlock extends BaseEntityBlock {
                                                Player player,
                                                BlockHitResult hit) {
         if (!level.isClientSide && level.getBlockEntity(pos) instanceof MobClonerControllerBlockEntity controller && player instanceof ServerPlayer sp) {
-            sp.openMenu(controller);
+            MenuOpening.openAt(sp, controller, pos);
         }
         return InteractionResult.sidedSuccess(level.isClientSide);
     }

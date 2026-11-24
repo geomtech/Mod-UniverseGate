@@ -1,6 +1,11 @@
 plugins {
-	id 'net.fabricmc.fabric-loom-remap' version "${loom_version}"
+	id 'net.neoforged.moddev' version '2.0.148'
 	id 'maven-publish'
+}
+
+repositories {
+	maven { url = 'https://maven.sinytra.org' }
+	mavenCentral()
 }
 
 version = project.mod_version
@@ -10,81 +15,88 @@ base {
 	archivesName = project.archives_base_name
 }
 
-repositories {
-	// Add repositories to retrieve artifacts from in here.
-	// You should only use this when depending on other mods because
-	// Loom adds the essential maven repositories to download Minecraft and libraries from automatically.
-	// See https://docs.gradle.org/current/userguide/declaring_repositories.html
-	// for more information about repositories.
+sourceSets {
+	client
+	gametest
 }
 
-loom {
-	splitEnvironmentSourceSets()
+sourceSets.client.compileClasspath += sourceSets.main.output
+sourceSets.client.runtimeClasspath += sourceSets.main.output
+sourceSets.gametest.compileClasspath += sourceSets.main.output + sourceSets.client.output
+sourceSets.gametest.runtimeClasspath += sourceSets.main.output + sourceSets.client.output
 
-	mods {
-		"universegate" {
-			sourceSet sourceSets.main
-			sourceSet sourceSets.client
-		}
-	}
-
+configurations {
+	clientImplementation.extendsFrom implementation
+	clientCompileOnly.extendsFrom compileOnly
+	gametestImplementation.extendsFrom implementation
 }
 
 dependencies {
-	// To change the versions see the gradle.properties file
-	minecraft "com.mojang:minecraft:${project.minecraft_version}"
-	mappings loom.officialMojangMappings()
-	modImplementation "net.fabricmc:fabric-loader:${project.loader_version}"
-
-	// Fabric API. This is technically optional, but you probably want it anyway.
-	modImplementation "net.fabricmc.fabric-api:fabric-api:${project.fabric_api_version}"
-	
+	implementation "net.neoforged:neoforge:${project.neo_version}"
+	implementation "org.sinytra.forgified-fabric-api:forgified-fabric-api:${project.forgified_fabric_api_version}"
 }
 
-processResources {
-	inputs.property "version", project.version
+neoForge {
+	version = project.neo_version
 
-	filesMatching("fabric.mod.json") {
-		expand "version": inputs.properties.version
-	}
-}
-
-tasks.withType(JavaCompile).configureEach {
-	it.options.release = 21
-}
-
-java {
-	// Loom will automatically attach sourcesJar to a RemapSourcesJar task and to the "build" task
-	// if it is present.
-	// If you remove this line, sources will not be generated.
-	withSourcesJar()
-
-	sourceCompatibility = JavaVersion.VERSION_21
-	targetCompatibility = JavaVersion.VERSION_21
-}
-
-jar {
-	inputs.property "archivesName", project.base.archivesName
-
-	from("LICENSE") {
-		rename { "${it}_${inputs.properties.archivesName}"}
-	}
-}
-
-// configure the maven publication
-publishing {
-	publications {
-		create("mavenJava", MavenPublication) {
-			artifactId = project.archives_base_name
-			from components.java
+	runs {
+		client {
+			client()
+			sourceSet = sourceSets.client
+			programArgument '--username'
+			programArgument 'Dev'
+		}
+		server {
+			server()
+		}
+		gameTestServer {
+			type = 'gameTestServer'
+			sourceSet = sourceSets.gametest
 		}
 	}
 
-	// See https://docs.gradle.org/current/userguide/publishing_maven.html for information on how to set up publishing.
-	repositories {
-		// Add repositories to publish to here.
-		// Notice: This block does NOT have the same function as the block in the top level.
-		// The repositories here will be used for publishing your artifact, not for
-		// retrieving dependencies.
+	mods {
+		universegate {
+			sourceSet sourceSets.main
+			sourceSet sourceSets.client
+			sourceSet sourceSets.gametest
+		}
+	}
+
+	addModdingDependenciesTo sourceSets.client
+	addModdingDependenciesTo sourceSets.gametest
+}
+
+tasks.withType(JavaCompile).configureEach {
+	options.release = 21
+}
+
+java {
+	toolchain.languageVersion = JavaLanguageVersion.of(21)
+	withSourcesJar()
+}
+
+processResources {
+	inputs.property 'version', project.version
+	filesMatching('META-INF/neoforge.mods.toml') {
+		expand version: inputs.properties.version,
+			minecraft_version: project.minecraft_version,
+			neo_version: project.neo_version
+	}
+}
+
+jar {
+	from sourceSets.client.output
+	from('LICENSE') {
+		rename { "${it}_${project.base.archivesName.get()}" }
+	}
+}
+
+publishing {
+	publications {
+		create('mavenJava', MavenPublication) {
+			artifactId = project.archives_base_name
+			from components.java
+		}
 	}
 }

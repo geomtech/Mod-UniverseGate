@@ -1,50 +1,54 @@
 package fr.geomtech.universegate;
 
-import net.fabricmc.api.ModInitializer;
 import net.fabricmc.fabric.api.event.lifecycle.v1.ServerTickEvents;
-
+import net.neoforged.bus.api.IEventBus;
+import net.neoforged.fml.common.Mod;
+import net.neoforged.fml.loading.FMLEnvironment;
+import net.neoforged.fml.event.lifecycle.FMLCommonSetupEvent;
+import net.neoforged.api.distmarker.Dist;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-public class UniverseGate implements ModInitializer {
+@Mod(UniverseGate.MOD_ID)
+public class UniverseGate {
 	public static final String MOD_ID = "universegate";
-
-	// This logger is used to write text to the console and the log file.
-	// It is considered best practice to use your mod id as the logger's name.
-	// That way, it's clear which mod wrote info, warnings, and errors.
 	public static final Logger LOGGER = LoggerFactory.getLogger(MOD_ID);
 
-	@Override
-	public void onInitialize() {
-		// This code runs as soon as Minecraft is in a mod-load-ready state.
-		// However, some things (like resources) may still be uninitialized.
-		// Proceed with mild caution.
+	public UniverseGate(IEventBus modEventBus) {
+		ModFluidTypes.register(modEventBus);
+		modEventBus.addListener(NeoForgeRegistryBootstrap::registerEntries);
+		modEventBus.addListener((net.neoforged.neoforge.event.entity.EntityAttributeCreationEvent event) -> ModEntityTypes.registerAttributes(event));
+		modEventBus.addListener((net.neoforged.neoforge.event.entity.RegisterSpawnPlacementsEvent event) -> ModEntityTypes.registerSpawnPlacements(event));
+		modEventBus.addListener((FMLCommonSetupEvent event) -> event.enqueueWork(UniverseGatePoiHelper::registerChargedLightningRodPoi));
+		onInitialize();
+		if (FMLEnvironment.dist == Dist.CLIENT) registerClient(modEventBus);
+	}
 
-		ModBlocks.register();
-		ModFluids.register();
-		ModEntityTypes.register();
-		ModItems.register();
-		ModItemGroups.register();
-		ModBlockEntities.register();
-		ModFeatures.register();
-		ModMenuTypes.register();
-		ModSounds.register();
-		ModVillagers.register();
-		UniverseGatePoiHelper.registerChargedLightningRodPoi();
+	private static void registerClient(IEventBus modEventBus) {
+		try {
+			Class<?> clientEntrypoint = Class.forName("fr.geomtech.universegate.UniverseGateClient");
+			clientEntrypoint.getMethod("register", IEventBus.class).invoke(null, modEventBus);
+		} catch (ReflectiveOperationException exception) {
+			throw new IllegalStateException("Could not initialize the UniverseGate client", exception);
+		}
+	}
+
+	public void onInitialize() {
 		RiftDeathRecoveryHandler.register();
 		EngineerExpeditionManager.register();
 		ZpcStructureLoot.register();
 		AncientCityZpcGuarantee.register();
 		WeatherMachineCommand.register();
+		AcidRainManager.register();
+		AcidTechnologyManager.register();
 		UpdateCheckManager.register();
 		ServerTickEvents.END_WORLD_TICK.register(RiftShadeSpawner::tickWorld);
 		ServerTickEvents.END_WORLD_TICK.register(RiftCubeGenerator::tickWorld);
 		ServerTickEvents.END_WORLD_TICK.register(PortalRiftHelper::tickWorld);
 		ServerTickEvents.END_WORLD_TICK.register(PortalPursuitTracker::tickWorld);
 		ServerTickEvents.END_WORLD_TICK.register(OverworldVillagePortalGenerator::tickWorld);
+		ServerTickEvents.END_WORLD_TICK.register(AcidRainManager::tickWorld);
 		fr.geomtech.universegate.net.UniverseGateNetwork.registerCommon();
-
-
-		LOGGER.info("UniverseGate Initialized");
+		LOGGER.info("UniverseGate Initialized for NeoForge");
 	}
 }

@@ -37,6 +37,7 @@ public final class UniverseGateNetwork {
         PayloadTypeRegistry.playS2C().register(PortalCoreNamePayload.TYPE, PortalCoreNamePayload.STREAM_CODEC);
         PayloadTypeRegistry.playS2C().register(PortalKeyboardStatusPayload.TYPE, PortalKeyboardStatusPayload.STREAM_CODEC);
         PayloadTypeRegistry.playS2C().register(PortalConnectionErrorPayload.TYPE, PortalConnectionErrorPayload.STREAM_CODEC);
+        PayloadTypeRegistry.playS2C().register(AcidRainStatePayload.TYPE, AcidRainStatePayload.STREAM_CODEC);
         PayloadTypeRegistry.playC2S().register(ConnectPortalPayload.TYPE, ConnectPortalPayload.STREAM_CODEC);
         PayloadTypeRegistry.playC2S().register(RenamePortalPayload.TYPE, RenamePortalPayload.STREAM_CODEC);
         PayloadTypeRegistry.playC2S().register(DisconnectPortalPayload.TYPE, DisconnectPortalPayload.STREAM_CODEC);

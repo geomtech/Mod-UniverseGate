@@ -38,14 +38,18 @@ public class MeteorologicalControllerBlockEntity extends BlockEntity implements 
     public static final int BEAM_START_TICKS = SPINUP_TICKS + PREPARATION_TICKS;
     public static final int BEAM_END_TICKS = BEAM_START_TICKS + BEAM_TICKS;
     public static final int TOTAL_SEQUENCE_TICKS = BEAM_END_TICKS + SPINDOWN_TICKS;
+    public static final int WEATHER_OPERATION_ENERGY_COST = 2500;
 
     private static final int RESCAN_INTERVAL_TICKS = 20;
+    private static final int ENERGY_STATUS_RESCAN_INTERVAL_TICKS = 20;
 
     private int chargeTicks = 0;
     private int sequenceTicks = 0;
     private boolean sequenceActive = false;
     private boolean finaleTriggered = false;
     private int rescanCooldown = 0;
+    private int energyStatusRescanCooldown = 0;
+    private long availableWeatherEnergy = 0L;
     @Nullable
     private WeatherSelection pendingWeather = null;
     @Nullable
@@ -90,6 +94,7 @@ public class MeteorologicalControllerBlockEntity extends BlockEntity implements 
         if (!(level instanceof ServerLevel serverLevel)) return;
 
         refreshMachineStatus(serverLevel, false);
+        refreshAvailableWeatherEnergy(serverLevel, false);
 
         if (sequenceActive) {
             tickWeatherSequence(serverLevel);
@@ -104,20 +109,26 @@ public class MeteorologicalControllerBlockEntity extends BlockEntity implements 
 
     public boolean tryStartWeatherSequence(WeatherSelection weatherSelection) {
         if (!(level instanceof ServerLevel serverLevel)) return false;
+        if (weatherSelection == WeatherSelection.ACID_RAIN && !AcidRainManager.canStartEpisode(serverLevel)) return false;
         refreshMachineStatus(serverLevel, true);
+        refreshAvailableWeatherEnergy(serverLevel, true);
 
         if (sequenceActive) return false;
         if (!machineStatus.structureReady()) return false;
+        if (!machineStatus.energyLinked()) return false;
         if (!machineStatus.parabolaPowered()) return false;
         if (!machineStatus.catalystHasCrystal()) return false;
-        if (chargeTicks < CHARGE_FULL_TICKS) return false;
+        if (chargeTicks < CHARGE_FULL_TICKS || availableWeatherEnergy < WEATHER_OPERATION_ENERGY_COST) return false;
 
         BlockPos catalystPos = machineStatus.catalystPos();
         if (catalystPos == null) return false;
 
-        if (!EnergyNetworkHelper.consumeEnergyFromNetwork(serverLevel, machineStatus.condenserBasePos(), 2500)) {
+        if (!EnergyNetworkHelper.consumeEnergyFromNetwork(serverLevel, machineStatus.condenserBasePos(), WEATHER_OPERATION_ENERGY_COST)) {
+            refreshAvailableWeatherEnergy(serverLevel, true);
             return false;
         }
+
+        availableWeatherEnergy = Math.max(0L, availableWeatherEnergy - WEATHER_OPERATION_ENERGY_COST);
 
         pendingWeather = weatherSelection;
         activeCatalystPos = catalystPos.immutable();
@@ -133,6 +144,10 @@ public class MeteorologicalControllerBlockEntity extends BlockEntity implements 
 
     public ContainerData dataAccess() {
         return dataAccess;
+    }
+
+    public long availableWeatherEnergy() {
+        return availableWeatherEnergy;
     }
 
     public ForceChargeResult forceFullCharge() {
@@ -156,6 +171,19 @@ public class MeteorologicalControllerBlockEntity extends BlockEntity implements 
         }
         machineStatus = WeatherMachineHelper.scan(level, worldPosition);
         rescanCooldown = RESCAN_INTERVAL_TICKS;
+    }
+
+    private void refreshAvailableWeatherEnergy(ServerLevel level, boolean force) {
+        if (!force && energyStatusRescanCooldown > 0) {
+            energyStatusRescanCooldown--;
+            return;
+        }
+
+        energyStatusRescanCooldown = ENERGY_STATUS_RESCAN_INTERVAL_TICKS;
+        BlockPos condenserBasePos = machineStatus.condenserBasePos();
+        availableWeatherEnergy = condenserBasePos == null
+                ? 0L
+                : EnergyNetworkHelper.getAvailableEnergyLongFromNetwork(level, condenserBasePos);
     }
 
     private void tickWeatherSequence(ServerLevel level) {
@@ -189,7 +217,11 @@ public class MeteorologicalControllerBlockEntity extends BlockEntity implements 
 
         if (!finaleTriggered && sequenceTicks == BEAM_END_TICKS) {
             ModSounds.stopBeamNear(level, catalystPos);
-            applyWeather(level, pendingWeather);
+            if (!applyWeather(level, pendingWeather)) {
+                resetSequence();
+                syncToClient();
+                return;
+            }
             strikeCatalystWithLightning(level, catalystPos);
             playCrystalStrikeEffects(level, catalystPos);
             consumeCatalystCrystal(level, catalystPos);
@@ -224,13 +256,19 @@ public class MeteorologicalControllerBlockEntity extends BlockEntity implements 
         if (machineStatus.energyLinked()) flags |= MeteorologicalControllerMenu.FLAG_ENERGY_LINKED;
         if (machineStatus.parabolaPowered()) flags |= MeteorologicalControllerMenu.FLAG_PARABOLA_POWERED;
         if (chargeTicks >= CHARGE_FULL_TICKS) flags |= MeteorologicalControllerMenu.FLAG_FULLY_CHARGED;
+        if (availableWeatherEnergy >= WEATHER_OPERATION_ENERGY_COST) flags |= MeteorologicalControllerMenu.FLAG_WEATHER_ENERGY_AVAILABLE;
         if (sequenceActive) flags |= MeteorologicalControllerMenu.FLAG_SEQUENCE_ACTIVE;
         if (canTriggerWeatherChange()) flags |= MeteorologicalControllerMenu.FLAG_WEATHER_UNLOCKED;
         return flags;
     }
 
     private boolean canTriggerWeatherChange() {
-        return !sequenceActive && machineStatus.structureReady() && chargeTicks >= CHARGE_FULL_TICKS;
+        return !sequenceActive
+                && machineStatus.structureReady()
+                && machineStatus.energyLinked()
+                && machineStatus.parabolaPowered()
+                && chargeTicks >= CHARGE_FULL_TICKS
+                && availableWeatherEnergy >= WEATHER_OPERATION_ENERGY_COST;
     }
 
     private boolean isCatalystCharged(ServerLevel level, BlockPos catalystPos) {
@@ -252,13 +290,17 @@ public class MeteorologicalControllerBlockEntity extends BlockEntity implements 
         level.setBlock(catalystPos, state.setValue(CrystalCondenserBlock.HAS_CRYSTAL, false), 3);
     }
 
-    private void applyWeather(ServerLevel level, WeatherSelection weatherSelection) {
+    private boolean applyWeather(ServerLevel level, WeatherSelection weatherSelection) {
+        if (weatherSelection == WeatherSelection.ACID_RAIN && !AcidRainManager.setActive(level, true)) return false;
         int duration = 20 * 60 * 10;
         switch (weatherSelection) {
             case CLEAR -> level.setWeatherParameters(duration, 0, false, false);
             case RAIN -> level.setWeatherParameters(0, duration, true, false);
             case THUNDER -> level.setWeatherParameters(0, duration, true, true);
+            case ACID_RAIN -> level.setWeatherParameters(0, duration, true, false);
         }
+        if (weatherSelection != WeatherSelection.ACID_RAIN) AcidRainManager.setActive(level, false);
+        return true;
     }
 
     private void strikeCatalystWithLightning(ServerLevel level, BlockPos catalystPos) {

@@ -9,6 +9,8 @@ import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.block.state.BlockState;
 
+import java.util.List;
+
 public class ParabolaBlockEntity extends BlockEntity {
 
     private boolean isPowered = false;
@@ -23,7 +25,11 @@ public class ParabolaBlockEntity extends BlockEntity {
         if (level.getGameTime() % 20L != 0L) return;
 
         // Consume 120 energy per interval (assumed 20 ticks based on solar panel interval)
-        boolean nowPowered = EnergyNetworkHelper.consumeEnergyFromNetwork(serverLevel, pos, 120);
+        boolean nowPowered = EnergyNetworkHelper.consumeEnergyFromNetwork(
+                serverLevel,
+                List.of(pos, pos.above(), pos.above(2), pos.above(3)),
+                120
+        );
         
         if (nowPowered != blockEntity.isPowered) {
             blockEntity.isPowered = nowPowered;

@@ -70,7 +70,14 @@ public class RiftShadeEntity extends Monster {
 
     @Override
     public boolean canAttackType(EntityType<?> type) {
-        return type != ModEntityTypes.RIFT_SHADE && super.canAttackType(type);
+        return type != ModEntityTypes.RIFT_SHADE
+                && type != ModEntityTypes.ACID_RIFT_SHADE
+                && super.canAttackType(type);
+    }
+
+    @Override
+    protected int getBaseExperienceReward() {
+        return this.getType() == ModEntityTypes.ACID_RIFT_SHADE ? 0 : super.getBaseExperienceReward();
     }
 
     @Override
@@ -80,6 +87,9 @@ public class RiftShadeEntity extends Monster {
 
     @Override
     public boolean removeWhenFarAway(double distanceToClosestPlayer) {
+        if (this.getType() == ModEntityTypes.ACID_RIFT_SHADE) {
+            return distanceToClosestPlayer > 48.0D;
+        }
         return false;
     }
 

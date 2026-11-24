@@ -1,6 +1,7 @@
 package fr.geomtech.universegate;
 
 import net.minecraft.core.BlockPos;
+import net.minecraft.network.chat.Component;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.entity.player.Inventory;
 import net.minecraft.world.entity.player.Player;
@@ -23,6 +24,7 @@ public class MeteorologicalControllerMenu extends AbstractContainerMenu {
     public static final int FLAG_SEQUENCE_ACTIVE = 1 << 7;
     public static final int FLAG_WEATHER_UNLOCKED = 1 << 8;
     public static final int FLAG_PARABOLA_POWERED = 1 << 9;
+    public static final int FLAG_WEATHER_ENERGY_AVAILABLE = 1 << 10;
 
     private static final int DATA_CHARGE_TICKS = 0;
     private static final int DATA_MAX_CHARGE_TICKS = 1;
@@ -66,7 +68,23 @@ public class MeteorologicalControllerMenu extends AbstractContainerMenu {
         if (selection == null) return false;
         if (!(player.level() instanceof ServerLevel serverLevel)) return false;
         if (!(serverLevel.getBlockEntity(controllerPos) instanceof MeteorologicalControllerBlockEntity controller)) return false;
-        return controller.tryStartWeatherSequence(selection);
+        if (selection == WeatherSelection.ACID_RAIN && !AcidRainManager.canStartEpisode(serverLevel)) {
+            AcidRainSavedData state = AcidRainSavedData.get(serverLevel);
+            long minutes = (state.cooldownRemaining(serverLevel.getGameTime()) + 1199L) / 1200L;
+            player.displayClientMessage(Component.translatable(minutes > 0 ? "message.universegate.acid_rain_cooldown"
+                    : "message.universegate.acid_rain_unavailable", minutes), true);
+            return false;
+        }
+        if (controller.tryStartWeatherSequence(selection)) return true;
+
+        if (controller.availableWeatherEnergy() < MeteorologicalControllerBlockEntity.WEATHER_OPERATION_ENERGY_COST) {
+            player.displayClientMessage(Component.translatable(
+                    "message.universegate.weather_need_operation_energy",
+                    MeteorologicalControllerBlockEntity.WEATHER_OPERATION_ENERGY_COST), true);
+        } else {
+            player.displayClientMessage(Component.translatable("message.universegate.weather_start_failed"), true);
+        }
+        return false;
     }
 
     @Override

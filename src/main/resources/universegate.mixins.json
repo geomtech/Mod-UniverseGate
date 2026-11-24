@@ -4,13 +4,18 @@
 	"compatibilityLevel": "JAVA_21",
 	"mixins": [
 		"AnvilMenuMixin",
+		"AcidRainWeatherMixin",
+		"HorseLaserMixin",
 		"ExampleMixin",
 		"MobDespawnMixin",
 		"PoiTypesAccessor",
 		"LightningBoltMixin"
 	],
 	"client": [
-		"LevelRendererMixin"
+		"LevelRendererMixin",
+		"HorseModelAccessor",
+		"AcidRainFogMixin",
+		"AcidRainSkyMixin"
 	],
 	"injectors": {
 		"defaultRequire": 1

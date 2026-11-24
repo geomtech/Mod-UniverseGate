@@ -1,8 +1,11 @@
 package fr.geomtech.universegate;
 
 import net.minecraft.core.registries.BuiltInRegistries;
+import net.minecraft.core.cauldron.CauldronInteraction;
+import net.minecraft.world.level.biome.Biome;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.Blocks;
+import net.minecraft.world.level.block.LayeredCauldronBlock;
 import net.minecraft.world.level.block.RotatedPillarBlock;
 import net.minecraft.world.level.block.LiquidBlock;
 import net.minecraft.world.level.block.Rotation;
@@ -25,6 +28,11 @@ public final class ModBlocks {
                     .strength(1.5f, 6.0f)
                     .requiresCorrectToolForDrops()
                     .lightLevel(state -> 15))
+    );
+
+    public static final Block MOLDY_DIRT = register(
+            "moldy_dirt",
+            new Block(BlockBehaviour.Properties.ofFullCopy(Blocks.DIRT))
     );
 
     public static final Block KELO_LOG = register(
@@ -132,6 +140,20 @@ public final class ModBlocks {
                     .noOcclusion())
     );
 
+    public static final Block ACID_NEON_LAMP = register(
+            "acid_neon_lamp",
+            new AcidNeonLampBlock(BlockBehaviour.Properties.ofFullCopy(Blocks.REDSTONE_LAMP)
+                    .strength(1.0f, 1.0f)
+                    .lightLevel(AcidNeonLampBlock::lightLevel)
+                    .noOcclusion())
+    );
+
+    public static final Block ACID_BEACON = register(
+            "acid_beacon",
+            new AcidBeaconBlock(BlockBehaviour.Properties.ofFullCopy(Blocks.BEACON)
+                    .strength(3.0F, 6.0F).lightLevel(AcidNeonLampBlock::lightLevel).noOcclusion())
+    );
+
     public static final Block ZPC_INTERFACE_CONTROLLER = register(
             "zpc_interface_controller",
             new ZpcInterfaceControllerBlock(BlockBehaviour.Properties.ofFullCopy(Blocks.IRON_BLOCK)
@@ -197,6 +219,20 @@ public final class ModBlocks {
             new LiquidBlock(ModFluids.STILL_DARK_MATTER, BlockBehaviour.Properties.ofFullCopy(Blocks.WATER).noLootTable())
     );
 
+    public static final Block ACID_RAIN_BLOCK = register(
+            "acid_rain",
+            new LiquidBlock(ModFluids.STILL_ACID_RAIN, BlockBehaviour.Properties.ofFullCopy(Blocks.WATER).noLootTable())
+    );
+
+    public static final Block ACID_RAIN_CAULDRON = register(
+            "acid_rain_cauldron",
+            new LayeredCauldronBlock(
+                    Biome.Precipitation.NONE,
+                    CauldronInteraction.EMPTY,
+                    BlockBehaviour.Properties.ofFullCopy(Blocks.CAULDRON)
+            )
+    );
+
     public static final Block RIFT_REFINER = register(
             "rift_refiner",
             new RiftRefinerBlock(BlockBehaviour.Properties.ofFullCopy(Blocks.IRON_BLOCK).strength(3.5f).requiresCorrectToolForDrops())
@@ -232,7 +268,7 @@ public final class ModBlocks {
     );
 
     private static Block register(String id, Block block) {
-        return Registry.register(
+        return NeoForgeRegistryBootstrap.register(
                 BuiltInRegistries.BLOCK,
                 ResourceLocation.fromNamespaceAndPath(UniverseGate.MOD_ID, id),
                 block

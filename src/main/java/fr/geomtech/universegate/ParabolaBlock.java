@@ -181,13 +181,12 @@ public class ParabolaBlock extends BaseEntityBlock {
                 && state.getValue(FACING) == facing;
     }
 
-    private static BlockPos getBasePos(BlockPos pos, BlockState state) {
+    public static BlockPos getBasePos(BlockPos pos, BlockState state) {
         return switch (state.getValue(PART)) {
             case BASE -> pos;
             case LOWER -> pos.below();
             case UPPER -> pos.below(2);
-            case TOP -> pos.below(3);
-            default -> pos;
+            case TOP, DISH -> pos.below(3);
         };
     }
 

@@ -1,0 +1,8 @@
+{
+  "type": "minecraft:crafting_shapeless",
+  "ingredients": [
+    {"item":"universegate:acid_rain_bucket"},
+    {"item":"universegate:acid_battery"}
+  ],
+  "result": {"id":"universegate:acid_battery", "count":1}
+}

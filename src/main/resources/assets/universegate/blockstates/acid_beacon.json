@@ -1,0 +1,6 @@
+{
+  "variants": {
+    "lit=false": { "model": "universegate:block/acid_beacon" },
+    "lit=true": { "model": "universegate:block/acid_beacon" }
+  }
+}

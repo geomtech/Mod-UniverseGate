@@ -1,0 +1,12 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "pattern": ["ICC", "ERA", "I I"],
+  "key": {
+    "I": {"item":"minecraft:iron_ingot"},
+    "C": {"item":"minecraft:copper_ingot"},
+    "E": {"item":"universegate:energy_crystal"},
+    "R": {"item":"minecraft:redstone_block"},
+    "A": {"item":"universegate:acid_rain_bucket"}
+  },
+  "result": {"id":"universegate:laser_rifle", "count":1}
+}

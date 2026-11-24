@@ -29,7 +29,7 @@ public final class ModSounds {
 
     private static SoundEvent register(String id) {
         ResourceLocation soundId = ResourceLocation.fromNamespaceAndPath(UniverseGate.MOD_ID, id);
-        return Registry.register(BuiltInRegistries.SOUND_EVENT, soundId, SoundEvent.createVariableRangeEvent(soundId));
+        return NeoForgeRegistryBootstrap.register(BuiltInRegistries.SOUND_EVENT.key(), soundId, SoundEvent.createVariableRangeEvent(soundId));
     }
 
     public static void playAt(ServerLevel level, BlockPos pos, SoundEvent sound, float volume, float pitch) {

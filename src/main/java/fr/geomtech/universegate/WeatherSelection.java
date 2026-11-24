@@ -5,7 +5,8 @@ import org.jetbrains.annotations.Nullable;
 public enum WeatherSelection {
     CLEAR(0),
     RAIN(1),
-    THUNDER(2);
+    THUNDER(2),
+    ACID_RAIN(3);
 
     private final int buttonId;
 
@@ -22,6 +23,7 @@ public enum WeatherSelection {
             case CLEAR -> "clear";
             case RAIN -> "rain";
             case THUNDER -> "thunder";
+            case ACID_RAIN -> "acid_rain";
         };
     }
 
@@ -44,6 +46,7 @@ public enum WeatherSelection {
             case "clear" -> CLEAR;
             case "rain" -> RAIN;
             case "thunder" -> THUNDER;
+            case "acid_rain" -> ACID_RAIN;
             default -> null;
         };
     }

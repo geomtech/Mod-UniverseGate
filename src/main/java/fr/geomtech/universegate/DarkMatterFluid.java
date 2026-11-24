@@ -15,8 +15,14 @@ import net.minecraft.world.level.block.state.StateDefinition;
 import net.minecraft.world.level.material.FlowingFluid;
 import net.minecraft.world.level.material.Fluid;
 import net.minecraft.world.level.material.FluidState;
+import net.neoforged.neoforge.fluids.FluidType;
 
 public abstract class DarkMatterFluid extends FlowingFluid {
+
+    @Override
+    public FluidType getFluidType() {
+        return ModFluidTypes.DARK_MATTER.get();
+    }
 
     @Override
     public Fluid getFlowing() {

@@ -191,10 +191,19 @@ public class CombustionGeneratorBlockEntity extends BlockEntity implements World
 
     public static boolean isSupportedFuel(ItemStack stack) {
         return !stack.isEmpty()
-                && (stack.is(ModItems.RIFT_CRYSTAL) || AbstractFurnaceBlockEntity.isFuel(stack));
+                && (stack.is(ModItems.RIFT_CRYSTAL)
+                || stack.is(ModItems.OXIDIZED_IRON)
+                || stack.is(ModItems.ACID_BATTERY) && AcidBatteryItem.getStoredEnergy(stack) > 0
+                || AbstractFurnaceBlockEntity.isFuel(stack));
     }
 
     private static int getFuelEnergy(ItemStack stack) {
+        if (stack.is(ModItems.OXIDIZED_IRON)) {
+            return 8_000;
+        }
+        if (stack.is(ModItems.ACID_BATTERY)) {
+            return AcidBatteryItem.getStoredEnergy(stack);
+        }
         if (stack.is(ModItems.RIFT_CRYSTAL)) {
             return RIFT_CRYSTAL_ENERGY;
         }

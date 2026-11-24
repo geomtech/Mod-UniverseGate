@@ -148,7 +148,7 @@ public class MeteorologicalControllerBlock extends BaseEntityBlock {
 
         BlockEntity blockEntity = level.getBlockEntity(pos);
         if (blockEntity instanceof MenuProvider provider && player instanceof ServerPlayer sp) {
-            sp.openMenu(provider);
+            MenuOpening.openAt(sp, provider, pos);
         }
         return InteractionResult.CONSUME;
     }

@@ -5,7 +5,7 @@ import com.google.gson.JsonParser;
 import net.fabricmc.fabric.api.event.lifecycle.v1.ServerLifecycleEvents;
 import net.fabricmc.fabric.api.event.lifecycle.v1.ServerTickEvents;
 import net.fabricmc.fabric.api.networking.v1.ServerPlayConnectionEvents;
-import net.fabricmc.loader.api.FabricLoader;
+import net.neoforged.fml.ModList;
 import net.minecraft.ChatFormatting;
 import net.minecraft.network.chat.ClickEvent;
 import net.minecraft.network.chat.Component;
@@ -145,9 +145,8 @@ public final class UpdateCheckManager {
     }
 
     private static String resolveCurrentVersion() {
-        String version = FabricLoader.getInstance()
-                .getModContainer(UniverseGate.MOD_ID)
-                .map(modContainer -> modContainer.getMetadata().getVersion().getFriendlyString())
+        String version = ModList.get().getModContainerById(UniverseGate.MOD_ID)
+                .map(modContainer -> modContainer.getModInfo().getVersion().toString())
                 .orElse("0.0.0");
         return normalizeVersion(version);
     }

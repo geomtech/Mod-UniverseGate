@@ -9,6 +9,7 @@ import net.minecraft.world.level.block.state.BlockState;
 import java.util.ArrayDeque;
 import java.util.ArrayList;
 import java.util.Comparator;
+import java.util.Collection;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
@@ -165,8 +166,14 @@ public final class EnergyNetworkHelper {
     }
 
     public static boolean consumeEnergyFromNetwork(ServerLevel level, BlockPos startNode, int amount) {
+        return consumeEnergyFromNetwork(level, List.of(startNode), amount);
+    }
+
+    public static boolean consumeEnergyFromNetwork(ServerLevel level, Collection<BlockPos> startNodes, int amount) {
         Set<BlockPos> startConduits = new HashSet<>();
-        collectAdjacentConduits(level, startNode, startConduits);
+        for (BlockPos startNode : startNodes) {
+            collectAdjacentConduits(level, startNode, startConduits);
+        }
 
         if (startConduits.isEmpty()) return false;
 
@@ -504,7 +511,7 @@ public final class EnergyNetworkHelper {
                 }
                 
                 if (neighborState.is(ModBlocks.PARABOLA_BLOCK)) {
-                    parabolas.add(neighborPos.immutable());
+                    parabolas.add(ParabolaBlock.getBasePos(neighborPos, neighborState).immutable());
                     continue;
                 }
 

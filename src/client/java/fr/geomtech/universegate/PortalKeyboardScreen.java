@@ -23,7 +23,7 @@ import java.util.List;
 import java.util.Locale;
 import java.util.function.BooleanSupplier;
 
-public class PortalKeyboardScreen extends AbstractContainerScreen<AbstractContainerMenu> {
+public class PortalKeyboardScreen<T extends AbstractContainerMenu> extends AbstractContainerScreen<T> {
 
     private static final ResourceLocation TEXTURE =
             ResourceLocation.fromNamespaceAndPath("universegate", "textures/gui/portal_keyboard.png");
@@ -59,23 +59,11 @@ public class PortalKeyboardScreen extends AbstractContainerScreen<AbstractContai
 
     private record VisiblePortalRow(PortalInfo portal, int y, boolean darkLocked) {}
 
-    public PortalKeyboardScreen(AbstractContainerMenu menu, Inventory inv, Component title) {
+    public PortalKeyboardScreen(T menu, Inventory inv, Component title) {
         this(menu, inv, title, resolveKeyboardPos(menu), resolveDarkPoweredSupplier(menu), resolveNaturalKeyboard(menu));
     }
 
-    public PortalKeyboardScreen(PortalKeyboardMenu menu, Inventory inv, Component title) {
-        this((AbstractContainerMenu) menu, inv, title);
-    }
-
-    public PortalKeyboardScreen(PortalNaturalKeyboardMenu menu, Inventory inv, Component title) {
-        this((AbstractContainerMenu) menu, inv, title);
-    }
-
-    public PortalKeyboardScreen(PortalMobileKeyboardMenu menu, Inventory inv, Component title) {
-        this((AbstractContainerMenu) menu, inv, title);
-    }
-
-    private PortalKeyboardScreen(AbstractContainerMenu menu,
+    private PortalKeyboardScreen(T menu,
                                  Inventory inv,
                                  Component title,
                                  BlockPos keyboardPos,

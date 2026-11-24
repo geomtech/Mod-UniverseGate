@@ -93,7 +93,7 @@ public class CombustionGeneratorBlock extends BaseEntityBlock {
         if (!level.isClientSide) {
             BlockEntity blockEntity = level.getBlockEntity(pos);
             if (blockEntity instanceof MenuProvider provider && player instanceof ServerPlayer sp) {
-                sp.openMenu(provider);
+                MenuOpening.openAt(sp, provider, pos);
             }
         }
         return ItemInteractionResult.sidedSuccess(level.isClientSide);
@@ -108,7 +108,7 @@ public class CombustionGeneratorBlock extends BaseEntityBlock {
         if (!level.isClientSide) {
             BlockEntity blockEntity = level.getBlockEntity(pos);
             if (blockEntity instanceof MenuProvider provider && player instanceof ServerPlayer sp) {
-                sp.openMenu(provider);
+                MenuOpening.openAt(sp, provider, pos);
             }
         }
         return InteractionResult.sidedSuccess(level.isClientSide);

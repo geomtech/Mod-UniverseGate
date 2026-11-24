@@ -12,10 +12,11 @@ public class MeteorologicalControllerScreen extends AbstractContainerScreen<Mete
     private Button clearButton;
     private Button rainButton;
     private Button thunderButton;
+    private Button acidRainButton;
 
     public MeteorologicalControllerScreen(MeteorologicalControllerMenu menu, Inventory inv, Component title) {
         super(menu, inv, title);
-        this.imageWidth = 188;
+        this.imageWidth = 268;
         this.imageHeight = 108;
         this.inventoryLabelY = 10000;
     }
@@ -27,17 +28,22 @@ public class MeteorologicalControllerScreen extends AbstractContainerScreen<Mete
         int y = topPos + 80;
         clearButton = addRenderableWidget(
                 Button.builder(Component.translatable("gui.universegate.weather_clear"), button -> sendWeatherSelection(WeatherSelection.CLEAR))
-                        .bounds(leftPos + 10, y, 54, 18)
+                        .bounds(leftPos + 8, y, 60, 18)
                         .build()
         );
         rainButton = addRenderableWidget(
                 Button.builder(Component.translatable("gui.universegate.weather_rain"), button -> sendWeatherSelection(WeatherSelection.RAIN))
-                        .bounds(leftPos + 67, y, 54, 18)
+                        .bounds(leftPos + 72, y, 60, 18)
                         .build()
         );
         thunderButton = addRenderableWidget(
                 Button.builder(Component.translatable("gui.universegate.weather_thunder"), button -> sendWeatherSelection(WeatherSelection.THUNDER))
-                        .bounds(leftPos + 124, y, 54, 18)
+                        .bounds(leftPos + 136, y, 60, 18)
+                        .build()
+        );
+        acidRainButton = addRenderableWidget(
+                Button.builder(Component.translatable("gui.universegate.weather_acid_rain"), button -> sendWeatherSelection(WeatherSelection.ACID_RAIN))
+                        .bounds(leftPos + 200, y, 60, 18)
                         .build()
         );
 
@@ -56,6 +62,7 @@ public class MeteorologicalControllerScreen extends AbstractContainerScreen<Mete
         if (clearButton != null) clearButton.active = available;
         if (rainButton != null) rainButton.active = available;
         if (thunderButton != null) thunderButton.active = available;
+        if (acidRainButton != null) acidRainButton.active = available;
     }
 
     private void sendWeatherSelection(WeatherSelection selection) {
@@ -70,7 +77,7 @@ public class MeteorologicalControllerScreen extends AbstractContainerScreen<Mete
 
         int barX = leftPos + 10;
         int barY = topPos + 30;
-        int barWidth = 168;
+        int barWidth = 248;
         int barHeight = 12;
         g.fill(barX, barY, barX + barWidth, barY + barHeight, 0xFF0E131D);
         int fill = Mth.floor(barWidth * menu.chargeProgress());
@@ -82,7 +89,7 @@ public class MeteorologicalControllerScreen extends AbstractContainerScreen<Mete
         if (menu.hasFlag(MeteorologicalControllerMenu.FLAG_SEQUENCE_ACTIVE)) {
             int seqBarX = leftPos + 10;
             int seqBarY = topPos + 62;
-            int seqBarWidth = 168;
+            int seqBarWidth = 248;
             int seqFill = Mth.floor(seqBarWidth * menu.sequenceProgress());
             g.fill(seqBarX, seqBarY, seqBarX + seqBarWidth, seqBarY + 7, 0xFF0E131D);
             if (seqFill > 0) {
@@ -116,14 +123,21 @@ public class MeteorologicalControllerScreen extends AbstractContainerScreen<Mete
         Component infoText;
         if (menu.hasFlag(MeteorologicalControllerMenu.FLAG_SEQUENCE_ACTIVE)) {
             infoText = Component.translatable("gui.universegate.weather_sequence");
-        } else if (!menu.hasFlag(MeteorologicalControllerMenu.FLAG_STRUCTURE_READY)) {
+        } else if (!menu.hasFlag(MeteorologicalControllerMenu.FLAG_TOWER_PRESENT)) {
             infoText = Component.translatable("gui.universegate.weather_structure_missing");
+        } else if (!menu.hasFlag(MeteorologicalControllerMenu.FLAG_PARABOLA_PRESENT)) {
+            infoText = Component.translatable("gui.universegate.weather_parabola_disconnected");
+        } else if (!menu.hasFlag(MeteorologicalControllerMenu.FLAG_ENERGY_LINKED)) {
+            infoText = Component.translatable("gui.universegate.weather_energy_offline");
         } else if (!menu.hasFlag(MeteorologicalControllerMenu.FLAG_CATALYST_HAS_CRYSTAL)) {
             infoText = Component.translatable("gui.universegate.weather_missing_crystal");
         } else if (!menu.hasFlag(MeteorologicalControllerMenu.FLAG_PARABOLA_POWERED)) {
             infoText = Component.translatable("gui.universegate.weather_parabola_unpowered");
         } else if (!menu.hasFlag(MeteorologicalControllerMenu.FLAG_FULLY_CHARGED)) {
             infoText = Component.translatable("gui.universegate.weather_waiting_energy");
+        } else if (!menu.hasFlag(MeteorologicalControllerMenu.FLAG_WEATHER_ENERGY_AVAILABLE)) {
+            infoText = Component.translatable("gui.universegate.weather_need_operation_energy",
+                    MeteorologicalControllerBlockEntity.WEATHER_OPERATION_ENERGY_COST);
         } else {
             infoText = Component.translatable("gui.universegate.weather_ready");
         }

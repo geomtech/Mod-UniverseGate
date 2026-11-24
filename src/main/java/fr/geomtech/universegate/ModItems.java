@@ -21,6 +21,11 @@ public final class ModItems {
             new BlockItem(ModBlocks.LIGHT_BLOCK, new Item.Properties())
     );
 
+    public static final Item MOLDY_DIRT_ITEM = register(
+            "moldy_dirt",
+            new BlockItem(ModBlocks.MOLDY_DIRT, new Item.Properties())
+    );
+
     public static final Item KELO_LOG_ITEM = register(
             "kelo_log",
             new BlockItem(ModBlocks.KELO_LOG, new Item.Properties())
@@ -181,6 +186,42 @@ public final class ModItems {
             new BucketItem(ModFluids.STILL_DARK_MATTER, new Item.Properties().stacksTo(1).craftRemainder(net.minecraft.world.item.Items.BUCKET))
     );
 
+    public static final Item ACID_RAIN_BUCKET = register(
+            "acid_rain_bucket",
+            new BucketItem(ModFluids.STILL_ACID_RAIN, new Item.Properties().stacksTo(1).craftRemainder(net.minecraft.world.item.Items.BUCKET))
+    );
+
+    public static final Item ACID_BATTERY = register(
+            "acid_battery",
+            new AcidBatteryItem(new Item.Properties())
+    );
+
+    public static final Item LASER_RIFLE = register("laser_rifle", new LaserRifleItem(new Item.Properties().stacksTo(1)));
+    public static final Item HORSE_LASER_HARNESS = register("horse_laser_harness", new HorseLaserHarnessItem(new Item.Properties().stacksTo(1)));
+    public static final Item CREEPER_COMMANDER = register("creeper_commander", new CreeperCommanderItem(new Item.Properties().stacksTo(1)));
+    public static final Item OXIDIZED_IRON = register("oxidized_iron", new Item(new Item.Properties()));
+    public static final Item ACID_BEACON_ITEM = register("acid_beacon", new BlockItem(ModBlocks.ACID_BEACON, new Item.Properties()));
+
+    public static final Item ACID_ARROW = register(
+            "acid_arrow",
+            new AcidArrowItem(new Item.Properties())
+    );
+
+    public static final Item PHOSPHATE_FERTILIZER = register(
+            "phosphate_fertilizer",
+            new PhosphateFertilizerItem(new Item.Properties())
+    );
+
+    public static final Item NITRO_ACID_EXPLOSIVE = register(
+            "nitro_acid_explosive",
+            new AcidExplosiveItem(new Item.Properties())
+    );
+
+    public static final Item ACID_NEON_LAMP_ITEM = register(
+            "acid_neon_lamp",
+            new BlockItem(ModBlocks.ACID_NEON_LAMP, new Item.Properties())
+    );
+
     public static final Item FLUID_PIPE_ITEM = register(
             "fluid_pipe",
             new BlockItem(ModBlocks.FLUID_PIPE, new Item.Properties())
@@ -207,7 +248,7 @@ public final class ModItems {
     );
 
     private static Item register(String id, Item item) {
-        return Registry.register(
+        return NeoForgeRegistryBootstrap.register(
                 BuiltInRegistries.ITEM,
                 ResourceLocation.fromNamespaceAndPath(UniverseGate.MOD_ID, id),
                 item

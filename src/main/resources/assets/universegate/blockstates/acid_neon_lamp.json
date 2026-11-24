@@ -1,0 +1,10 @@
+{
+  "variants": {
+    "lit=false": {
+      "model": "universegate:block/acid_neon_lamp_off"
+    },
+    "lit=true": {
+      "model": "universegate:block/acid_neon_lamp_on"
+    }
+  }
+}
