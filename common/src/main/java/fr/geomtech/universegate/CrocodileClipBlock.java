@@ -83,7 +83,38 @@ public class CrocodileClipBlock extends Block implements EntityBlock {
     private static boolean canGrip(BlockState state) {
         return state.is(ModBlocks.PORTAL_FRAME)
                 || state.is(ModBlocks.PORTAL_CORE)
-                || state.is(ModBlocks.LIGHTNING_ANTENNA);
+                || state.is(ModBlocks.LIGHTNING_ANTENNA)
+                || state.is(ModBlocks.PORTAL_KEYBOARD);
+    }
+
+    @Override
+    protected void onPlace(BlockState state, net.minecraft.world.level.Level level, BlockPos pos, BlockState oldState, boolean movedByPiston) {
+        super.onPlace(state, level, pos, oldState, movedByPiston);
+        syncGrippedKeyboard(state, level, pos);
+    }
+
+    //? if >=1.21.11 {
+    /*@Override
+    protected void affectNeighborsAfterRemoval(BlockState state, net.minecraft.server.level.ServerLevel level, BlockPos pos, boolean movedByPiston) {
+        super.affectNeighborsAfterRemoval(state, level, pos, movedByPiston);
+        syncGrippedKeyboard(state, level, pos);
+    }
+    *///?} else {
+    @Override
+    protected void onRemove(BlockState state, net.minecraft.world.level.Level level, BlockPos pos, BlockState newState, boolean movedByPiston) {
+        super.onRemove(state, level, pos, newState, movedByPiston);
+        if (!state.is(newState.getBlock())) syncGrippedKeyboard(state, level, pos);
+    }
+    //?}
+
+    /** A player-built keyboard only lights up while clipped and wired to a portal: refresh it when any clip on the network changes. */
+    private static void syncGrippedKeyboard(BlockState state, net.minecraft.world.level.Level level, BlockPos pos) {
+        if (!(level instanceof net.minecraft.server.level.ServerLevel serverLevel)) return;
+        BlockPos gripped = pos.relative(state.getValue(FACING));
+        if (serverLevel.getBlockState(gripped).is(ModBlocks.PORTAL_KEYBOARD)) {
+            PortalConnectionManager.syncKeyboardLitFromNearbyCore(serverLevel, gripped);
+        }
+        WireNetwork.syncWiredKeyboardsAround(serverLevel, pos);
     }
 
     //? if >=1.21.11 {

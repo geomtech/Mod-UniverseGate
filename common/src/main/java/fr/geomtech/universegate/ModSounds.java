@@ -9,6 +9,7 @@ import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.sounds.SoundEvent;
 import net.minecraft.sounds.SoundSource;
+import net.minecraft.world.level.block.SoundType;
 
 public final class ModSounds {
 
@@ -30,6 +31,19 @@ public final class ModSounds {
     public static final SoundEvent RIFT_SHADE_HIT = register("rift_shade_hit");
     public static final SoundEvent RIFT_SHADE_DEATH = register("rift_shade_death");
     public static final SoundEvent RIFT_DIMENSION_AMBIENT_SOUND = register("rift_dimension_ambient_sound");
+    public static final SoundEvent ELECTRIC_WIRE_BREAK = register("electric_wire_break");
+    public static final SoundEvent ELECTRIC_WIRE_PLACE = register("electric_wire_place");
+    public static final SoundEvent ELECTRIC_WIRE_STEP = register("electric_wire_step");
+
+    public static final SoundType ELECTRIC_WIRE_SOUND_TYPE = new SoundType(
+            0.9F,
+            1.0F,
+            ELECTRIC_WIRE_BREAK,
+            ELECTRIC_WIRE_STEP,
+            ELECTRIC_WIRE_PLACE,
+            ELECTRIC_WIRE_STEP,
+            ELECTRIC_WIRE_STEP
+    );
 
     private static SoundEvent register(String id) {
         ResourceLocation soundId = ResourceLocation.fromNamespaceAndPath(UniverseGate.MOD_ID, id);

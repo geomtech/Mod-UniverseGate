@@ -4,9 +4,12 @@ import com.mojang.blaze3d.vertex.PoseStack;
 import com.mojang.blaze3d.vertex.VertexConsumer;
 import fr.geomtech.universegate.compat.ImmediateBlockEntityRenderer;
 import net.minecraft.client.renderer.MultiBufferSource;
+import net.minecraft.client.renderer.RenderType;
 import net.minecraft.client.renderer.blockentity.BlockEntityRendererProvider;
+import net.minecraft.client.renderer.texture.OverlayTexture;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
+import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.block.state.BlockState;
@@ -28,6 +31,7 @@ public final class CableTerminalRenderer<T extends BlockEntity> extends Immediat
     private static final int RED = 0xe63c37, BLUE = 0x4678eb, STEEL = 0xb5c2c7, RUBBER = 0x34363b;
     private static final int COPPER = 0xd9894f, GALVANIZED = 0x859499;
     private static final Direction[] DIRECTIONS = Direction.values();
+    private static final ResourceLocation WHITE = ResourceLocation.fromNamespaceAndPath(UniverseGate.MOD_ID, "textures/block/cable_white.png");
     private final Map<T, Geometry> cache = new WeakHashMap<>();
 
     public CableTerminalRenderer(BlockEntityRendererProvider.Context context) {}
@@ -64,8 +68,12 @@ public final class CableTerminalRenderer<T extends BlockEntity> extends Immediat
         if (changed) {
             geometry.rebuild(level, pos, grip, antenna);
         }
-        float brightness = .32f + .68f * Math.max((light >> 20) & 15, (light >> 4) & 15) / 15f;
-        geometry.draw(buffers.getBuffer(PortalGateRenderTypes.GATE_SOLID), poses.last().pose(), brightness);
+        //? if >=1.21.11 {
+        /*VertexConsumer consumer = buffers.getBuffer(RenderTypes.entityCutoutNoCull(WHITE));
+        *///?} else {
+        VertexConsumer consumer = buffers.getBuffer(RenderType.entityCutoutNoCull(WHITE));
+        //?}
+        geometry.draw(consumer, poses.last(), light);
     }
 
     private record Bite(Vec3 lip, Vec3 back, Vec3 opening, double gap, double lean) {}
@@ -87,6 +95,7 @@ public final class CableTerminalRenderer<T extends BlockEntity> extends Immediat
         private Direction right;
         private boolean buried;
         private boolean waitingForCore;
+        private Direction keyboardFacing;
         private long retryAt;
 
         void rebuild(Level level, BlockPos pos, Direction facing, boolean antenna) {
@@ -104,6 +113,8 @@ public final class CableTerminalRenderer<T extends BlockEntity> extends Immediat
             waitingForCore = (core || frame) && right == null;
             retryAt = level.getGameTime() + 20;
             boolean onMast = !antenna && support.is(ModBlocks.LIGHTNING_ANTENNA);
+            keyboardFacing = !antenna && support.is(ModBlocks.PORTAL_KEYBOARD)
+                    ? support.getValue(PortalKeyboardBlock.FACING) : null;
             Vec3 mast = antenna ? Vec3.ZERO : onMast
                     ? Vec3.atLowerCornerOf(LightningAntennaBlock.basePos(supportPos,support).subtract(pos)) : null;
             Direction mastFacing = onMast ? support.getValue(LightningAntennaBlock.FACING) : facing;
@@ -248,7 +259,7 @@ public final class CableTerminalRenderer<T extends BlockEntity> extends Immediat
         private void portalLead(Level level, BlockPos pos, WirePort port, Vec3 end, Vec3 across,
                                 Vec3 approach, Vec3 front, int lane) {
             Vec3 start = port.center;
-            end = end.subtract(across.scale(lane*.16));
+            Vec3 centerEnd = end.subtract(across.scale(lane*.16));
             double ceiling = Math.max(start.y, end.y) + .05;
             Vec3 entry = port.start(lane);
             List<Vec3> run = new ArrayList<>();
@@ -256,12 +267,12 @@ public final class CableTerminalRenderer<T extends BlockEntity> extends Immediat
             if (hanging) {
                 // Clear the lip, drop almost vertically, then turn onto the ground outside the plinth.
                 Vec3 lip = start.add(port.inward.scale(.20));
-                Vec3 landing = lip.add(front.scale(Math.max(.12, .88 - lip.subtract(end).dot(front))));
+                Vec3 landing = lip.add(front.scale(Math.max(.12, .88 - lip.subtract(centerEnd).dot(front))));
                 double ground = restingHeight(level, pos, landing, start.y-.09);
                 // Across a void only pay out a short free bight.
-                if (!Double.isFinite(ground)) ground = end.y-.44;
+                if (!Double.isFinite(ground)) ground = centerEnd.y-.44;
                 ground = Math.min(ground, start.y-.10);
-                Vec3 floorDirection = end.subtract(landing).multiply(1,0,1).normalize();
+                Vec3 floorDirection = centerEnd.subtract(landing).multiply(1,0,1).normalize();
                 Vec3 lateral = UP.cross(floorDirection);
                 if (lateral.dot(port.transverse) < -.001 ||
                         (Math.abs(lateral.dot(port.transverse)) <= .001 && lateral.dot(across) < 0)) lateral = lateral.reverse();
@@ -275,30 +286,19 @@ public final class CableTerminalRenderer<T extends BlockEntity> extends Immediat
                 run.add(new Vec3(knee.x,ground + Math.min(.25,(entry.y-ground)*.32),knee.z));
                 run.add(touch);
                 port = new WirePort(groundCenter, floorDirection, lateral, Direction.DOWN);
-                start = groundCenter;
             }
-            double span = start.distanceTo(end);
-            Vec3 b = start.add(port.inward.scale(Math.min(.27, span*.30)));
-            Vec3 c = end.add(approach.scale(Math.min(.35, span*.34))).add(0,-Math.min(.08,span*.07),0);
-            // Ease out of the baked port, and arrive tangent to the stripped copper.
-            // At a junction one incoming pair may approach the common posts in reverse order.
+            // Route each conductor along its own Bézier from its port to its lug so tight inner bends never cusp.
+            Vec3 laneStart = port.start(lane);
+            double span = laneStart.distanceTo(end);
+            Vec3 b = laneStart.add(port.inward.scale(Math.min(.28, span * .38)));
+            Vec3 c = end.add(approach.scale(Math.min(.32, span * .38))).add(0, -Math.min(.06, span * .05), 0);
             double handedness = UP.cross(port.inward).dot(port.transverse);
             Vec3 exitNormal = UP.cross(approach.reverse()).scale(handedness);
             boolean crossover = exitNormal.dot(across) < 0;
             Vec3[] path = new Vec3[17];
             for (int i=0; i<path.length; i++) {
                 double t = i/(double)(path.length-1), s = 1-t;
-                Vec3 center = start.scale(s*s*s).add(b.scale(3*s*s*t)).add(c.scale(3*s*t*t)).add(end.scale(t*t*t));
-                double blend = t*t*(3-2*t);
-                Vec3 offset = port.transverse.scale(1.45/16).lerp(across.scale(.16), blend);
-                if (handedness != 0 && !crossover) {
-                    // Offset the pair across each bend before spreading it to the screw spacing.
-                    Vec3 tangent = b.subtract(start).scale(s*s).add(c.subtract(b).scale(2*s*t)).add(end.subtract(c).scale(t*t));
-                    Vec3 normal = UP.cross(tangent).normalize().scale(handedness);
-                    offset = normal.scale((1-blend)*1.45/16 + blend*.16)
-                            .add(across.subtract(exitNormal).scale(blend*.16));
-                }
-                Vec3 p = center.add(offset.scale(lane));
+                Vec3 p = laneStart.scale(s*s*s).add(b.scale(3*s*s*t)).add(c.scale(3*s*t*t)).add(end.scale(t*t*t));
                 double ground = restingHeight(level, pos, p, ceiling);
                 if (Double.isFinite(ground)) {
                     // Settle early and lift only the last few centimetres as the wire reaches its lug.
@@ -360,11 +360,49 @@ public final class CableTerminalRenderer<T extends BlockEntity> extends Immediat
         }
 
         private Bite surfaceBite(int lane) {
+            if (keyboardFacing != null) return keyboardBite(keyboardFacing, lane);
             Vec3 normal = vector(grip).reverse();
             Vec3 along = grip.getAxis().isVertical() ? new Vec3(0, 0, 1) : new Vec3(0, -1, 0);
             Vec3 across = normal.cross(along);
             Vec3 lip = CENTER.add(vector(grip).scale(.47)).add(across.scale(lane*.14));
             return new Bite(lip, along, normal, .022, .14);
+        }
+
+        /**
+         * Clamps onto the tilted desk rim of the player-built keyboard so the jaws straddle its top and
+         * bottom faces and the insulated sleeves point outward toward the incoming wires.
+         */
+        private Bite keyboardBite(Direction kbFacing, int lane) {
+            double cos = Math.cos(Math.toRadians(22.5)), sin = Math.sin(Math.toRadians(22.5));
+            Vec3 forward = vector(kbFacing);
+            Vec3 deskUp = UP.scale(cos).add(forward.scale(sin));
+            Vec3 deskFwd = forward.scale(cos).subtract(UP.scale(sin));
+            Vec3 deskCenter = CENTER.add(vector(grip)).add(0, 1.0 / 16.0, 0);
+
+            if (grip.getAxis().isVertical()) {
+                Vec3 back = vector(grip).reverse();
+                Vec3 edge = deskCenter.add(deskUp.scale(grip == Direction.DOWN ? 1.5 / 16.0 : -1.0 / 16.0));
+                Vec3 across = vector(kbFacing.getClockWise());
+                if (across.x + across.z < 0) across = across.reverse();
+                return new Bite(edge.add(across.scale(lane * .14)), back, forward, .035, .0);
+            }
+
+            Vec3 back;
+            Vec3 edge;
+            if (grip == kbFacing.getOpposite()) {
+                edge = deskCenter.add(deskFwd.scale(5.0 / 16.0));
+                back = deskFwd;
+            } else if (grip == kbFacing) {
+                edge = deskCenter.subtract(deskFwd.scale(5.0 / 16.0));
+                back = deskFwd.reverse();
+            } else {
+                edge = deskCenter.add(vector(grip).reverse().scale(7.0 / 16.0));
+                back = vector(grip).reverse();
+            }
+            Vec3 across = back.cross(deskUp).normalize();
+            if (across.x + across.z < 0) across = across.reverse();
+            Vec3 lip = edge.add(across.scale(lane * .14));
+            return new Bite(lip, back, deskUp, .065, -.04);
         }
 
         private Vec3 hardware(Bite bite, int color) {
@@ -459,18 +497,26 @@ public final class CableTerminalRenderer<T extends BlockEntity> extends Immediat
             }
         }
 
-        void draw(VertexConsumer consumer, Matrix4f matrix, float brightness) {
+        void draw(VertexConsumer consumer, PoseStack.Pose pose, int light) {
+            Matrix4f matrix = pose.pose();
             for (Quad quad : quads) {
-                int rgb = PortalGateMesh.shade(quad.color,brightness) | 0xff000000;
-                vertex(consumer,matrix,quad.a,rgb); vertex(consumer,matrix,quad.b,rgb);
-                vertex(consumer,matrix,quad.c,rgb); vertex(consumer,matrix,quad.d,rgb);
+                int argb = quad.color | 0xff000000;
+                vertex(consumer, pose, matrix, quad.a, argb, light);
+                vertex(consumer, pose, matrix, quad.b, argb, light);
+                vertex(consumer, pose, matrix, quad.c, argb, light);
+                vertex(consumer, pose, matrix, quad.d, argb, light);
             }
         }
     }
 
     private record Quad(Vec3 a, Vec3 b, Vec3 c, Vec3 d, int color) {}
 
-    private static void vertex(VertexConsumer out, Matrix4f matrix, Vec3 p, int argb) {
-        out.addVertex(matrix,(float)p.x,(float)p.y,(float)p.z).setColor(argb);
+    private static void vertex(VertexConsumer out, PoseStack.Pose pose, Matrix4f matrix, Vec3 p, int argb, int light) {
+        out.addVertex(matrix, (float) p.x, (float) p.y, (float) p.z)
+                .setColor(argb)
+                .setUv(0.5F, 0.5F)
+                .setOverlay(OverlayTexture.NO_OVERLAY)
+                .setLight(light)
+                .setNormal(pose, 0.0F, 1.0F, 0.0F);
     }
 }

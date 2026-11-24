@@ -15,6 +15,7 @@ import fr.geomtech.universegate.PortalNaturalKeyboardBlockEntity;
 import fr.geomtech.universegate.PortalNaturalKeyboardMenu;
 import fr.geomtech.universegate.PortalRiftHelper;
 import fr.geomtech.universegate.PortalRegistrySavedData;
+import fr.geomtech.universegate.WireNetwork;
 import fr.geomtech.universegate.platform.Services;
 import net.minecraft.core.BlockPos;
 import net.minecraft.server.level.ServerLevel;
@@ -50,6 +51,13 @@ public final class UniverseGateNetwork {
                 boolean isNaturalKeyboard = access.naturalKeyboard();
                 BlockPos corePos = access.corePos();
                 if (corePos == null) {
+                    if (!isNaturalKeyboard && level.getBlockState(access.controllerPos()).is(ModBlocks.PORTAL_KEYBOARD)) {
+                        ModSounds.playAt(level, payload.keyboardPos(), ModSounds.PORTAL_ERROR, 0.9F, 1.0F);
+                        sendPortalConnectionError(player, WireNetwork.hasClip(level, access.controllerPos())
+                                ? "Clavier non relié : les fils électriques de ses pinces crocodiles n'atteignent aucun portail."
+                                : "Clavier non câblé : pose des pinces crocodiles sur le clavier et relie-les au portail avec des fils électriques.");
+                        return;
+                    }
                     sendPortalConnectionError(player, "Aucun cœur de portail à proximité du clavier.");
                     return;
                 }
@@ -88,6 +96,13 @@ public final class UniverseGateNetwork {
                 int openEnergyCost = requiresOpenEnergy
                         ? EnergyNetworkHelper.getPortalOpenEnergyCost(level, corePos, targetPortalId)
                         : 0;
+
+                if (requiresOpenEnergy && EnergyNetworkHelper.getAvailableEnergyForPortal(level, corePos) < openEnergyCost) {
+                    ModSounds.playAt(level, payload.keyboardPos(), ModSounds.PORTAL_ERROR, 0.9F, 1.0F);
+                    sendPortalConnectionError(player, "Énergie insuffisante pour l'ouverture du portail (" + openEnergyCost + " FE requis).");
+                    sendPortalKeyboardStatusToPlayer(player, access.controllerPos());
+                    return;
+                }
 
                 boolean ok = PortalConnectionManager.openBothSides(
                         level,
@@ -236,7 +251,7 @@ public final class UniverseGateNetwork {
 
         if (player.containerMenu instanceof PortalKeyboardMenu keyboardMenu
                 && keyboardMenu.getKeyboardPos().equals(controllerPos)) {
-            BlockPos corePos = findCoreNear(level, controllerPos, CORE_SEARCH_RADIUS_XZ);
+            BlockPos corePos = WireNetwork.findWiredCore(level, controllerPos);
             return new PortalControllerAccess(controllerPos, corePos, false);
         }
 
@@ -252,7 +267,8 @@ public final class UniverseGateNetwork {
         }
 
         if (level.getBlockEntity(controllerPos) instanceof PortalKeyboardBlockEntity) {
-            BlockPos corePos = findCoreNear(level, controllerPos, CORE_SEARCH_RADIUS_XZ);
+            // A player-built keyboard only reaches the portal its crocodile clips are wired to.
+            BlockPos corePos = WireNetwork.findWiredCore(level, controllerPos);
             return new PortalControllerAccess(controllerPos, corePos, false);
         }
 

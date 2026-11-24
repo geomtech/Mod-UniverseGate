@@ -66,6 +66,11 @@ final class PortalGateMesh {
 
     static final int EDGE_TINT = -2;
 
+    /** Renvoie un marqueur qui étiquette cette bande de tranche avec {@code customTag} (couleur de base blanche). */
+    static int edgeTagged(int customTag) {
+        return -100 - customTag;
+    }
+
     /**
      * @param edgePaint détail des tranches (null : teinte unie). La tranche est alors découpée en bandes de 1 px
      *                  dans l'épaisseur, colorées selon leur position le long du bord ({@code arcPx}).
@@ -142,6 +147,8 @@ final class PortalGateMesh {
                         int col = edgePaint.color(arcPx, sl, slices, outer, tag[i]);
                         if (col == EDGE_TINT) {
                             c[n] = 0; t[n] = tag[i];
+                        } else if (col <= -100) {
+                            c[n] = 0xFFFFFF; t[n] = -100 - col;
                         } else {
                             c[n] = col; t[n] = 0;
                         }
@@ -174,6 +181,10 @@ final class PortalGateMesh {
      * @param xAxis portail aligné sur X (horizontal = x, profondeur = z) ou sur Z (horizontal = z, profondeur = x)
      */
     void render(VertexConsumer consumer, Matrix4f matrix, boolean xAxis, float rotationDeg, Tint tint) {
+        render(consumer, matrix, xAxis, rotationDeg, 1.0F, tint);
+    }
+
+    void render(VertexConsumer consumer, Matrix4f matrix, boolean xAxis, float rotationDeg, float brightness, Tint tint) {
         float rad = rotationDeg * Mth.DEG_TO_RAD;
         float cos = Mth.cos(rad), sin = Mth.sin(rad);
         for (int n = 0; n < count; n++) {
@@ -181,7 +192,7 @@ final class PortalGateMesh {
             float h0 = quads[o], v0 = quads[o + 1], h1 = quads[o + 2], v1 = quads[o + 3];
             float z0 = quads[o + 4], z1 = quads[o + 5];
             int kind = (int) quads[o + 6];
-            int rgb = tags[n] == 0 ? colors[n] : tint.color(tags[n], colors[n], angles[n] + rad);
+            int rgb = tags[n] == 0 ? shade(colors[n], brightness) : tint.color(tags[n], colors[n], angles[n] + rad);
             if (kind != 0 && tags[n] != 0) rgb = shade(rgb, 0.85F);
             if (kind == 0) {
                 // Faces avant et arrière.

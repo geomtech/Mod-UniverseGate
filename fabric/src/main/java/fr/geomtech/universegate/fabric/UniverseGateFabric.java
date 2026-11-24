@@ -2,6 +2,7 @@ package fr.geomtech.universegate.fabric;
 
 import fr.geomtech.universegate.AncientCityZpcGuarantee;
 import fr.geomtech.universegate.CrocodileClipEntity;
+import fr.geomtech.universegate.ElectricWireBlockEntity;
 import fr.geomtech.universegate.RiftDeathRecoveryHandler;
 import fr.geomtech.universegate.UniverseGate;
 import fr.geomtech.universegate.UpdateCheckManager;
@@ -23,7 +24,10 @@ public class UniverseGateFabric implements ModInitializer {
 	@Override
 	public void onInitialize() {
 		UniverseGate.registerContent();
-		ServerChunkEvents.CHUNK_LOAD.register((level, chunk) -> CrocodileClipEntity.restoreMissing(chunk));
+		ServerChunkEvents.CHUNK_LOAD.register((level, chunk) -> {
+			CrocodileClipEntity.restoreMissing(chunk);
+			ElectricWireBlockEntity.restoreMissing(chunk);
+		});
 
 		// Optional energy compatibility (Stellaris and other Team Reborn Energy mods).
 		if (FabricLoader.getInstance().isModLoaded("team_reborn_energy")) {

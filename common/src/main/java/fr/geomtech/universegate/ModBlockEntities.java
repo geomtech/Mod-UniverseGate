@@ -93,6 +93,11 @@ public final class ModBlockEntities {
                     ResourceLocation.fromNamespaceAndPath(UniverseGate.MOD_ID, "crocodile_clip"),
                     type(CrocodileClipEntity::new, ModBlocks.CROCODILE_CLIP));
 
+    public static final BlockEntityType<ElectricWireBlockEntity> ELECTRIC_WIRE =
+            Registry.register(BuiltInRegistries.BLOCK_ENTITY_TYPE,
+                    ResourceLocation.fromNamespaceAndPath(UniverseGate.MOD_ID, "electric_wire"),
+                    type(ElectricWireBlockEntity::new, ModBlocks.ELECTRIC_WIRE));
+
     public static final BlockEntityType<MeteorologicalControllerBlockEntity> METEOROLOGICAL_CONTROLLER =
             Registry.register(
                     BuiltInRegistries.BLOCK_ENTITY_TYPE,

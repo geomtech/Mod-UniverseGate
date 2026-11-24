@@ -139,8 +139,12 @@ public class PortalCoreBlockEntity extends BlockEntity implements PosMenuProvide
         PortalFrameDetector.FrameMatch match = new PortalFrameDetector.FrameMatch(right, java.util.List.of());
         for (BlockPos p : PortalFrameHelper.collectFrame(match, worldPosition)) {
             BlockState state = sl.getBlockState(p);
-            if (state.is(ModBlocks.PORTAL_FRAME) && state.getValue(PortalFrameBlock.FORMED) != formed) {
-                sl.setBlock(p, state.setValue(PortalFrameBlock.FORMED, formed), 3);
+            if (!state.is(ModBlocks.PORTAL_FRAME)) continue;
+            BlockState updated = state
+                    .setValue(PortalFrameBlock.FORMED, formed)
+                    .setValue(PortalFrameBlock.BLINK_ON, false);
+            if (!updated.equals(state)) {
+                sl.setBlock(p, updated, 3);
             }
         }
     }
@@ -336,12 +340,10 @@ public class PortalCoreBlockEntity extends BlockEntity implements PosMenuProvide
             BlockState state = sl.getBlockState(p);
             if (state.is(ModBlocks.PORTAL_FRAME)
                     && state.hasProperty(PortalFrameBlock.ACTIVE)
-                    && state.hasProperty(PortalFrameBlock.UNSTABLE)
-                    && state.hasProperty(PortalFrameBlock.BLINK_ON)) {
+                    && state.hasProperty(PortalFrameBlock.UNSTABLE)) {
                 BlockState updated = state
                         .setValue(PortalFrameBlock.ACTIVE, true)
-                        .setValue(PortalFrameBlock.UNSTABLE, unstableVisual)
-                        .setValue(PortalFrameBlock.BLINK_ON, unstableVisual);
+                        .setValue(PortalFrameBlock.UNSTABLE, unstableVisual);
                 if (!updated.equals(state)) {
                     sl.setBlock(p, updated, 3);
                 }

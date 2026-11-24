@@ -4,9 +4,11 @@ import com.mojang.blaze3d.vertex.PoseStack;
 import fr.geomtech.universegate.compat.ImmediateBlockEntityRenderer;
 import net.minecraft.client.renderer.MultiBufferSource;
 import net.minecraft.client.renderer.blockentity.BlockEntityRendererProvider;
+import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.util.Mth;
 import net.minecraft.world.level.Level;
+import net.minecraft.world.level.LightLayer;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.phys.AABB;
 
@@ -56,12 +58,35 @@ public class PortalGateRenderer extends ImmediateBlockEntityRenderer<PortalCoreB
         }
         PortalGateAnimator animator = core.getClientGateAnimator();
         float angle = animator == null ? 0.0F : animator.angle(partialTick);
+        boolean cooldown = animator != null && animator.isCooldown();
 
+        float brightness = sampleBrightness(level, core.getBlockPos(), right);
         PortalGateRenderContext context = new PortalGateRenderContext(level, core, core.getBlockPos(), right,
                 tick, partialTick, tick + partialTick, opening, active, active && core.isClientAmbientUnstable(),
-                progress, angle);
+                progress, angle, brightness, cooldown);
         for (PortalGateLayer layer : PortalGateLayers.all()) {
             layer.render(context, poseStack, buffer);
         }
+    }
+
+    /** Natural ambient brightness around the gate (matches Minecraft's sky darkening and block light). */
+    static float sampleBrightness(Level level, BlockPos corePos, Direction right) {
+        Direction depth = right.getClockWise();
+        BlockPos center = corePos.above(2);
+        int best = Math.max(
+                effectiveLight(level, center),
+                Math.max(effectiveLight(level, center.relative(depth)), effectiveLight(level, center.relative(depth.getOpposite())))
+        );
+        float f = best / 15.0F;
+        float ramp = Math.max(level.dimensionType().ambientLight(), f * (0.45F + 0.55F * f));
+        return 0.08F + 0.92F * ramp;
+    }
+
+    private static int effectiveLight(Level level, BlockPos pos) {
+        int sky = level.dimensionType().hasSkyLight()
+                ? Math.max(0, level.getBrightness(LightLayer.SKY, pos) - level.getSkyDarken())
+                : 0;
+        int block = level.getBrightness(LightLayer.BLOCK, pos);
+        return Math.max(sky, block);
     }
 }

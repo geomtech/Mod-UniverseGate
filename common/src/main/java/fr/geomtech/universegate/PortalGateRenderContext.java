@@ -23,7 +23,9 @@ public record PortalGateRenderContext(Level level,
                                       boolean active,
                                       boolean unstable,
                                       float openingProgress,
-                                      float ringAngle) {
+                                      float ringAngle,
+                                      float brightness,
+                                      boolean cooldown) {
 
     public boolean xAxis() {
         return right.getAxis() == Direction.Axis.X;
@@ -32,5 +34,10 @@ public record PortalGateRenderContext(Level level,
     /** Portail ouvert ou en cours d'ouverture. */
     public boolean running() {
         return opening || active;
+    }
+
+    /** Phase de clignotement pendant la désactivation (retour arrière + refroidissement vapeur). */
+    public boolean cooldownBlinkOn() {
+        return cooldown && ((tick / 4L) & 1L) == 0L;
     }
 }

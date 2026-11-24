@@ -55,6 +55,7 @@ public final class UniverseGateNeoForge {
         gameBus.addListener(ChunkEvent.Load.class, event -> {
             if (event.getLevel() instanceof ServerLevel && event.getChunk() instanceof LevelChunk chunk) {
                 CrocodileClipEntity.restoreMissing(chunk);
+                fr.geomtech.universegate.ElectricWireBlockEntity.restoreMissing(chunk);
             }
         });
 

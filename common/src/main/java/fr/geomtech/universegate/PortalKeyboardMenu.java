@@ -12,8 +12,6 @@ import net.minecraft.world.level.block.entity.BlockEntity;
 
 public class PortalKeyboardMenu extends AbstractContainerMenu {
 
-    private static final int CORE_SEARCH_RADIUS_XZ = 8;
-    private static final int CORE_SEARCH_RADIUS_Y = 4;
     private static final long POWER_REFRESH_INTERVAL_TICKS = 10L;
     private static final long CORE_RESCAN_INTERVAL_TICKS = 40L;
 
@@ -95,14 +93,8 @@ public class PortalKeyboardMenu extends AbstractContainerMenu {
     }
 
     private BlockPos findCore(BlockPos start, ServerLevel level) {
-        for (BlockPos p : BlockPos.betweenClosed(
-                start.offset(-CORE_SEARCH_RADIUS_XZ, -CORE_SEARCH_RADIUS_Y, -CORE_SEARCH_RADIUS_XZ),
-                start.offset(CORE_SEARCH_RADIUS_XZ, CORE_SEARCH_RADIUS_Y, CORE_SEARCH_RADIUS_XZ))) {
-            if (level.getBlockState(p).is(ModBlocks.PORTAL_CORE)) {
-                return p.immutable();
-            }
-        }
-        return null;
+        // The player-built keyboard is bound to the portal its crocodile clips are wired to, never to a nearby one.
+        return WireNetwork.findWiredCore(level, start);
     }
 
     public boolean isDarkPowered() {

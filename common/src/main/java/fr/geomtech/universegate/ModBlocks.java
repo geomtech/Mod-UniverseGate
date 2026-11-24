@@ -208,7 +208,7 @@ public final class ModBlocks {
                     .noCollission()
                     .instabreak()
                     .noOcclusion()
-                    .sound(net.minecraft.world.level.block.SoundType.WOOL)
+                    .sound(ModSounds.ELECTRIC_WIRE_SOUND_TYPE)
                     .pushReaction(net.minecraft.world.level.material.PushReaction.DESTROY)))
     );
 

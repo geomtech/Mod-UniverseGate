@@ -102,6 +102,11 @@ public final class PortalGateAnimator {
         return speed;
     }
 
+    /** Vrai pendant la désactivation (retour arrière de l'anneau + jets de vapeur « pssshhh »). */
+    public boolean isCooldown() {
+        return rewinding || ventTicks > 0;
+    }
+
     /** Refroidissement : deux jets de vapeur, puis quelques volutes de vapeur qui s'élèvent (pas de fumée). */
     private void tickVent(Level level, BlockPos core, int age) {
         if (right == null) return;
