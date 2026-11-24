@@ -279,6 +279,8 @@ public final class PortalTeleportHandler {
     private static void keepPortalOpenFromDestinationContact(ServerLevel destinationLevel,
                                                              PortalCoreBlockEntity destinationCore,
                                                              long now) {
+        if (destinationCore.isPowerLossUnstable()) return;
+
         destinationCore.onEntityPassed(now);
 
         UUID sourcePortalId = destinationCore.getTargetPortalId();
@@ -292,7 +294,7 @@ public final class PortalTeleportHandler {
         ServerLevel sourceLevel = destinationLevel.getServer().getLevel(sourceEntry.dim());
         if (sourceLevel == null || !sourceLevel.hasChunkAt(sourceEntry.pos())) return;
         if (!(sourceLevel.getBlockEntity(sourceEntry.pos()) instanceof PortalCoreBlockEntity sourceCore)) return;
-        if (!sourceCore.isActive()) return;
+        if (!sourceCore.isActive() || sourceCore.isPowerLossUnstable()) return;
         if (!connectionId.equals(sourceCore.getConnectionId())) return;
 
         sourceCore.onEntityPassed(sourceLevel.getGameTime());

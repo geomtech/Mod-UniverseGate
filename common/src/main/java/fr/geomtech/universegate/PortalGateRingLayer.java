@@ -32,15 +32,28 @@ final class PortalGateRingLayer implements PortalGateLayer {
     @Override
     public void render(PortalGateRenderContext ctx, PoseStack poseStack, MultiBufferSource buffer) {
         VertexConsumer consumer = buffer.getBuffer(PortalGateRenderTypes.GATE_SOLID);
-        PortalGateMesh.Tint tint = (tag, base, angle) -> tag == TAG_CRYSTAL ? accentColor(ctx, base) : lipColor(ctx, angle);
-        RING.render(consumer, poseStack.last().pose(), ctx.xAxis(), ctx.ringAngle(), ctx.brightness(), tint);
-        CRYSTALS.render(consumer, poseStack.last().pose(), ctx.xAxis(), ctx.ringAngle(), ctx.brightness(), tint);
+        PortalGateMesh.Tint ringTint = (tag, base, angle) -> tag == TAG_CRYSTAL ? accentColor(ctx, base) : lipColor(ctx, angle);
+        PortalGateMesh.Tint crystalTint = (tag, base, angle) -> crystalColor(ctx, base);
+        RING.render(consumer, poseStack.last().pose(), ctx.xAxis(), ctx.ringAngle(), ctx.brightness(), ringTint);
+        CRYSTALS.render(consumer, poseStack.last().pose(), ctx.xAxis(), ctx.ringAngle(), ctx.brightness(), crystalTint);
     }
 
-    /** Cristaux et points blancs : éteints au repos, plein éclat à l'activation, clignotants pendant la désactivation. */
+    /** Points blancs de l'anneau : éteints au repos, plein éclat à l'activation, clignotants pendant la désactivation. */
     private static int accentColor(PortalGateRenderContext ctx, int base) {
         if (ctx.running() || ctx.cooldownBlinkOn()) return base;
         return PortalGateMesh.shade(base, ctx.brightness() * 0.55F);
+    }
+
+    /** Les 3 cristaux de Faille : clignotent en blanc pendant une instabilité (plus vite avant l'effondrement). */
+    private static int crystalColor(PortalGateRenderContext ctx, int base) {
+        if (ctx.unstable()) {
+            long activeUntil = ctx.core().getClientActiveUntil();
+            boolean critical = activeUntil > 0L && (activeUntil - ctx.tick()) <= PortalCinematics.COLLAPSE_WARNING_TICKS;
+            long period = critical ? 2L : 4L;
+            boolean blinkOn = ((ctx.tick() / period) & 1L) == 0L;
+            return blinkOn ? base : PortalGateMesh.shade(base, ctx.brightness() * 0.30F);
+        }
+        return accentColor(ctx, base);
     }
 
     /**

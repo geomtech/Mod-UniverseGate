@@ -25,6 +25,8 @@ public final class PortalGateArcs {
     /** Hauteur minimale du point de départ (en blocs) : jamais depuis la partie enterrée ou dans le socle. */
     private static final double MIN_START_HEIGHT = 1.15D;
     private static final int MAX_ARCS = 3;
+    private static final int MAX_UNSTABLE_ARCS = 7;
+    private static final int MAX_CRITICAL_ARCS = 10;
     private static final double MIN_REACH = 0.8D;
     private static final double MAX_REACH = 4.5D;
 
@@ -53,7 +55,7 @@ public final class PortalGateArcs {
     }
 
     void tick(Level level, BlockPos core, Direction right, float ringAngle,
-              boolean opening, boolean active, boolean unstable) {
+              boolean opening, boolean active, boolean unstable, boolean critical) {
         if (right == null || !(opening || active)) {
             arcs.clear();
             return;
@@ -71,13 +73,17 @@ public final class PortalGateArcs {
             scannedRight = right;
         }
 
-        float chance = unstable ? 0.35F : active ? 0.10F : 0.18F;
-        if (arcs.size() < MAX_ARCS && random.nextFloat() < chance) {
-            spawn(level, core, right, ringAngle, random);
+        int maxArcs = critical ? MAX_CRITICAL_ARCS : unstable ? MAX_UNSTABLE_ARCS : MAX_ARCS;
+        float chance = critical ? 0.92F : unstable ? 0.72F : active ? 0.10F : 0.18F;
+        int attempts = unstable ? 2 : 1;
+        for (int i = 0; i < attempts && arcs.size() < maxArcs; i++) {
+            if (random.nextFloat() < chance) {
+                spawn(level, core, right, ringAngle, unstable, random);
+            }
         }
     }
 
-    private void spawn(Level level, BlockPos core, Direction right, float ringAngle, RandomSource random) {
+    private void spawn(Level level, BlockPos core, Direction right, float ringAngle, boolean unstable, RandomSource random) {
         // Point de départ au hasard sur le bord de l'anneau, au-dessus du sol.
         float worldAngle = 0.0F;
         Vec3 start = null;
@@ -104,23 +110,55 @@ public final class PortalGateArcs {
             if (outward < 0.35D) continue;
             reachable.add(c);
         }
-        if (reachable.isEmpty()) return;
-        Vec3 target = reachable.get(random.nextInt(reachable.size()));
-        Arc arc = new Arc(worldAngle - ringAngle, target, 3 + random.nextInt(4));
+
+        Vec3 target;
+        if (!reachable.isEmpty() && (!unstable || random.nextFloat() < 0.65F)) {
+            target = reachable.get(random.nextInt(reachable.size()));
+        } else if (unstable) {
+            target = pickUnstableWildTarget(right, worldAngle, start, xAxis, cu, cv, random);
+            if (target == null) return;
+        } else {
+            return;
+        }
+
+        Arc arc = new Arc(worldAngle - ringAngle, target, 3 + random.nextInt(unstable ? 5 : 4));
         jitter(arc, random);
         arcs.add(arc);
 
-        // Crépitement électrique sec, entre l'anneau et le point d'impact.
-        level.playLocalSound(core.getX() + (start.x + target.x) * 0.5D, core.getY() + (start.y + target.y) * 0.5D,
-                core.getZ() + (start.z + target.z) * 0.5D, ModSounds.PORTAL_ARC, SoundSource.BLOCKS,
-                0.45F + random.nextFloat() * 0.25F, 0.9F + random.nextFloat() * 0.3F, false);
+        // Crépitement électrique sec, entre l'anneau et le point d'impact (limité en instable pour éviter la saturation).
+        if (!unstable || random.nextFloat() < 0.45F) {
+            level.playLocalSound(core.getX() + (start.x + target.x) * 0.5D, core.getY() + (start.y + target.y) * 0.5D,
+                    core.getZ() + (start.z + target.z) * 0.5D, ModSounds.PORTAL_ARC, SoundSource.BLOCKS,
+                    0.45F + random.nextFloat() * 0.25F, 0.9F + random.nextFloat() * 0.3F, false);
+        }
 
         // Impact : quelques étincelles du mod là où l'arc touche.
-        for (int i = 0; i < 3; i++) {
+        int sparks = unstable ? 4 : 3;
+        for (int i = 0; i < sparks; i++) {
             level.addParticle(ModParticles.SPARK,
                     core.getX() + target.x, core.getY() + target.y, core.getZ() + target.z,
-                    (random.nextDouble() - 0.5D) * 0.08D, random.nextDouble() * 0.06D, (random.nextDouble() - 0.5D) * 0.08D);
+                    (random.nextDouble() - 0.5D) * 0.09D, random.nextDouble() * 0.07D, (random.nextDouble() - 0.5D) * 0.09D);
         }
+    }
+
+    /** Décharge sauvage en instabilité : arc entre deux points de l'anneau ou projection électrique dans l'air. */
+    private static Vec3 pickUnstableWildTarget(Direction right, float startAngleDeg, Vec3 start,
+                                               boolean xAxis, double cu, double cv, RandomSource random) {
+        if (random.nextBoolean()) {
+            float delta = (45.0F + random.nextFloat() * 75.0F) * (random.nextBoolean() ? 1.0F : -1.0F);
+            Vec3 other = ringPoint(right, startAngleDeg + delta);
+            if (other.y >= MIN_START_HEIGHT) {
+                return other;
+            }
+        }
+        double su = (xAxis ? start.x : start.z) - cu;
+        double sv = start.y - cv;
+        double len = Math.max(1.0E-3D, Math.sqrt(su * su + sv * sv));
+        double reach = 1.2D + random.nextDouble() * 1.8D;
+        double tu = cu + su + (su / len) * reach + (random.nextDouble() - 0.5D) * 0.6D;
+        double tv = Math.max(0.35D, cv + sv + (sv / len) * reach + (random.nextDouble() - 0.5D) * 0.6D);
+        double td = 0.5D + (random.nextDouble() - 0.5D) * 0.9D;
+        return xAxis ? new Vec3(tu, tv, td) : new Vec3(td, tv, tu);
     }
 
     private static void jitter(Arc arc, RandomSource random) {
