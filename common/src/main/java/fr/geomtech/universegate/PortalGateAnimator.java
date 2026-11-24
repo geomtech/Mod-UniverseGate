@@ -22,15 +22,22 @@ public final class PortalGateAnimator {
 
     private static final float OPENING_SPEED = 7.5F;   // degrés par tick
     private static final float ACTIVE_SPEED = 1.2F;
-    private static final float UNSTABLE_SPEED = 3.5F;
+    private static final float UNSTABLE_SPEED = 11.5F;
+    private static final float UNSTABLE_CRITICAL_SPEED = 15.5F;
     private static final int VENT_TICKS = 60;
     private static final float REWIND_MAX_SPEED = 6.0F;
+    // Évents : de chaque côté du socle, et sur les flancs bas de l'anneau.
+    private static final double[][] VENTS = {
+            {-2.2D, 0.55D, -1.0D}, {3.2D, 0.55D, 1.0D},
+            {-1.55D, 1.25D, -1.0D}, {2.55D, 1.25D, 1.0D}
+    };
 
     private float angle;
     private float speed;
     private boolean wasRunning;
     private boolean rewinding;
     private int ventTicks;
+    private int unstableSteamTick;
     private Direction right;
     private final PortalGateArcs arcs = new PortalGateArcs();
 
@@ -39,6 +46,9 @@ public final class PortalGateAnimator {
         boolean opening = core.isOpening();
         boolean active = core.isActive();
         boolean unstable = active && core.isClientAmbientUnstable();
+        long activeUntil = core.getClientActiveUntil();
+        boolean critical = unstable && activeUntil > 0L
+                && (activeUntil - level.getGameTime()) <= PortalCinematics.COLLAPSE_WARNING_TICKS;
 
         boolean running = opening || active;
         if (wasRunning && !running) {
@@ -52,15 +62,26 @@ public final class PortalGateAnimator {
         if (rewinding) {
             tickRewind();
         } else {
-            float target = opening ? OPENING_SPEED : unstable ? UNSTABLE_SPEED : active ? ACTIVE_SPEED : 0.0F;
-            // Montée en régime lente à l'ouverture.
-            speed += (target - speed) * (target > speed ? 0.04F : 0.025F);
-            if (unstable) speed += (level.random.nextFloat() - 0.5F) * 0.8F;
+            float target = opening ? OPENING_SPEED
+                    : critical ? UNSTABLE_CRITICAL_SPEED
+                    : unstable ? UNSTABLE_SPEED
+                    : active ? ACTIVE_SPEED
+                    : 0.0F;
+            // Montée en régime vive pendant une instabilité, plus douce à l'ouverture normale.
+            float accel = unstable ? 0.08F : (target > speed ? 0.04F : 0.025F);
+            speed += (target - speed) * accel;
+            if (unstable) speed += (level.random.nextFloat() - 0.5F) * (critical ? 1.8F : 1.2F);
             if (Math.abs(speed) < 0.01F && target == 0.0F) speed = 0.0F;
             angle = wrap(angle + speed);
         }
 
-        arcs.tick(level, core.getBlockPos(), right, angle, opening, active, unstable);
+        arcs.tick(level, core.getBlockPos(), right, angle, opening, active, unstable, critical);
+
+        if (unstable) {
+            tickUnstableSteam(level, core.getBlockPos(), unstableSteamTick++, critical);
+        } else {
+            unstableSteamTick = 0;
+        }
 
         if (ventTicks > 0) {
             tickVent(level, core.getBlockPos(), VENT_TICKS - ventTicks);
@@ -107,6 +128,56 @@ public final class PortalGateAnimator {
         return rewinding || ventTicks > 0;
     }
 
+    /** Surchauffe pendant une instabilité : gros jets de vapeur et fumée par les évents et autour de l'anneau. */
+    private void tickUnstableSteam(Level level, BlockPos core, int age, boolean critical) {
+        if (right == null) return;
+        RandomSource random = level.random;
+
+        int soundInterval = critical ? 28 : 48;
+        if (age % soundInterval == 0) {
+            double[] c = toWorld(core, 0.5D, 1.0D, 0.5D);
+            level.playLocalSound(c[0], c[1], c[2], ModSounds.PORTAL_VENT, SoundSource.BLOCKS,
+                    critical ? 0.60F : 0.45F, 1.05F + random.nextFloat() * 0.25F, false);
+        }
+
+        boolean burst = (age % (critical ? 12 : 20)) < 8;
+        for (double[] vent : VENTS) {
+            double out = vent[2];
+            int steamCount = burst ? (critical ? 3 : 2) : (critical ? 2 : 1);
+            for (int i = 0; i < steamCount; i++) {
+                double[] p = toWorld(core,
+                        vent[0] + (random.nextDouble() - 0.5D) * 0.25D,
+                        vent[1] + (random.nextDouble() - 0.5D) * 0.2D,
+                        0.5D + (random.nextDouble() - 0.5D) * 0.65D);
+                double jetSpeed = (burst ? 0.10D : 0.06D) + random.nextDouble() * 0.06D;
+                double[] v = toVelocity(out * jetSpeed * 0.9D, jetSpeed + 0.03D);
+                level.addParticle(ParticleTypes.CLOUD, p[0], p[1], p[2],
+                        v[0] + (random.nextDouble() - 0.5D) * 0.02D,
+                        v[1],
+                        v[2] + (random.nextDouble() - 0.5D) * 0.02D);
+            }
+            if (burst || random.nextFloat() < (critical ? 0.65F : 0.40F)) {
+                double[] p = toWorld(core, vent[0], vent[1], 0.5D + (random.nextDouble() - 0.5D) * 0.55D);
+                double smokeSpeed = 0.04D + random.nextDouble() * 0.045D;
+                double[] v = toVelocity(out * smokeSpeed * 0.7D, smokeSpeed + 0.035D);
+                level.addParticle(burst ? ParticleTypes.LARGE_SMOKE : ParticleTypes.SMOKE,
+                        p[0], p[1], p[2], v[0], v[1], v[2]);
+            }
+        }
+
+        // Volutes de vapeur qui s'échappent directement tout autour de l'anneau en rotation rapide.
+        int ringPuffs = critical ? 4 : 2;
+        for (int i = 0; i < ringPuffs; i++) {
+            double side = random.nextBoolean() ? 1.0D : -1.0D;
+            double h = 0.5D + side * (1.85D + random.nextDouble() * 1.05D);
+            double vPos = 1.2D + random.nextDouble() * 3.6D;
+            double[] p = toWorld(core, h, vPos, 0.5D + (random.nextDouble() - 0.5D) * 0.65D);
+            double[] v = toVelocity(side * (0.04D + random.nextDouble() * 0.045D), 0.05D + random.nextDouble() * 0.05D);
+            level.addParticle(random.nextFloat() < 0.75F ? ParticleTypes.CLOUD : ParticleTypes.SMOKE,
+                    p[0], p[1], p[2], v[0], v[1], v[2]);
+        }
+    }
+
     /** Refroidissement : deux jets de vapeur, puis quelques volutes de vapeur qui s'élèvent (pas de fumée). */
     private void tickVent(Level level, BlockPos core, int age) {
         if (right == null) return;
@@ -118,13 +189,8 @@ public final class PortalGateAnimator {
                     volume, 0.85F + random.nextFloat() * 0.2F, false);
         }
 
-        // Évents : de chaque côté du socle, et sur les flancs bas de l'anneau.
-        double[][] vents = {
-                {-2.2D, 0.55D, -1.0D}, {3.2D, 0.55D, 1.0D},
-                {-1.55D, 1.25D, -1.0D}, {2.55D, 1.25D, 1.0D}
-        };
         boolean jet = age < 14 || (age >= 18 && age < 26);
-        for (double[] vent : vents) {
+        for (double[] vent : VENTS) {
             double[] p = toWorld(core, vent[0], vent[1], 0.5D + (random.nextDouble() - 0.5D) * 0.5D);
             double out = vent[2];
             if (jet) {

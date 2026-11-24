@@ -318,6 +318,32 @@ public final class PortalConnectionManager {
         setFrameActiveFallback(level, corePos, true, unstable);
     }
 
+    static void syncPowerLossStateToOtherSide(ServerLevel sourceLevel,
+                                              PortalCoreBlockEntity sourceCore,
+                                              boolean powerLoss,
+                                              long remainingTicks) {
+        UUID targetId = sourceCore.getTargetPortalId();
+        UUID connectionId = sourceCore.getConnectionId();
+        if (targetId == null || connectionId == null) return;
+
+        MinecraftServer server = sourceLevel.getServer();
+        PortalRegistrySavedData reg = PortalRegistrySavedData.get(server);
+        PortalRegistrySavedData.PortalEntry entry = reg.get(targetId);
+        if (entry == null) return;
+
+        ServerLevel targetLevel = server.getLevel(entry.dim());
+        if (targetLevel == null || !targetLevel.hasChunkAt(entry.pos())) return;
+        if (!(targetLevel.getBlockEntity(entry.pos()) instanceof PortalCoreBlockEntity targetCore)) return;
+        if (!targetCore.isActive()) return;
+        if (!connectionId.equals(targetCore.getConnectionId())) return;
+
+        targetCore.applyRemotePowerLossState(targetLevel, powerLoss, remainingTicks);
+    }
+
+    static void triggerPowerLossShockwave(ServerLevel level, BlockPos corePos) {
+        PortalPowerLossShockwave.trigger(level, corePos);
+    }
+
     public static void syncKeyboardLitFromNearbyCore(ServerLevel level, BlockPos keyboardPos) {
         boolean lit;
         if (level.getBlockState(keyboardPos).is(ModBlocks.PORTAL_KEYBOARD)) {

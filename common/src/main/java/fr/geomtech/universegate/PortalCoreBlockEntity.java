@@ -48,6 +48,11 @@ public class PortalCoreBlockEntity extends BlockEntity implements PosMenuProvide
 
     private static final long PER_ENTITY_EXTENSION_TICKS = 20L * 10L;
     private static final long UNSTABLE_THRESHOLD_TICKS = 20L * 60L;
+    private static final long POWER_LOSS_COLLAPSE_TICKS = 20L * 45L;
+    private static final long POWER_LOSS_ENTITY_PENALTY_TICKS = 20L * 5L;
+    private static final long POWER_LOSS_ENTITY_PENALTY_COOLDOWN_TICKS = 20L;
+    private static final long POWER_LOSS_MIN_REMAINING_AFTER_PENALTY_TICKS = 20L;
+    private static final long POWER_LOSS_RECOVERY_MIN_ACTIVE_TICKS = 20L * 15L;
     private static final long OPENING_DURATION_FALLBACK_TICKS = 20L * 9L;
     private static final long PLAYER_PASS_CHUNK_FORCE_TICKS = 20L * 15L;
     private static final long TICK_DURATION_MILLIS = 50L;
@@ -63,6 +68,8 @@ public class PortalCoreBlockEntity extends BlockEntity implements PosMenuProvide
     private long activeUntilEpochMillis = 0L;
     private long activeStartedGameTime = 0L;
     private boolean visualUnstable = false;
+    private boolean powerLossUnstable = false;
+    private long lastPowerLossPenaltyGameTime = Long.MIN_VALUE;
     private boolean riftLightningLink = false;
     private boolean outboundTravelEnabled = false;
     private boolean maintenanceEnergyBypass = false;
@@ -443,8 +450,13 @@ public class PortalCoreBlockEntity extends BlockEntity implements PosMenuProvide
     public long getOpeningCompleteGameTime() { return openingCompleteGameTime; }
     public boolean isVortexUnstable(long now) {
         return active
-                && activeStartedGameTime > 0L
-                && (now - activeStartedGameTime) > UNSTABLE_THRESHOLD_TICKS;
+                && (powerLossUnstable
+                || (activeStartedGameTime > 0L
+                && (now - activeStartedGameTime) > UNSTABLE_THRESHOLD_TICKS));
+    }
+
+    public boolean isPowerLossUnstable() {
+        return active && powerLossUnstable;
     }
 
     public @Nullable Direction getFormedRight() {
@@ -646,6 +658,28 @@ public class PortalCoreBlockEntity extends BlockEntity implements PosMenuProvide
     void onEntityPassed(long now) {
         if (!active) return;
 
+        if (powerLossUnstable) {
+            if (!outboundTravelEnabled) return;
+            if (lastPowerLossPenaltyGameTime != Long.MIN_VALUE
+                    && (now - lastPowerLossPenaltyGameTime) < POWER_LOSS_ENTITY_PENALTY_COOLDOWN_TICKS) {
+                return;
+            }
+            lastPowerLossPenaltyGameTime = now;
+            long minUntil = now + POWER_LOSS_MIN_REMAINING_AFTER_PENALTY_TICKS;
+            long shortened = Math.max(minUntil, activeUntilGameTime - POWER_LOSS_ENTITY_PENALTY_TICKS);
+            if (shortened < activeUntilGameTime) {
+                activeUntilGameTime = shortened;
+                activeUntilEpochMillis = computeEpochDeadlineFromGameTime(now, activeUntilGameTime);
+                setChanged();
+                syncOpeningToClients();
+                if (level instanceof ServerLevel sl) {
+                    long remainingTicks = Math.max(0L, activeUntilGameTime - now);
+                    PortalConnectionManager.syncPowerLossStateToOtherSide(sl, this, true, remainingTicks);
+                }
+            }
+            return;
+        }
+
         activeUntilGameTime = now + PER_ENTITY_EXTENSION_TICKS;
         activeUntilEpochMillis = computeEpochDeadlineFromGameTime(now, activeUntilGameTime);
         setChanged();
@@ -672,7 +706,11 @@ public class PortalCoreBlockEntity extends BlockEntity implements PosMenuProvide
     private boolean closeIfExpired(ServerLevel level, long nowGameTime) {
         if (!active) return false;
         if (!hasReachedActiveDeadline(nowGameTime)) return false;
+        boolean triggerShockwave = powerLossUnstable && outboundTravelEnabled;
         PortalConnectionManager.forceCloseOneSide(level, worldPosition);
+        if (triggerShockwave) {
+            PortalConnectionManager.triggerPowerLossShockwave(level, worldPosition);
+        }
         return true;
     }
 
@@ -724,11 +762,57 @@ public class PortalCoreBlockEntity extends BlockEntity implements PosMenuProvide
                 worldPosition,
                 energyCost
         );
-        if (consumed) return true;
+        if (consumed) {
+            if (powerLossUnstable) {
+                recoverFromPowerLoss(level, now);
+            }
+            return true;
+        }
 
+        if (!powerLossUnstable) {
+            enterPowerLossInstability(level, now);
+        }
+        return true;
+    }
+
+    private void enterPowerLossInstability(ServerLevel level, long now) {
+        powerLossUnstable = true;
+        lastPowerLossPenaltyGameTime = Long.MIN_VALUE;
+        activeUntilGameTime = now + POWER_LOSS_COLLAPSE_TICKS;
+        activeUntilEpochMillis = computeEpochDeadlineFromGameTime(now, activeUntilGameTime);
         ModSounds.playAt(level, worldPosition, ModSounds.PORTAL_ERROR, 0.9F, 1.0F);
-        PortalConnectionManager.forceCloseOneSide(level, worldPosition);
-        return false;
+        refreshInstabilityVisuals(level, now);
+        setChanged();
+        syncOpeningToClients();
+        PortalConnectionManager.syncPowerLossStateToOtherSide(level, this, true, POWER_LOSS_COLLAPSE_TICKS);
+    }
+
+    private void recoverFromPowerLoss(ServerLevel level, long now) {
+        powerLossUnstable = false;
+        lastPowerLossPenaltyGameTime = Long.MIN_VALUE;
+        long minUntil = now + POWER_LOSS_RECOVERY_MIN_ACTIVE_TICKS;
+        if (activeUntilGameTime < minUntil) {
+            activeUntilGameTime = minUntil;
+            activeUntilEpochMillis = computeEpochDeadlineFromGameTime(now, activeUntilGameTime);
+        }
+        long remainingTicks = Math.max(0L, activeUntilGameTime - now);
+        refreshInstabilityVisuals(level, now);
+        setChanged();
+        syncOpeningToClients();
+        PortalConnectionManager.syncPowerLossStateToOtherSide(level, this, false, remainingTicks);
+    }
+
+    void applyRemotePowerLossState(ServerLevel level, boolean powerLoss, long remainingTicks) {
+        if (!active || outboundTravelEnabled) return;
+        long now = level.getGameTime();
+        powerLossUnstable = powerLoss;
+        // Garde 1 s de marge côté destination pour que la source déclenche toujours le souffle en premier.
+        long targetRemaining = Math.max(20L, remainingTicks + (powerLoss ? 20L : 0L));
+        activeUntilGameTime = now + targetRemaining;
+        activeUntilEpochMillis = computeEpochDeadlineFromGameTime(now, activeUntilGameTime);
+        refreshInstabilityVisuals(level, now);
+        setChanged();
+        syncOpeningToClients();
     }
 
     private void refreshInstabilityVisuals(ServerLevel level, long now) {
@@ -774,6 +858,8 @@ public class PortalCoreBlockEntity extends BlockEntity implements PosMenuProvide
         this.activeUntilEpochMillis = 0L;
         this.activeStartedGameTime = 0L;
         this.visualUnstable = false;
+        this.powerLossUnstable = false;
+        this.lastPowerLossPenaltyGameTime = Long.MIN_VALUE;
         this.riftLightningLink = riftLightningLink;
         this.outboundTravelEnabled = outboundTravelEnabled;
         this.maintenanceEnergyBypass = maintenanceEnergyBypass;
@@ -798,6 +884,8 @@ public class PortalCoreBlockEntity extends BlockEntity implements PosMenuProvide
         this.activeUntilEpochMillis = computeEpochDeadlineFromGameTime(activeStartedGameTime, activeUntilGameTime);
         this.activeStartedGameTime = Math.max(0L, activeStartedGameTime);
         this.visualUnstable = riftLightningLink;
+        this.powerLossUnstable = false;
+        this.lastPowerLossPenaltyGameTime = Long.MIN_VALUE;
         this.openingStartedGameTime = 0L;
         this.openingCompleteGameTime = 0L;
         setChanged();
@@ -826,6 +914,8 @@ public class PortalCoreBlockEntity extends BlockEntity implements PosMenuProvide
                 : 0L;
         this.activeStartedGameTime = 0L;
         this.visualUnstable = riftLightningLink;
+        this.powerLossUnstable = false;
+        this.lastPowerLossPenaltyGameTime = Long.MIN_VALUE;
         this.riftLightningLink = riftLightningLink;
         this.outboundTravelEnabled = outboundTravelEnabled;
         this.maintenanceEnergyBypass = maintenanceEnergyBypass;
@@ -857,6 +947,8 @@ public class PortalCoreBlockEntity extends BlockEntity implements PosMenuProvide
         this.activeUntilEpochMillis = 0L;
         this.activeStartedGameTime = 0L;
         this.visualUnstable = false;
+        this.powerLossUnstable = false;
+        this.lastPowerLossPenaltyGameTime = Long.MIN_VALUE;
         this.riftLightningLink = false;
         this.outboundTravelEnabled = false;
         this.maintenanceEnergyBypass = false;
@@ -935,6 +1027,7 @@ public class PortalCoreBlockEntity extends BlockEntity implements PosMenuProvide
         tag.putLong("ActiveUntil", activeUntilGameTime);
         tag.putLong("ActiveUntilEpoch", activeUntilEpochMillis);
         tag.putLong("ActiveStarted", activeStartedGameTime);
+        tag.putBoolean("PowerLossUnstable", powerLossUnstable);
         tag.putBoolean("RiftLightning", riftLightningLink);
         tag.putBoolean("OutboundTravel", outboundTravelEnabled);
         tag.putBoolean("MaintenanceEnergyBypass", maintenanceEnergyBypass);
@@ -971,6 +1064,8 @@ public class PortalCoreBlockEntity extends BlockEntity implements PosMenuProvide
         activeUntilEpochMillis = tag.contains("ActiveUntilEpoch") ? tag.getLong("ActiveUntilEpoch") : 0L;
         activeStartedGameTime = tag.contains("ActiveStarted") ? tag.getLong("ActiveStarted") : 0L;
         visualUnstable = false;
+        powerLossUnstable = active && tag.getBoolean("PowerLossUnstable");
+        lastPowerLossPenaltyGameTime = Long.MIN_VALUE;
         riftLightningLink = tag.getBoolean("RiftLightning");
         outboundTravelEnabled = tag.contains("OutboundTravel") ? tag.getBoolean("OutboundTravel") : (active || opening);
         maintenanceEnergyBypass = tag.getBoolean("MaintenanceEnergyBypass");
