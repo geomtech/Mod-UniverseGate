@@ -26,7 +26,9 @@ import fr.geomtech.universegate.UniverseGate;
 import fr.geomtech.universegate.ZpcInterfaceControllerRenderer;
 import fr.geomtech.universegate.ZpcInterfaceControllerScreen;
 import fr.geomtech.universegate.net.UniverseGateClientNetwork;
+import fr.geomtech.universegate.seamless.client.ClientRemoteWorldManager;
 import net.fabricmc.api.ClientModInitializer;
+import net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientTickEvents;
 import net.fabricmc.fabric.api.client.particle.v1.ParticleFactoryRegistry;
 import fr.geomtech.universegate.ModParticles;
 import fr.geomtech.universegate.UniverseGateSparkParticle;
@@ -105,6 +107,7 @@ public class UniverseGateFabricClient implements ClientModInitializer {
 		BlockRenderLayerMap.INSTANCE.putBlocks(RenderType.cutout(), ModBlocks.ELECTRIC_WIRE, ModBlocks.CROCODILE_CLIP, ModBlocks.LIGHTNING_ANTENNA);
 		//?}
 		UniverseGateClientNetwork.registerClient();
+		ClientTickEvents.END_CLIENT_TICK.register(mc -> ClientRemoteWorldManager.getInstance().tickClient(mc));
 		ItemTooltipCallback.EVENT.register((stack, context, type, lines) -> ModTooltips.appendTooltip(stack, lines));
 		HudRenderCallback.EVENT.register((guiGraphics, deltaTracker) -> DnaExtractionHudOverlay.render(guiGraphics));
 	}

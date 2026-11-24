@@ -10,6 +10,7 @@ import fr.geomtech.universegate.ZpcStructureLoot;
 import net.fabricmc.api.ModInitializer;
 import net.fabricmc.loader.api.FabricLoader;
 import net.fabricmc.fabric.api.command.v2.CommandRegistrationCallback;
+import net.fabricmc.fabric.api.entity.event.v1.ServerEntityWorldChangeEvents;
 import net.fabricmc.fabric.api.entity.event.v1.ServerPlayerEvents;
 import net.fabricmc.fabric.api.event.lifecycle.v1.ServerLifecycleEvents;
 import net.fabricmc.fabric.api.event.lifecycle.v1.ServerChunkEvents;
@@ -52,10 +53,21 @@ public class UniverseGateFabric implements ModInitializer {
 
 		CommandRegistrationCallback.EVENT.register((dispatcher, registryAccess, environment) -> UniverseGate.registerCommands(dispatcher));
 
-		ServerLifecycleEvents.SERVER_STARTING.register(UpdateCheckManager::onServerStarting);
+		ServerLifecycleEvents.SERVER_STARTING.register(server -> {
+			UpdateCheckManager.onServerStarting(server);
+			UniverseGate.onServerStarting(server);
+		});
 		ServerLifecycleEvents.SERVER_STARTED.register(UpdateCheckManager::onServerStarted);
-		ServerLifecycleEvents.SERVER_STOPPED.register(UpdateCheckManager::onServerStopped);
+		ServerLifecycleEvents.SERVER_STOPPING.register(UniverseGate::onServerStopping);
+		ServerLifecycleEvents.SERVER_STOPPED.register(server -> {
+			UniverseGate.onServerStopped(server);
+			UpdateCheckManager.onServerStopped(server);
+		});
 		ServerPlayConnectionEvents.JOIN.register((handler, sender, server) -> UpdateCheckManager.onPlayerJoin(handler.player));
+		ServerPlayConnectionEvents.DISCONNECT.register((handler, server) -> UniverseGate.onPlayerDisconnect(handler.player));
+		ServerEntityWorldChangeEvents.AFTER_PLAYER_CHANGE_WORLD.register(
+				(player, origin, destination) -> UniverseGate.onPlayerChangedDimension(player, origin.dimension(), destination.dimension())
+		);
 
 		ServerTickEvents.END_SERVER_TICK.register(UniverseGate::onServerTickEnd);
 		ServerTickEvents.END_WORLD_TICK.register(UniverseGate::onServerLevelTickEnd);

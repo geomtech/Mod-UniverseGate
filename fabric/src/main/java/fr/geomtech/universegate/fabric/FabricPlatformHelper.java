@@ -21,7 +21,10 @@ import net.minecraft.core.BlockPos;
 import net.minecraft.network.RegistryFriendlyByteBuf;
 import net.minecraft.network.chat.Component;
 import net.minecraft.network.codec.StreamCodec;
+import net.minecraft.network.protocol.Packet;
 import net.minecraft.network.protocol.common.custom.CustomPacketPayload;
+import net.minecraft.network.protocol.game.ClientGamePacketListener;
+import net.minecraft.server.level.ServerEntity;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.MenuProvider;
 import net.minecraft.world.entity.EntityType;
@@ -39,6 +42,7 @@ import net.minecraft.world.level.levelgen.Heightmap;
 import net.minecraft.world.level.material.FlowingFluid;
 
 import java.util.function.BiConsumer;
+import java.util.function.Consumer;
 import java.util.function.Supplier;
 
 public final class FabricPlatformHelper implements PlatformHelper {
@@ -54,6 +58,11 @@ public final class FabricPlatformHelper implements PlatformHelper {
                 .getModContainer(UniverseGate.MOD_ID)
                 .map(container -> container.getMetadata().getVersion().getFriendlyString())
                 .orElse("0.0.0");
+    }
+
+    @Override
+    public boolean isModLoaded(String modId) {
+        return modId != null && FabricLoader.getInstance().isModLoaded(modId);
     }
 
     @Override
@@ -138,5 +147,12 @@ public final class FabricPlatformHelper implements PlatformHelper {
     @Override
     public void sendToPlayer(ServerPlayer player, CustomPacketPayload payload) {
         ServerPlayNetworking.send(player, payload);
+    }
+
+    @Override
+    public void sendEntityPairingData(ServerEntity serverEntity,
+                                      ServerPlayer player,
+                                      Consumer<Packet<? super ClientGamePacketListener>> consumer) {
+        serverEntity.sendPairingData(player, consumer::accept);
     }
 }

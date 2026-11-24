@@ -24,6 +24,8 @@ neoForge {
 	}
 }
 
+neoForge.addModdingDependenciesTo(sourceSets.e2eTest)
+
 processResources {
 	def props = [
 			'version'          : project.version,

@@ -197,6 +197,9 @@ public class PortalFieldBlock extends Block implements EntityBlock, SimpleWaterl
 
     @Override
     public void animateTick(BlockState state, Level level, BlockPos pos, RandomSource random) {
+        if (level.isClientSide() && fr.geomtech.universegate.seamless.client.ClientRemoteWorldManager.isRemoteLevel(level)) {
+            return;
+        }
         Direction.Axis axis = state.getValue(AXIS);
         boolean unstable = state.getValue(UNSTABLE);
         if (!unstable) return;

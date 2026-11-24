@@ -2,7 +2,13 @@ package fr.geomtech.universegate;
 
 import fr.geomtech.universegate.compat.DataReader;
 import fr.geomtech.universegate.compat.DataWriter;
+import fr.geomtech.universegate.seamless.net.PortalEndpointListener;
+import fr.geomtech.universegate.seamless.net.PortalEndpointResolver;
+import fr.geomtech.universegate.seamless.net.PortalRemoteEndpointPayload;
+import fr.geomtech.universegate.seamless.net.ResolvedPortalEndpoint;
+import fr.geomtech.universegate.seamless.net.SeamlessNetwork;
 import net.minecraft.core.HolderLookup;
+import net.minecraft.core.registries.Registries;
 import net.minecraft.nbt.CompoundTag;
 //? if >=1.21.11 {
 /*import net.minecraft.world.level.storage.ValueInput;
@@ -13,7 +19,11 @@ import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.network.protocol.game.ClientboundBlockEntityDataPacket;
 import net.minecraft.network.chat.Component;
+import net.minecraft.resources.ResourceKey;
+import net.minecraft.resources.ResourceLocation;
+import net.minecraft.server.MinecraftServer;
 import net.minecraft.world.level.ChunkPos;
+import net.minecraft.world.level.Level;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.tags.FluidTags;
@@ -22,9 +32,16 @@ import net.minecraft.world.inventory.AbstractContainerMenu;
 import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.phys.AABB;
+import org.jetbrains.annotations.Nullable;
 
 import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
+import java.util.Objects;
+import java.util.Optional;
+import java.util.Set;
 import java.util.UUID;
 
 public class PortalCoreBlockEntity extends BlockEntity implements PosMenuProvider {
@@ -58,6 +75,14 @@ public class PortalCoreBlockEntity extends BlockEntity implements PosMenuProvide
     private boolean outboundChunkForceClaimed = false;
     private int darkEnergyAmount = 0;
     public static final int DARK_ENERGY_THRESHOLD = 400;
+
+    private static volatile @Nullable PortalEndpointListener endpointListener;
+    private @Nullable ResourceKey<Level> cachedTargetDim;
+    private @Nullable BlockPos cachedTargetCorePos;
+    private @Nullable Direction cachedTargetRight;
+    private @Nullable Direction cachedExitNormal;
+    private final Set<UUID> syncedEndpointObservers = new HashSet<>();
+    private @Nullable ResolvedPortalEndpoint lastSyncedEndpointSnapshot;
 
     public PortalCoreBlockEntity(BlockPos pos, BlockState state) {
 
@@ -169,10 +194,11 @@ public class PortalCoreBlockEntity extends BlockEntity implements PosMenuProvide
 
     public void clientTick() {
         if (level == null || !level.isClientSide()) return;
-        if (opening) {
+        boolean remoteWorld = fr.geomtech.universegate.seamless.client.ClientRemoteWorldManager.isRemoteLevel(level);
+        if (!remoteWorld && opening) {
             PortalOpeningParticles.clientTick(level, worldPosition, this);
         }
-        if (opening || active) {
+        if (!remoteWorld && (opening || active)) {
             if (clientCinematics == null) clientCinematics = new PortalCinematics.State();
             PortalCinematics.clientTick(level, this, clientCinematics);
         } else {
@@ -184,7 +210,7 @@ public class PortalCoreBlockEntity extends BlockEntity implements PosMenuProvide
         } else {
             clientGateAnimator = null;
         }
-        if (active) {
+        if (!remoteWorld && active) {
             if (clientAmbientSound == null) clientAmbientSound = new PortalAmbientSoundClient();
             ((PortalAmbientSoundClient) clientAmbientSound).tick(this, level.getGameTime());
         } else {
@@ -216,6 +242,15 @@ public class PortalCoreBlockEntity extends BlockEntity implements PosMenuProvide
         super.setRemoved();
         if (level != null && level.isClientSide()) {
             stopClientAmbientSound();
+            return;
+        }
+        syncedEndpointObservers.clear();
+        lastSyncedEndpointSnapshot = null;
+        if (level instanceof ServerLevel sl) {
+            PortalEndpointListener listener = endpointListener;
+            if (listener != null) {
+                listener.onCoreUnloaded(sl, worldPosition, this);
+            }
         }
     }
 
@@ -241,6 +276,9 @@ public class PortalCoreBlockEntity extends BlockEntity implements PosMenuProvide
                     syncOpeningToClients();
                 }
                 PortalConnectionManager.setNearbyKeyboardsLit(sl, worldPosition, true);
+                refreshAndSyncEndpoint(sl, true);
+            } else if (active) {
+                refreshAndSyncEndpoint(sl, true);
             }
         }
         if (now % 10L == 0L) {
@@ -249,6 +287,9 @@ public class PortalCoreBlockEntity extends BlockEntity implements PosMenuProvide
         }
         if (opening) {
             PortalConnectionManager.tickOpeningSequence(sl, worldPosition, this);
+            if (opening) {
+                refreshAndSyncEndpoint(sl, false);
+            }
             return;
         }
         if (!active) return;
@@ -266,6 +307,7 @@ public class PortalCoreBlockEntity extends BlockEntity implements PosMenuProvide
         }
 
         refreshInstabilityVisuals(sl, now);
+        refreshAndSyncEndpoint(sl, false);
         // These cells keep their real blocks, so they cannot trigger PortalFieldBlock.entityInside.
         for (BlockPos cell : wiredFieldCells) {
             for (var entity : sl.getEntities(null, new AABB(cell).deflate(.001))) {
@@ -405,6 +447,202 @@ public class PortalCoreBlockEntity extends BlockEntity implements PosMenuProvide
                 && (now - activeStartedGameTime) > UNSTABLE_THRESHOLD_TICKS;
     }
 
+    public @Nullable Direction getFormedRight() {
+        return formedRight;
+    }
+
+    public static void setEndpointListener(@Nullable PortalEndpointListener listener) {
+        endpointListener = listener;
+    }
+
+    public static @Nullable PortalEndpointListener getEndpointListener() {
+        return endpointListener;
+    }
+
+    public byte getEndpointStateFlags() {
+        boolean unstable = active && (visualUnstable
+                || (level instanceof ServerLevel sl && shouldUseUnstableVisuals(sl.getGameTime())));
+        return PortalEndpointResolver.computeStateFlags(opening, active, unstable);
+    }
+
+    public List<ServerPlayer> getTrackingObservers() {
+        if (!(level instanceof ServerLevel sl)) {
+            return List.of();
+        }
+        return List.copyOf(sl.getChunkSource().chunkMap.getPlayers(new ChunkPos(worldPosition), false));
+    }
+
+    public Optional<ResolvedPortalEndpoint> resolveRemoteEndpoint() {
+        if (!isActiveOrOpening()) {
+            return Optional.empty();
+        }
+
+        ResourceKey<Level> registryTargetDim = null;
+        BlockPos registryTargetCorePos = null;
+        Direction liveTargetRight = null;
+        Direction liveExitNormal = null;
+
+        if (level instanceof ServerLevel sl && targetPortalId != null) {
+            MinecraftServer server = sl.getServer();
+            PortalRegistrySavedData.PortalEntry targetEntry = PortalRegistrySavedData.get(server).get(targetPortalId);
+            if (targetEntry != null) {
+                registryTargetDim = targetEntry.dim();
+                registryTargetCorePos = targetEntry.pos();
+
+                ServerLevel targetLevel = server.getLevel(targetEntry.dim());
+                if (targetLevel != null && targetLevel.hasChunkAt(targetEntry.pos())) {
+                    Optional<PortalFrameDetector.FrameMatch> targetFrame =
+                            PortalFrameDetector.find(targetLevel, targetEntry.pos());
+                    if (targetFrame.isPresent()) {
+                        liveTargetRight = targetFrame.get().right();
+                        liveExitNormal = PortalOrientationHelper.resolveFrontNormal(
+                                targetLevel,
+                                targetEntry.pos(),
+                                liveTargetRight
+                        );
+                    }
+                }
+            }
+        }
+
+        boolean unstable = active && (visualUnstable
+                || (level instanceof ServerLevel sl && shouldUseUnstableVisuals(sl.getGameTime())));
+
+        return PortalEndpointResolver.resolveEndpoint(
+                opening,
+                active,
+                unstable,
+                outboundTravelEnabled,
+                registryTargetDim,
+                registryTargetCorePos,
+                liveTargetRight,
+                liveExitNormal,
+                cachedTargetDim,
+                cachedTargetCorePos,
+                cachedTargetRight,
+                cachedExitNormal
+        );
+    }
+
+    private static @Nullable BlockPos findTargetKeyboardPos(ServerLevel targetLevel, BlockPos targetCorePos) {
+        // 1) Wired keyboards belonging to this specific portal take priority (handles multiple portals in one room)
+        BlockPos bestWired = null;
+        double bestWiredDist = Double.MAX_VALUE;
+        for (BlockPos wiredKb : WireNetwork.findWiredKeyboards(targetLevel, targetCorePos)) {
+            double d = wiredKb.distSqr(targetCorePos);
+            if (d < bestWiredDist) {
+                bestWiredDist = d;
+                bestWired = wiredKb.immutable();
+            }
+        }
+        if (bestWired != null) {
+            return bestWired;
+        }
+
+        // 2) Closest nearby natural keyboard, then closest nearby player keyboard
+        BlockPos bestNatural = null;
+        double bestNaturalDist = Double.MAX_VALUE;
+        BlockPos bestKeyboard = null;
+        double bestKeyboardDist = Double.MAX_VALUE;
+        for (int dy = -4; dy <= 4; dy++) {
+            for (int dx = -8; dx <= 8; dx++) {
+                for (int dz = -8; dz <= 8; dz++) {
+                    BlockPos p = targetCorePos.offset(dx, dy, dz);
+                    if (!targetLevel.hasChunkAt(p)) continue;
+                    var state = targetLevel.getBlockState(p);
+                    if (state.is(ModBlocks.PORTAL_NATURAL_KEYBOARD)) {
+                        double d = p.distSqr(targetCorePos);
+                        if (d < bestNaturalDist) {
+                            bestNaturalDist = d;
+                            bestNatural = p.immutable();
+                        }
+                    } else if (state.is(ModBlocks.PORTAL_KEYBOARD)) {
+                        double d = p.distSqr(targetCorePos);
+                        if (d < bestKeyboardDist) {
+                            bestKeyboardDist = d;
+                            bestKeyboard = p.immutable();
+                        }
+                    }
+                }
+            }
+        }
+        return bestNatural != null ? bestNatural : bestKeyboard;
+    }
+
+    private boolean updateCachedEndpoint(ResolvedPortalEndpoint endpoint) {
+        boolean changed = !Objects.equals(cachedTargetDim, endpoint.targetDim())
+                || !Objects.equals(cachedTargetCorePos, endpoint.targetCorePos())
+                || cachedTargetRight != endpoint.targetRight()
+                || cachedExitNormal != endpoint.exitNormal();
+        cachedTargetDim = endpoint.targetDim();
+        cachedTargetCorePos = endpoint.targetCorePos();
+        cachedTargetRight = endpoint.targetRight();
+        cachedExitNormal = endpoint.exitNormal();
+        return changed;
+    }
+
+    private void clearCachedEndpoint() {
+        cachedTargetDim = null;
+        cachedTargetCorePos = null;
+        cachedTargetRight = null;
+        cachedExitNormal = null;
+        lastSyncedEndpointSnapshot = null;
+    }
+
+    private void refreshAndSyncEndpoint(ServerLevel sl, boolean forceBroadcast) {
+        Optional<ResolvedPortalEndpoint> resolved = resolveRemoteEndpoint();
+        if (resolved.isEmpty()) {
+            return;
+        }
+
+        ResolvedPortalEndpoint endpoint = resolved.get();
+        if (updateCachedEndpoint(endpoint)) {
+            setChanged();
+        }
+
+        boolean snapshotChanged = !endpoint.equals(lastSyncedEndpointSnapshot);
+        boolean resyncAll = forceBroadcast || snapshotChanged;
+
+        List<ServerPlayer> trackers = getTrackingObservers();
+        List<UUID> trackerIds = new ArrayList<>(trackers.size());
+        Map<UUID, ServerPlayer> playersById = new HashMap<>(trackers.size());
+        for (ServerPlayer player : trackers) {
+            UUID id = player.getUUID();
+            trackerIds.add(id);
+            playersById.put(id, player);
+        }
+
+        PortalEndpointResolver.ObserverSyncPlan plan = PortalEndpointResolver.computeObserverSync(
+                syncedEndpointObservers,
+                trackerIds,
+                resyncAll
+        );
+
+        if (!plan.toSend().isEmpty()) {
+            PortalRemoteEndpointPayload payload = endpoint.toPayload(worldPosition);
+            for (UUID playerId : plan.toSend()) {
+                ServerPlayer player = playersById.get(playerId);
+                if (player != null) {
+                    SeamlessNetwork.sendToPlayer(player, payload);
+                }
+            }
+        }
+
+        syncedEndpointObservers.clear();
+        syncedEndpointObservers.addAll(plan.nextSynced());
+        lastSyncedEndpointSnapshot = endpoint;
+
+        PortalEndpointListener listener = endpointListener;
+        if (listener != null) {
+            for (UUID untrackedId : plan.untracked()) {
+                listener.onObserverUntracked(sl, worldPosition, untrackedId);
+            }
+            if (resyncAll) {
+                listener.onEndpointUpdated(sl, worldPosition, this, endpoint);
+            }
+        }
+    }
+
     void onEntityPassed(long now) {
         if (!active) return;
 
@@ -501,6 +739,7 @@ public class PortalCoreBlockEntity extends BlockEntity implements PosMenuProvide
         PortalConnectionManager.syncActivePortalInstability(level, worldPosition, unstableNow);
         setChanged();
         syncOpeningToClients();
+        refreshAndSyncEndpoint(level, true);
     }
 
     public void setPortalName(String name) { this.portalName = name == null ? "" : name; setChanged(); }
@@ -540,10 +779,12 @@ public class PortalCoreBlockEntity extends BlockEntity implements PosMenuProvide
         this.maintenanceEnergyBypass = maintenanceEnergyBypass;
         this.openingStartedGameTime = openingStartedGameTime;
         this.openingCompleteGameTime = openingCompleteGameTime;
+        clearCachedEndpoint();
         setChanged();
         updateRedstoneSignal(previouslyEmitting);
         if (level instanceof ServerLevel sl) {
             syncOutboundChunkForce(sl);
+            refreshAndSyncEndpoint(sl, true);
         }
         syncOpeningToClients();
     }
@@ -563,6 +804,7 @@ public class PortalCoreBlockEntity extends BlockEntity implements PosMenuProvide
         updateRedstoneSignal(previouslyEmitting);
         if (level instanceof ServerLevel sl) {
             syncOutboundChunkForce(sl);
+            refreshAndSyncEndpoint(sl, true);
         }
         syncOpeningToClients();
     }
@@ -589,15 +831,22 @@ public class PortalCoreBlockEntity extends BlockEntity implements PosMenuProvide
         this.maintenanceEnergyBypass = maintenanceEnergyBypass;
         this.openingStartedGameTime = 0L;
         this.openingCompleteGameTime = 0L;
+        clearCachedEndpoint();
         setChanged();
         updateRedstoneSignal(previouslyEmitting);
         if (level instanceof ServerLevel sl) {
             syncOutboundChunkForce(sl);
+            refreshAndSyncEndpoint(sl, true);
         }
         syncOpeningToClients();
     }
 
     void clearActiveState() {
+        boolean wasConnected = active || opening || targetPortalId != null || cachedTargetDim != null;
+        ResolvedPortalEndpoint previousEndpoint = wasConnected
+                ? resolveRemoteEndpoint().orElse(lastSyncedEndpointSnapshot)
+                : null;
+
         wiredFieldCells.clear();
         boolean previouslyEmitting = emitsRedstoneSignal();
         this.active = false;
@@ -613,10 +862,28 @@ public class PortalCoreBlockEntity extends BlockEntity implements PosMenuProvide
         this.maintenanceEnergyBypass = false;
         this.openingStartedGameTime = 0L;
         this.openingCompleteGameTime = 0L;
+        clearCachedEndpoint();
         setChanged();
         updateRedstoneSignal(previouslyEmitting);
         if (level instanceof ServerLevel sl) {
             syncOutboundChunkForce(sl);
+            if (wasConnected) {
+                PortalRemoteEndpointPayload closedPayload = PortalEndpointResolver.closedPayload(
+                        worldPosition,
+                        sl.dimension(),
+                        previousEndpoint
+                );
+                for (ServerPlayer observer : getTrackingObservers()) {
+                    SeamlessNetwork.sendToPlayer(observer, closedPayload);
+                }
+                syncedEndpointObservers.clear();
+                PortalEndpointListener listener = endpointListener;
+                if (listener != null) {
+                    listener.onEndpointClosed(sl, worldPosition, this, previousEndpoint);
+                }
+            }
+        } else {
+            syncedEndpointObservers.clear();
         }
         syncOpeningToClients();
     }
@@ -675,6 +942,10 @@ public class PortalCoreBlockEntity extends BlockEntity implements PosMenuProvide
         tag.putLong("OpeningComplete", openingCompleteGameTime);
         tag.putLong("ChunkForceUntil", keepChunkForcedUntilGameTime);
         tag.putInt("DarkEnergyAmount", darkEnergyAmount);
+        if (cachedTargetDim != null) tag.putString("TargetDim", cachedTargetDim.location().toString());
+        if (cachedTargetCorePos != null) tag.putLong("TargetCorePos", cachedTargetCorePos.asLong());
+        if (cachedTargetRight != null) tag.putString("TargetRight", cachedTargetRight.getSerializedName());
+        if (cachedExitNormal != null) tag.putString("TargetExitNormal", cachedExitNormal.getSerializedName());
     }
 
     private void loadData(DataReader tag) {
@@ -709,6 +980,17 @@ public class PortalCoreBlockEntity extends BlockEntity implements PosMenuProvide
         darkEnergyAmount = Math.max(0, Math.min(tag.getInt("DarkEnergyAmount"), DARK_ENERGY_THRESHOLD));
         outboundChunkForceClaimed = false;
 
+        cachedTargetDim = null;
+        if (tag.contains("TargetDim")) {
+            ResourceLocation dimLoc = ResourceLocation.tryParse(tag.getString("TargetDim"));
+            if (dimLoc != null) {
+                cachedTargetDim = ResourceKey.create(Registries.DIMENSION, dimLoc);
+            }
+        }
+        cachedTargetCorePos = tag.contains("TargetCorePos") ? BlockPos.of(tag.getLong("TargetCorePos")) : null;
+        cachedTargetRight = tag.contains("TargetRight") ? Direction.byName(tag.getString("TargetRight")) : null;
+        cachedExitNormal = tag.contains("TargetExitNormal") ? Direction.byName(tag.getString("TargetExitNormal")) : null;
+
         if (!active) {
             activeUntilEpochMillis = 0L;
             activeStartedGameTime = 0L;
@@ -717,6 +999,9 @@ public class PortalCoreBlockEntity extends BlockEntity implements PosMenuProvide
         if (!opening) {
             openingStartedGameTime = 0L;
             openingCompleteGameTime = 0L;
+        }
+        if (!active && !opening) {
+            clearCachedEndpoint();
         }
         restorePending = active || opening;
 

@@ -27,6 +27,7 @@ import net.neoforged.neoforge.event.entity.player.PlayerInteractEvent;
 import net.neoforged.neoforge.event.server.ServerStartedEvent;
 import net.neoforged.neoforge.event.server.ServerStartingEvent;
 import net.neoforged.neoforge.event.server.ServerStoppedEvent;
+import net.neoforged.neoforge.event.server.ServerStoppingEvent;
 import net.neoforged.neoforge.event.tick.LevelTickEvent;
 import net.neoforged.neoforge.event.tick.ServerTickEvent;
 import net.neoforged.neoforge.network.event.RegisterPayloadHandlersEvent;
@@ -82,12 +83,29 @@ public final class UniverseGateNeoForge {
 
         gameBus.addListener(RegisterCommandsEvent.class, event -> UniverseGate.registerCommands(event.getDispatcher()));
 
-        gameBus.addListener(ServerStartingEvent.class, event -> UpdateCheckManager.onServerStarting(event.getServer()));
+        gameBus.addListener(ServerStartingEvent.class, event -> {
+            UpdateCheckManager.onServerStarting(event.getServer());
+            UniverseGate.onServerStarting(event.getServer());
+        });
         gameBus.addListener(ServerStartedEvent.class, event -> UpdateCheckManager.onServerStarted(event.getServer()));
-        gameBus.addListener(ServerStoppedEvent.class, event -> UpdateCheckManager.onServerStopped(event.getServer()));
+        gameBus.addListener(ServerStoppingEvent.class, event -> UniverseGate.onServerStopping(event.getServer()));
+        gameBus.addListener(ServerStoppedEvent.class, event -> {
+            UniverseGate.onServerStopped(event.getServer());
+            UpdateCheckManager.onServerStopped(event.getServer());
+        });
         gameBus.addListener(PlayerEvent.PlayerLoggedInEvent.class, event -> {
             if (event.getEntity() instanceof ServerPlayer player) {
                 UpdateCheckManager.onPlayerJoin(player);
+            }
+        });
+        gameBus.addListener(PlayerEvent.PlayerLoggedOutEvent.class, event -> {
+            if (event.getEntity() instanceof ServerPlayer player) {
+                UniverseGate.onPlayerDisconnect(player);
+            }
+        });
+        gameBus.addListener(PlayerEvent.PlayerChangedDimensionEvent.class, event -> {
+            if (event.getEntity() instanceof ServerPlayer player) {
+                UniverseGate.onPlayerChangedDimension(player, event.getFrom(), event.getTo());
             }
         });
 

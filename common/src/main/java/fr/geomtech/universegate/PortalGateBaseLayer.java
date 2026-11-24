@@ -20,7 +20,7 @@ import net.minecraft.world.level.block.state.BlockState;
  * <p>Si le bas du portail est enterré (sol devant et derrière), le socle laisse place au terrain : la rangée du
  * bas est dessinée avec le bloc de sol voisin, et l'anneau a l'air de s'enfoncer dans le sol.</p>
  */
-final class PortalGateBaseLayer implements PortalGateLayer {
+public final class PortalGateBaseLayer implements PortalGateLayer {
 
     static final int TAG_CORE = 2;
 
@@ -75,7 +75,7 @@ final class PortalGateBaseLayer implements PortalGateLayer {
         return true;
     }
 
-    static boolean isBuried(Level level, BlockPos core, Direction right) {
+    public static boolean isBuried(Level level, BlockPos core, Direction right) {
         Direction depth = right.getClockWise();
         return groundAt(level, core.relative(depth)) != null && groundAt(level, core.relative(depth.getOpposite())) != null;
     }

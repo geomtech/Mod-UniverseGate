@@ -15,6 +15,7 @@ import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.Mob;
 import net.minecraft.world.entity.RelativeMovement;
 import net.minecraft.world.entity.projectile.AbstractArrow;
+import net.minecraft.world.entity.projectile.Projectile;
 import net.minecraft.world.entity.projectile.ThrownEnderpearl;
 import net.minecraft.world.entity.vehicle.AbstractMinecart;
 import net.minecraft.world.phys.AABB;
@@ -22,6 +23,11 @@ import net.minecraft.world.phys.Vec3;
 
 import fr.geomtech.universegate.UniverseGateDimensions;
 import fr.geomtech.universegate.PortalRiftHelper;
+import fr.geomtech.universegate.seamless.math.PortalCrossingMath;
+import fr.geomtech.universegate.seamless.math.PortalTransform;
+import fr.geomtech.universegate.seamless.net.SeamlessNetwork;
+import fr.geomtech.universegate.seamless.net.SeamlessSwitchHintPayload;
+import fr.geomtech.universegate.seamless.physics.PortalCrossingTracker;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -41,7 +47,7 @@ public final class PortalTeleportHandler {
     private static final double PORTAL_INNER_HEIGHT = PortalFrameDetector.INNER_HEIGHT;
     private static final double PORTAL_POSITION_EPSILON = 0.01D;
     private static final double PORTAL_MIN_EXIT_OFFSET = 0.35D;
-    private static final double PORTAL_FIELD_CLEARANCE = 0.55D;
+    private static final double PORTAL_FIELD_CLEARANCE = 0.22D;
     private static final double PORTAL_MINECART_EXTRA_OFFSET = 0.18D;
 
     private static final double PURSUING_MOB_SEARCH_RADIUS_XZ = 8.0D;
@@ -61,35 +67,43 @@ public final class PortalTeleportHandler {
     /** Appelé par PortalFieldBlock quand une entité touche le champ. */
     public static void tryTeleport(Entity entity, BlockPos fieldPos) {
         if (!(entity.level() instanceof ServerLevel sourceLevel)) return;
-        if (!entity.isAlive() || entity.isPassenger()) return;
+        if (!entity.isAlive()) return;
+        Entity root = entity.isPassenger() ? entity.getRootVehicle() : entity;
+        if (root == null || !root.isAlive()) return;
         BlockPos corePos = findCoreNear(sourceLevel, fieldPos);
         if (corePos != null && sourceLevel.getBlockEntity(corePos) instanceof PortalCoreBlockEntity core)
-            tryTeleport(entity, fieldPos, core);
+            tryTeleport(root, fieldPos, core);
     }
 
     static void tryTeleport(Entity entity, BlockPos fieldPos, PortalCoreBlockEntity core) {
         if (!(entity.level() instanceof ServerLevel sourceLevel) || !core.isActive()) return;
-        if (!entity.isAlive() || entity.isPassenger()) return;
+        if (!entity.isAlive()) return;
+        if (entity.isPassenger()) {
+            Entity root = entity.getRootVehicle();
+            if (root == null || root == entity || !root.isAlive()) return;
+            entity = root;
+        }
+
+        if (!PortalCrossingTracker.shouldCrossPortal(sourceLevel, entity, core)) {
+            return;
+        }
 
         long now = sourceLevel.getGameTime();
         UUID entityId = entity.getUUID();
 
-        boolean preserveProjectileMomentum = shouldPreserveProjectileMomentum(entity);
+        boolean alignYawToVelocity = shouldAlignYawToVelocity(entity);
         Vec3 preservedVelocity = entity.getDeltaMovement();
         float preservedYaw = entity.getYRot();
         float preservedPitch = entity.getXRot();
-        Vec3 projectileVelocityAfterTeleport = preservedVelocity;
-        float projectileYawAfterTeleport = preservedYaw;
-        float projectilePitchAfterTeleport = preservedPitch;
+        Vec3 velocityAfterTeleport = preservedVelocity;
+        float yawAfterTeleport = preservedYaw;
+        float pitchAfterTeleport = preservedPitch;
         List<UUID> pursuingMobIds = List.of();
 
         BlockPos corePos = core.getBlockPos();
         if (!core.isOutboundTravelEnabled()) {
+            // Portals are now bidirectional; still refresh the initiator side's activity timer.
             keepPortalOpenFromDestinationContact(sourceLevel, core, now);
-            if (entity instanceof ServerPlayer player) {
-                showBlockedDirectionMessage(player);
-            }
-            return;
         }
 
         UUID targetId = core.getTargetPortalId();
@@ -146,66 +160,181 @@ public final class PortalTeleportHandler {
         // charger chunk destination (core)
         targetLevel.getChunk(targetEntry.pos());
 
-        // 4) point d’arrivée (orienté selon le portail)
+        // 4) point d’arrivée (orienté selon le portail avec conservation continue de vitesse/angle)
         double x = targetEntry.pos().getX() + 0.5;
         double y = targetEntry.pos().getY() + 1.0;
         double z = targetEntry.pos().getZ() + 0.5;
-        float yaw = preserveProjectileMomentum ? preservedYaw : entity.getYRot();
-        float pitch = preserveProjectileMomentum ? preservedPitch : entity.getXRot();
+        float yaw = preservedYaw;
+        float pitch = preservedPitch;
+        PortalTransform portalTransform = null;
 
         var sourceMatch = PortalFrameDetector.find(sourceLevel, corePos);
         var targetMatch = PortalFrameDetector.find(targetLevel, targetEntry.pos());
         if (sourceMatch.isPresent() && targetMatch.isPresent()) {
-            int sideSign = sideSignFromEntry(sourceMatch.get(), corePos, entity);
-            Direction sourceNormal = normalFromMatch(sourceMatch.get(), sideSign);
-            Direction sourceSurfaceRight = sourceNormal.getCounterClockWise();
-            PortalKeyboardBlockEntity targetKeyboard = findKeyboardNear(targetLevel, targetEntry.pos(), KEYBOARD_RADIUS);
-            Direction exitNormal = targetKeyboard != null
-                    ? normalFromKeyboard(targetMatch.get(), targetEntry.pos(), targetKeyboard.getBlockPos(), sideSign)
-                    : normalFromMatch(targetMatch.get(), sideSign);
-            Direction targetSurfaceRight = exitNormal.getCounterClockWise();
-
-            if (preserveProjectileMomentum) {
-                projectileVelocityAfterTeleport = transformVelocityThroughPortal(
-                        preservedVelocity,
-                        sourceSurfaceRight,
-                        sourceNormal,
-                        targetSurfaceRight,
-                        exitNormal
-                );
-                projectileYawAfterTeleport = yawFromVelocity(projectileVelocityAfterTeleport, preservedYaw);
-                projectilePitchAfterTeleport = pitchFromVelocity(projectileVelocityAfterTeleport, preservedPitch);
+            Direction sourceFrontNormal = PortalOrientationHelper.resolveFrontNormal(sourceLevel, corePos, sourceMatch.get().right());
+            Direction sourceNormal = resolveSourceInwardNormal(sourceMatch.get(), corePos, entity, sourceFrontNormal);
+            // Only allow entering a portal from its FRONT face (controller side).
+            if (sourceNormal != sourceFrontNormal.getOpposite()) {
+                return;
             }
+            // Always exit on the destination portal's FRONT face (controller side) using the unified helper
+            Direction exitNormal = PortalOrientationHelper.resolveFrontNormal(targetLevel, targetEntry.pos(), targetMatch.get().right());
 
-            double lateralOffset = lateralOffsetFromCore(corePos, entity.position(), sourceSurfaceRight);
+            portalTransform = new PortalTransform(corePos, sourceNormal, targetEntry.pos(), exitNormal);
+            Direction sourceRight = portalTransform.sourceRight();
+            Direction targetRight = portalTransform.targetRight();
+
+            double lateralOffset = lateralOffsetFromCore(corePos, entity.position(), sourceRight);
             double verticalOffset = entity.getY() - (corePos.getY() + 1.0D);
             double lateralLimit = Math.max(0.0D, PORTAL_INNER_HALF_WIDTH - (entity.getBbWidth() * 0.5D) - PORTAL_POSITION_EPSILON);
             double verticalMax = Math.max(0.0D, PORTAL_INNER_HEIGHT - entity.getBbHeight() - PORTAL_POSITION_EPSILON);
 
             double clampedLateral = clamp(lateralOffset, -lateralLimit, lateralLimit);
-            double mirroredLateral = -clampedLateral;
             double clampedVertical = clamp(verticalOffset, 0.0D, verticalMax);
             double exitOffset = Math.max(PORTAL_MIN_EXIT_OFFSET, (entity.getBbWidth() * 0.5D) + PORTAL_FIELD_CLEARANCE);
             if (entity instanceof AbstractMinecart) {
                 exitOffset += PORTAL_MINECART_EXTRA_OFFSET;
             }
 
-            x = targetEntry.pos().getX() + 0.5 + targetSurfaceRight.getStepX() * mirroredLateral;
+            x = targetEntry.pos().getX() + 0.5 + targetRight.getStepX() * clampedLateral + exitNormal.getStepX() * exitOffset;
             y = targetEntry.pos().getY() + 1.0 + clampedVertical;
-            z = targetEntry.pos().getZ() + 0.5 + targetSurfaceRight.getStepZ() * mirroredLateral;
+            z = targetEntry.pos().getZ() + 0.5 + targetRight.getStepZ() * clampedLateral + exitNormal.getStepZ() * exitOffset;
 
-            x += exitNormal.getStepX() * exitOffset;
-            z += exitNormal.getStepZ() * exitOffset;
-            if (!preserveProjectileMomentum) {
-                yaw = exitNormal.toYRot();
-            }
+            velocityAfterTeleport = portalTransform.transformVelocity(preservedVelocity);
+            yawAfterTeleport = alignYawToVelocity
+                    ? PortalCrossingMath.yawFromVelocity(velocityAfterTeleport, portalTransform.transformYaw(preservedYaw))
+                    : portalTransform.transformYaw(preservedYaw);
+            pitchAfterTeleport = alignYawToVelocity
+                    ? PortalCrossingMath.pitchFromVelocity(velocityAfterTeleport, preservedPitch)
+                    : preservedPitch;
+            yaw = yawAfterTeleport;
+            pitch = pitchAfterTeleport;
         }
 
-        if (entity instanceof ServerPlayer player) {
-            pursuingMobIds = collectPursuingMobIds(sourceLevel, corePos, player);
+        ServerPlayer primaryPlayer = entity instanceof ServerPlayer sp ? sp : null;
+        if (primaryPlayer == null) {
+            for (Entity passenger : entity.getIndirectPassengers()) {
+                if (passenger instanceof ServerPlayer sp) {
+                    primaryPlayer = sp;
+                    break;
+                }
+            }
+        }
+        if (primaryPlayer != null) {
+            pursuingMobIds = collectPursuingMobIds(sourceLevel, corePos, primaryPlayer);
+        }
+
+        // Capture passenger hierarchy before teleporting so vehicles + riders cross together cleanly
+        PassengerNode passengerTree = captureAndDetachPassengers(entity);
+
+        boolean crossDimension = sourceLevel != targetLevel;
+        if (crossDimension) {
+            sendSeamlessSwitchHints(passengerTree, targetEntry.dim(), targetEntry.pos(), x, y, z, yaw, pitch, velocityAfterTeleport, portalTransform);
         }
 
         ModSounds.playAt(sourceLevel, corePos, ModSounds.PORTAL_ENTITY_GOING_THROUGH, 0.9F, 1.0F);
+        // Apply transformed velocity BEFORE cross-dimension teleportTo() so Entity#restoreFrom copies
+        // the transformed velocity into the newly spawned destination entity BEFORE ChunkMap#addEntity
+        // builds ServerEntity and emits ClientboundAddEntityPacket (prevents dropped items/projectiles
+        // from flying sideways in the remote preview until ServerEntity's next 20-tick sync).
+        if (!(entity instanceof ServerPlayer)) {
+            entity.setDeltaMovement(velocityAfterTeleport);
+        }
+        Entity teleportedRoot = teleportSingleEntity(entity, targetLevel, x, y, z, yaw, pitch);
+        if (teleportedRoot == null) {
+            if (!(entity instanceof ServerPlayer)) {
+                entity.setDeltaMovement(preservedVelocity);
+            }
+            return;
+        }
+
+        applyPostTeleportKinematics(teleportedRoot, velocityAfterTeleport, yawAfterTeleport, pitchAfterTeleport);
+        long destGameTime = targetLevel.getGameTime();
+        PortalCrossingTracker.recordCrossingCompleted(teleportedRoot.getUUID(), targetLevel.dimension(), targetEntry.pos(), destGameTime);
+
+        List<Entity> allTeleported = new ArrayList<>();
+        allTeleported.add(teleportedRoot);
+        teleportAndRemountChildren(passengerTree, teleportedRoot, targetLevel, x, y, z, velocityAfterTeleport, portalTransform, targetEntry.pos(), destGameTime, allTeleported);
+
+        for (Entity moved : allTeleported) {
+            if (moved instanceof Mob teleportedMob) {
+                PortalPursuitTracker.onMobTeleported(targetLevel, teleportedMob);
+            }
+        }
+
+        ModSounds.playAt(targetLevel, targetEntry.pos(), ModSounds.PORTAL_ENTITY_GOING_THROUGH, 0.9F, 1.05F);
+        if (primaryPlayer != null) {
+            core.onPlayerPassedThrough(now);
+        } else {
+            core.onEntityPassed(now);
+        }
+        if (targetLevel.getBlockEntity(targetEntry.pos()) instanceof PortalCoreBlockEntity targetCore) {
+            targetCore.onEntityPassed(targetLevel.getGameTime());
+        }
+
+        // Apply instability damage/debuffs to the post-teleport LivingEntity instance(s) in targetLevel
+        // (fixing stale pre-teleport entity reference in cross-dimension transfers).
+        for (Entity moved : allTeleported) {
+            if (!(moved instanceof LivingEntity livingEntity)) continue;
+            if (unstableDamageRoll) {
+                livingEntity.hurt(targetLevel.damageSources().magic(), UNSTABLE_DAMAGE_AMOUNT);
+                instabilityTriggered = true;
+            }
+            if (instabilityTriggered) {
+                applyUnstableDebuffs(livingEntity);
+            }
+        }
+
+        if (primaryPlayer != null && !pursuingMobIds.isEmpty()) {
+            markPursuingMobsForPortalFollow(sourceLevel, fieldPos, primaryPlayer, pursuingMobIds);
+        }
+
+        if (isRift) {
+            PortalRiftHelper.handleRiftArrival(targetLevel, targetEntry.pos());
+        }
+    }
+
+    private static PassengerNode captureAndDetachPassengers(Entity root) {
+        List<Entity> direct = new ArrayList<>(root.getPassengers());
+        List<PassengerNode> children = new ArrayList<>(direct.size());
+        for (Entity passenger : direct) {
+            PassengerNode childNode = captureAndDetachPassengers(passenger);
+            passenger.stopRiding();
+            children.add(childNode);
+        }
+        return new PassengerNode(root, root.getYRot(), root.getXRot(), children);
+    }
+
+    private static void sendSeamlessSwitchHints(PassengerNode node,
+                                                net.minecraft.resources.ResourceKey<net.minecraft.world.level.Level> targetDim,
+                                                BlockPos targetCorePos,
+                                                double x,
+                                                double y,
+                                                double z,
+                                                float rootYaw,
+                                                float rootPitch,
+                                                Vec3 velocity,
+                                                @org.jetbrains.annotations.Nullable PortalTransform transform) {
+        if (node.entity() instanceof ServerPlayer player) {
+            float playerYaw = transform != null ? transform.transformYaw(node.originalYaw()) : rootYaw;
+            SeamlessNetwork.sendToPlayer(
+                    player,
+                    new SeamlessSwitchHintPayload(targetDim, targetCorePos, x, y, z, playerYaw, node.originalPitch(), velocity)
+            );
+        }
+        for (PassengerNode child : node.children()) {
+            sendSeamlessSwitchHints(child, targetDim, targetCorePos, x, y, z, rootYaw, rootPitch, velocity, transform);
+        }
+    }
+
+    private static @org.jetbrains.annotations.Nullable Entity teleportSingleEntity(Entity entity,
+                                                                                   ServerLevel targetLevel,
+                                                                                   double x,
+                                                                                   double y,
+                                                                                   double z,
+                                                                                   float yaw,
+                                                                                   float pitch) {
+        UUID entityId = entity.getUUID();
         boolean teleported;
         if (entity instanceof ServerPlayer player) {
             //? if >=1.21.11 {
@@ -220,54 +349,66 @@ public final class PortalTeleportHandler {
             teleported = entity.teleportTo(targetLevel, x, y, z, Set.<RelativeMovement>of(), yaw, pitch);
             //?}
         }
-        if (!teleported) return;
+        if (!teleported) {
+            return null;
+        }
+        Entity resolved = targetLevel.getEntity(entityId);
+        if (resolved == null && entity.level() == targetLevel) {
+            resolved = entity;
+        }
+        return resolved;
+    }
 
-        if (preserveProjectileMomentum) {
-            Entity teleportedEntity = targetLevel.getEntity(entityId);
-            if (teleportedEntity == null && entity.level() == targetLevel) {
-                teleportedEntity = entity;
+    private static void teleportAndRemountChildren(PassengerNode parentNode,
+                                                   Entity teleportedParent,
+                                                   ServerLevel targetLevel,
+                                                   double x,
+                                                   double y,
+                                                   double z,
+                                                   Vec3 velocity,
+                                                   @org.jetbrains.annotations.Nullable PortalTransform transform,
+                                                   BlockPos targetCorePos,
+                                                   long destGameTime,
+                                                   List<Entity> allTeleported) {
+        for (PassengerNode child : parentNode.children()) {
+            float childYaw = transform != null ? transform.transformYaw(child.originalYaw()) : child.originalYaw();
+            float childPitch = child.originalPitch();
+            if (!(child.entity() instanceof ServerPlayer)) {
+                child.entity().setDeltaMovement(velocity);
             }
-            if (teleportedEntity != null) {
-                teleportedEntity.setDeltaMovement(projectileVelocityAfterTeleport);
-                teleportedEntity.setYRot(projectileYawAfterTeleport);
-                teleportedEntity.setXRot(projectilePitchAfterTeleport);
+            Entity movedChild = teleportSingleEntity(child.entity(), targetLevel, x, y, z, childYaw, childPitch);
+            if (movedChild == null) {
+                continue;
             }
-        }
-
-        if (entity instanceof Mob) {
-            Entity teleportedMobEntity = targetLevel.getEntity(entityId);
-            if (teleportedMobEntity instanceof Mob teleportedMob) {
-                PortalPursuitTracker.onMobTeleported(targetLevel, teleportedMob);
-            }
-        }
-
-        ModSounds.playAt(targetLevel, targetEntry.pos(), ModSounds.PORTAL_ENTITY_GOING_THROUGH, 0.9F, 1.05F);
-        if (entity instanceof ServerPlayer) {
-            core.onPlayerPassedThrough(now);
-        } else {
-            core.onEntityPassed(now);
-        }
-        if (targetLevel.getBlockEntity(targetEntry.pos()) instanceof PortalCoreBlockEntity targetCore) {
-            targetCore.onEntityPassed(targetLevel.getGameTime());
-        }
-
-        LivingEntity livingEntity = entity instanceof LivingEntity living ? living : null;
-        if (unstableDamageRoll && livingEntity != null) {
-            livingEntity.hurt(targetLevel.damageSources().magic(), UNSTABLE_DAMAGE_AMOUNT);
-            instabilityTriggered = true;
-        }
-        if (instabilityTriggered && livingEntity != null) {
-            applyUnstableDebuffs(livingEntity);
-        }
-
-        if (entity instanceof ServerPlayer player && !pursuingMobIds.isEmpty()) {
-            markPursuingMobsForPortalFollow(sourceLevel, fieldPos, player, pursuingMobIds);
-        }
-
-        if (isRift) {
-            PortalRiftHelper.handleRiftArrival(targetLevel, targetEntry.pos());
+            applyPostTeleportKinematics(movedChild, velocity, childYaw, childPitch);
+            PortalCrossingTracker.recordCrossingCompleted(movedChild.getUUID(), targetLevel.dimension(), targetCorePos, destGameTime);
+            //? if >=1.21.11 {
+            /*movedChild.startRiding(teleportedParent, true, true);
+            *///?} else {
+            movedChild.startRiding(teleportedParent, true);
+            //?}
+            allTeleported.add(movedChild);
+            teleportAndRemountChildren(child, movedChild, targetLevel, x, y, z, velocity, transform, targetCorePos, destGameTime, allTeleported);
         }
     }
+
+    private static void applyPostTeleportKinematics(Entity entity, Vec3 velocity, float yaw, float pitch) {
+        entity.setDeltaMovement(velocity);
+        entity.setYRot(yaw);
+        entity.setXRot(pitch);
+        if (entity instanceof LivingEntity living) {
+            living.setYHeadRot(yaw);
+            living.setYBodyRot(yaw);
+        }
+        entity.hasImpulse = true;
+        if (!(entity instanceof ServerPlayer)) {
+            // Forces ServerEntity#sendChanges to broadcast ClientboundSetEntityMotionPacket even
+            // when tickCount == 0 (newly created cross-dimension entity in 1.21.1 and 1.21.11).
+            entity.hurtMarked = true;
+        }
+    }
+
+    private record PassengerNode(Entity entity, float originalYaw, float originalPitch, List<PassengerNode> children) {}
 
     private static void showBlockedDirectionMessage(ServerPlayer player) {
         player.displayClientMessage(
@@ -298,43 +439,41 @@ public final class PortalTeleportHandler {
         sourceCore.onEntityPassed(sourceLevel.getGameTime());
     }
 
-    private static int sideSignFromEntry(PortalFrameDetector.FrameMatch match, BlockPos corePos, Entity entity) {
-        double axisVelocity = match.right() == Direction.EAST
-                ? entity.getDeltaMovement().z
-                : entity.getDeltaMovement().x;
+    private static Direction resolveSourceInwardNormal(PortalFrameDetector.FrameMatch match,
+                                                       BlockPos corePos,
+                                                       Entity entity,
+                                                       Direction sourceFrontNormal) {
+        // 1) Exact approach side tracked by PortalCrossingTracker prior to crossing the plane
+        Direction tracked = PortalCrossingTracker.getLastInwardNormal(entity.getUUID(), corePos);
+        if (tracked != null) {
+            return tracked;
+        }
 
+        Direction positiveNormal = match.right().getAxis() == Direction.Axis.X ? Direction.SOUTH : Direction.EAST;
+
+        // 2) Actual server tick displacement (xo/zo), which works for ServerPlayer even when deltaMovement == 0
+        double tickDelta = (entity.getX() - entity.xo) * positiveNormal.getStepX()
+                + (entity.getZ() - entity.zo) * positiveNormal.getStepZ();
+        if (Math.abs(tickDelta) > 0.001D) {
+            return tickDelta > 0.0D ? positiveNormal : positiveNormal.getOpposite();
+        }
+
+        // 3) Entity velocity (projectiles, minecarts, mobs)
+        double axisVelocity = entity.getDeltaMovement().x * positiveNormal.getStepX()
+                + entity.getDeltaMovement().z * positiveNormal.getStepZ();
         if (Math.abs(axisVelocity) > 0.001D) {
-            return axisVelocity >= 0 ? 1 : -1;
+            return axisVelocity > 0.0D ? positiveNormal : positiveNormal.getOpposite();
         }
 
-        double centerX = corePos.getX() + 0.5;
-        double centerZ = corePos.getZ() + 0.5;
-        if (match.right() == Direction.EAST) {
-            return entity.getZ() >= centerZ ? 1 : -1;
-        }
-        return entity.getX() >= centerX ? 1 : -1;
-    }
-
-    private static Direction normalFromMatch(PortalFrameDetector.FrameMatch match, int sideSign) {
-        if (match.right() == Direction.EAST) {
-            return sideSign >= 0 ? Direction.SOUTH : Direction.NORTH;
-        }
-        return sideSign >= 0 ? Direction.EAST : Direction.WEST;
-    }
-
-    private static Direction normalFromKeyboard(PortalFrameDetector.FrameMatch match,
-                                                BlockPos corePos,
-                                                BlockPos keyboardPos,
-                                                int fallbackSign) {
-        if (match.right() == Direction.EAST) {
-            int dz = Integer.compare(keyboardPos.getZ(), corePos.getZ());
-            if (dz == 0) return normalFromMatch(match, fallbackSign);
-            return dz > 0 ? Direction.SOUTH : Direction.NORTH;
+        // 4) Position side relative to portal center (pointing INTO the portal from the entity's side)
+        double signedOffset = (entity.getX() - (corePos.getX() + 0.5D)) * positiveNormal.getStepX()
+                + (entity.getZ() - (corePos.getZ() + 0.5D)) * positiveNormal.getStepZ();
+        if (Math.abs(signedOffset) > 0.05D) {
+            return signedOffset > 0.0D ? positiveNormal.getOpposite() : positiveNormal;
         }
 
-        int dx = Integer.compare(keyboardPos.getX(), corePos.getX());
-        if (dx == 0) return normalFromMatch(match, fallbackSign);
-        return dx > 0 ? Direction.EAST : Direction.WEST;
+        // 5) Default: entering from the portal's front (controller) face
+        return sourceFrontNormal.getOpposite();
     }
 
     private static BlockPos findCoreNear(ServerLevel level, BlockPos pos) {
@@ -513,8 +652,9 @@ public final class PortalTeleportHandler {
         return (float) (-(Math.atan2(velocity.y, horizontalLength) * (180.0D / Math.PI)));
     }
 
-    private static boolean shouldPreserveProjectileMomentum(Entity entity) {
-        return entity instanceof AbstractArrow
+    private static boolean shouldAlignYawToVelocity(Entity entity) {
+        return entity instanceof Projectile
+                || entity instanceof AbstractArrow
                 || entity instanceof AbstractMinecart
                 || entity instanceof ThrownEnderpearl;
     }

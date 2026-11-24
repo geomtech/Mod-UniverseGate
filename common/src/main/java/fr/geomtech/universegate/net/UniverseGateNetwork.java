@@ -17,6 +17,7 @@ import fr.geomtech.universegate.PortalRiftHelper;
 import fr.geomtech.universegate.PortalRegistrySavedData;
 import fr.geomtech.universegate.WireNetwork;
 import fr.geomtech.universegate.platform.Services;
+import fr.geomtech.universegate.seamless.net.SeamlessNetwork;
 import net.minecraft.core.BlockPos;
 import net.minecraft.server.level.ServerLevel;
 
@@ -39,6 +40,7 @@ public final class UniverseGateNetwork {
         Services.PLATFORM.registerClientboundPayload(PortalKeyboardStatusPayload.TYPE, PortalKeyboardStatusPayload.STREAM_CODEC);
         Services.PLATFORM.registerClientboundPayload(PortalConnectionErrorPayload.TYPE, PortalConnectionErrorPayload.STREAM_CODEC);
         Services.PLATFORM.registerClientboundPayload(PortalFieldCollapsePayload.TYPE, PortalFieldCollapsePayload.STREAM_CODEC);
+        SeamlessNetwork.registerPayloads();
                         
         // handler C2S (connect)
         Services.PLATFORM.registerServerboundPayload(ConnectPortalPayload.TYPE, ConnectPortalPayload.STREAM_CODEC, (payload, player) -> {

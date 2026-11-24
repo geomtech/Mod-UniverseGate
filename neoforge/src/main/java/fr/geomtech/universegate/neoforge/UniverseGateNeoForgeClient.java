@@ -26,9 +26,13 @@ import fr.geomtech.universegate.UniverseGate;
 import fr.geomtech.universegate.ZpcInterfaceControllerRenderer;
 import fr.geomtech.universegate.ZpcInterfaceControllerScreen;
 import fr.geomtech.universegate.net.UniverseGateClientNetwork;
+import fr.geomtech.universegate.seamless.client.ClientRemoteWorldManager;
+import fr.geomtech.universegate.seamless.client.PortalRenderTargetPool;
+import net.minecraft.client.Minecraft;
 import net.minecraft.client.renderer.ItemBlockRenderTypes;
 //? if >=1.21.11 {
 /*import net.minecraft.client.renderer.chunk.ChunkSectionLayer;
+import net.neoforged.neoforge.client.event.ConfigureMainRenderTargetEvent;
 *///?}
 import net.minecraft.client.renderer.RenderType;
 import net.minecraft.resources.ResourceLocation;
@@ -37,6 +41,7 @@ import net.neoforged.api.distmarker.Dist;
 import net.neoforged.bus.api.IEventBus;
 import net.neoforged.fml.common.Mod;
 import net.neoforged.fml.event.lifecycle.FMLClientSetupEvent;
+import net.neoforged.neoforge.client.event.ClientTickEvent;
 import net.neoforged.neoforge.client.event.EntityRenderersEvent;
 import net.neoforged.neoforge.client.event.RegisterGuiLayersEvent;
 import net.neoforged.neoforge.client.event.RegisterMenuScreensEvent;
@@ -77,6 +82,8 @@ public final class UniverseGateNeoForgeClient {
             ItemBlockRenderTypes.setRenderLayer(ModBlocks.ELECTRIC_WIRE, RenderType.cutout());
             ItemBlockRenderTypes.setRenderLayer(ModBlocks.CROCODILE_CLIP, RenderType.cutout());
             ItemBlockRenderTypes.setRenderLayer(ModBlocks.LIGHTNING_ANTENNA, RenderType.cutout());
+            Minecraft.getInstance().getMainRenderTarget().enableStencil();
+            PortalRenderTargetPool.markStencilRequested();
             //?}
         }));
 
@@ -131,5 +138,13 @@ public final class UniverseGateNeoForgeClient {
 
         NeoForge.EVENT_BUS.addListener(ItemTooltipEvent.class, event ->
                 ModTooltips.appendTooltip(event.getItemStack(), event.getToolTip()));
+        NeoForge.EVENT_BUS.addListener(ClientTickEvent.Post.class, event ->
+                ClientRemoteWorldManager.getInstance().tickClient(Minecraft.getInstance()));
+        //? if >=1.21.11 {
+        /*modBus.addListener(ConfigureMainRenderTargetEvent.class, event -> {
+            event.enableStencil();
+            PortalRenderTargetPool.markStencilRequested();
+        });
+        *///?}
     }
 }

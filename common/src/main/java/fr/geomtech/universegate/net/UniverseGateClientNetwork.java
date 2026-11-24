@@ -3,6 +3,7 @@ package fr.geomtech.universegate.net;
 import fr.geomtech.universegate.PortalCoreScreen;
 import fr.geomtech.universegate.PortalKeyboardScreen;
 import fr.geomtech.universegate.platform.ClientServices;
+import fr.geomtech.universegate.seamless.net.SeamlessNetwork;
 import net.minecraft.client.Minecraft;
 
 public final class UniverseGateClientNetwork {
@@ -57,5 +58,9 @@ public final class UniverseGateClientNetwork {
                 }
             });
         });
+
+        SeamlessNetwork.registerClientReceivers();
+        fr.geomtech.universegate.seamless.client.ClientRemoteWorldManager.initClient();
+        fr.geomtech.universegate.seamless.client.SeamlessSwitchCoordinator.initClient();
     }
 }

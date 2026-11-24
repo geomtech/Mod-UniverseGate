@@ -33,6 +33,12 @@ final class PortalAmbientSoundClient {
     private boolean playingUnstable;
 
     void tick(PortalCoreBlockEntity core, long now) {
+        // Never play ambient sounds for cores living in a remote seamless ClientLevel.
+        Minecraft mc = Minecraft.getInstance();
+        if (mc.level == null || core.getLevel() != mc.level) {
+            stop();
+            return;
+        }
         boolean unstable = core.isClientAmbientUnstable();
         if (unstable != playingUnstable) {
             // Même comportement que le serveur : on coupe l'ancienne ambiance et on relance tout de suite.

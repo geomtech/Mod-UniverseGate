@@ -14,6 +14,9 @@ neoForge {
 	accessTransformers.from(versionAt.exists() ? versionAt : project.parent.file('accesstransformer.cfg'))
 }
 
+neoForge.addModdingDependenciesTo(sourceSets.test)
+neoForge.addModdingDependenciesTo(sourceSets.e2eTest)
+
 dependencies {
 	compileOnly 'org.spongepowered:mixin:0.8.5'
 }

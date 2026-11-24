@@ -299,7 +299,9 @@ public final class PortalConnectionManager {
             ModSounds.playAt(targetLevel, entry.pos(), ModSounds.PORTAL_CLOSING, 1.0F, 1.0F);
         }
         ModSounds.stopPortalLifecycleNear(targetLevel, entry.pos());
-        b.clearActiveState();
+        if (b.isActiveOrOpening()) {
+            b.clearActiveState();
+        }
         setNearbyKeyboardsLit(targetLevel, entry.pos(), false);
         b.setChanged();
     }

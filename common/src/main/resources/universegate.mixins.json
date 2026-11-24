@@ -4,13 +4,33 @@
 	"compatibilityLevel": "JAVA_21",
 	"mixins": [
 		"AnvilMenuMixin",
+		"ChunkMapAccessor",
+		"ChunkMapEntityAddMixin",
+		"ChunkMapEntityRemoveMixin",
+		"EntityHalfCollisionMixin",
 		"ExampleMixin",
 		"MobDespawnMixin",
 		"PoiTypesAccessor",
-		"LightningBoltMixin"
+		"LightningBoltMixin",
+		"ServerChunkCacheBlockDeltaMixin",
+		"ServerLevelUnloadMixin",
+		"TrackedEntityAccessor",
+		"TrackedEntityBroadcastMixin"
 	],
 	"client": [
-		"RiftSkyMixin"
+		"RiftSkyMixin",
+		"client.CameraAccessor",
+		"client.CameraPortalClipMixin",
+		"client.ClientLevelIsolationMixin",
+		"client.ClientPacketListenerAccessor",
+		"client.ClientPacketListenerRespawnMixin",
+		"client.LevelRendererAccessor",
+		"client.LevelRendererSeamlessMixin",
+		"client.LightTextureAccessor",
+		"client.MainTargetStencilMixin",
+		"client.MinecraftSeamlessSwitchMixin",
+		"client.RenderTargetStencilMixin",
+		"client.SectionRenderDispatcherAccessor"
 	],
 	"injectors": {
 		"defaultRequire": 1

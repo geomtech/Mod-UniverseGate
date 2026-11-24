@@ -1,9 +1,14 @@
 package fr.geomtech.universegate;
 
 import com.mojang.brigadier.CommandDispatcher;
+import fr.geomtech.universegate.seamless.server.RemoteChunkTicketController;
+import fr.geomtech.universegate.seamless.server.ServerPortalStreamManager;
 import net.minecraft.commands.CommandSourceStack;
+import net.minecraft.resources.ResourceKey;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.level.ServerLevel;
+import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.world.level.Level;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -44,6 +49,7 @@ public final class UniverseGate {
 		ModVillagers.register();
 		UniverseGatePoiHelper.registerLightningAntennaPoi();
 		OverworldVillagePortalGenerator.registerTicketType();
+		RemoteChunkTicketController.registerTicketType();
 	}
 
 	/** Registers network payloads. Does not touch registries. */
@@ -57,8 +63,34 @@ public final class UniverseGate {
 		WeatherMachineCommand.registerCommands(dispatcher);
 	}
 
+	public static void onServerStarting(MinecraftServer server) {
+		ServerPortalStreamManager.onServerStarting(server);
+	}
+
+	public static void onServerStopping(MinecraftServer server) {
+		ServerPortalStreamManager.onServerStopping(server);
+	}
+
+	public static void onServerStopped(MinecraftServer server) {
+		ServerPortalStreamManager.onServerStopped(server);
+		fr.geomtech.universegate.seamless.physics.PortalCrossingTracker.clearAll();
+	}
+
+	public static void onPlayerDisconnect(ServerPlayer player) {
+		ServerPortalStreamManager.onPlayerDisconnect(player);
+		if (player != null) {
+			fr.geomtech.universegate.seamless.physics.PortalCrossingTracker.onEntityRemoved(player.getUUID());
+		}
+	}
+
+	public static void onPlayerChangedDimension(ServerPlayer player, ResourceKey<Level> fromDim, ResourceKey<Level> toDim) {
+		ServerPortalStreamManager.onPlayerChangedDimension(player, fromDim, toDim);
+	}
+
 	/** Called at the end of every server tick. */
 	public static void onServerTickEnd(MinecraftServer server) {
+		fr.geomtech.universegate.seamless.physics.PortalCrossingTracker.tickServerPlayers(server);
+		ServerPortalStreamManager.onServerTickEnd(server);
 		EngineerExpeditionManager.tickServer(server);
 		UpdateCheckManager.runPeriodicCheck(server);
 	}

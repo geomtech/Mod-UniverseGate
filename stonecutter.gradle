@@ -120,6 +120,38 @@ configure(nodes) {
 			rename { "${it}_${rootProject.archives_base_name}" }
 		}
 	}
+
+	sourceSets {
+		e2eTest {
+			compileClasspath = sourceSets.main.output + compileClasspath
+			runtimeClasspath = sourceSets.main.output + runtimeClasspath
+		}
+	}
+
+	configurations {
+		e2eTestImplementation.extendsFrom(configurations.implementation)
+		e2eTestCompileOnly.extendsFrom(configurations.compileOnly)
+		e2eTestRuntimeOnly.extendsFrom(configurations.runtimeOnly)
+	}
+
+	dependencies {
+		e2eTestImplementation platform("org.junit:junit-bom:${rootProject.junit_version}")
+		e2eTestImplementation 'org.junit.jupiter:junit-jupiter'
+		e2eTestRuntimeOnly 'org.junit.platform:junit-platform-launcher'
+	}
+
+	tasks.register('e2eTest', Test) {
+		group = 'verification'
+		description = 'Runs isolated end-to-end and contract verification tests.'
+		testClassesDirs = sourceSets.e2eTest.output.classesDirs
+		classpath = sourceSets.e2eTest.runtimeClasspath
+		useJUnitPlatform()
+		shouldRunAfter(tasks.named('test'))
+		testLogging {
+			events 'passed', 'skipped', 'failed'
+			exceptionFormat 'full'
+		}
+	}
 }
 
 // Shared wiring for the loader projects: compile the common sources of the same Minecraft version
@@ -129,6 +161,9 @@ configure(nodes.findAll { it.parent.name in ['fabric', 'neoforge'] }) {
 	evaluationDependsOn(commonProject.path)
 
 	def commonMain = commonProject.sourceSets.main
+	def commonE2eTest = commonProject.sourceSets.e2eTest
+	sourceSets.e2eTest.compileClasspath += commonE2eTest.output
+	sourceSets.e2eTest.runtimeClasspath += commonE2eTest.output
 
 	dependencies {
 		// Lets IDEs resolve common classes from loader code; the sources themselves are compiled below.
@@ -163,4 +198,10 @@ tasks.register('buildAll') {
 	group = 'build'
 	description = 'Builds the Fabric and NeoForge jars for every supported Minecraft version.'
 	dependsOn(nodes.collect { "${it.path}:build" })
+}
+
+tasks.register('e2eTestAll') {
+	group = 'verification'
+	description = 'Runs isolated E2E tests across common, fabric, and neoforge for every supported Minecraft version.'
+	dependsOn(nodes.collect { "${it.path}:e2eTest" })
 }

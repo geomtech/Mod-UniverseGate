@@ -41,3 +41,6 @@ processResources {
 		expand props
 	}
 }
+
+sourceSets.e2eTest.compileClasspath += sourceSets.main.compileClasspath
+sourceSets.e2eTest.runtimeClasspath += sourceSets.main.runtimeClasspath

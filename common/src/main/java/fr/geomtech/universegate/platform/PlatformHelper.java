@@ -9,7 +9,10 @@ import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.core.BlockPos;
 import net.minecraft.network.RegistryFriendlyByteBuf;
 import net.minecraft.network.codec.StreamCodec;
+import net.minecraft.network.protocol.Packet;
 import net.minecraft.network.protocol.common.custom.CustomPacketPayload;
+import net.minecraft.network.protocol.game.ClientGamePacketListener;
+import net.minecraft.server.level.ServerEntity;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.MenuProvider;
 import net.minecraft.world.entity.EntityType;
@@ -25,6 +28,7 @@ import net.minecraft.world.level.levelgen.Heightmap;
 import net.minecraft.world.level.material.FlowingFluid;
 
 import java.util.function.BiConsumer;
+import java.util.function.Consumer;
 import java.util.function.Supplier;
 
 /**
@@ -37,6 +41,9 @@ public interface PlatformHelper {
 
     /** Version of the UniverseGate mod as declared in the loader metadata. */
     String getModVersion();
+
+    /** Returns true if a mod with the given id is currently loaded at runtime. */
+    boolean isModLoaded(String modId);
 
     CreativeModeTab.Builder creativeTabBuilder();
 
@@ -87,4 +94,12 @@ public interface PlatformHelper {
                                                                    BiConsumer<T, ServerPlayer> handler);
 
     void sendToPlayer(ServerPlayer player, CustomPacketPayload payload);
+
+    /**
+     * Invokes {@link ServerEntity#sendPairingData} across loader differences
+     * (NeoForge 1.21.1 uses {@code PacketAndPayloadAcceptor} instead of {@code Consumer}).
+     */
+    void sendEntityPairingData(ServerEntity serverEntity,
+                               ServerPlayer player,
+                               Consumer<Packet<? super ClientGamePacketListener>> consumer);
 }

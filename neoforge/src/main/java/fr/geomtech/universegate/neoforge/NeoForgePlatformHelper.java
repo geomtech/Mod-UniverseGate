@@ -12,7 +12,10 @@ import fr.geomtech.universegate.platform.PosMenuFactory;
 import net.minecraft.core.BlockPos;
 import net.minecraft.network.RegistryFriendlyByteBuf;
 import net.minecraft.network.codec.StreamCodec;
+import net.minecraft.network.protocol.Packet;
 import net.minecraft.network.protocol.common.custom.CustomPacketPayload;
+import net.minecraft.network.protocol.game.ClientGamePacketListener;
+import net.minecraft.server.level.ServerEntity;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.MenuProvider;
 import net.minecraft.world.entity.EntityType;
@@ -46,7 +49,7 @@ import java.util.function.Supplier;
 public final class NeoForgePlatformHelper implements PlatformHelper {
 
     /** Network protocol version; bump when payloads change incompatibly. */
-    private static final String NETWORK_VERSION = "1";
+    private static final String NETWORK_VERSION = "2";
 
     private static final Map<EntityType<? extends LivingEntity>, Supplier<AttributeSupplier.Builder>> ATTRIBUTES = new LinkedHashMap<>();
     private static final List<Consumer<RegisterSpawnPlacementsEvent>> SPAWN_PLACEMENTS = new ArrayList<>();
@@ -63,6 +66,11 @@ public final class NeoForgePlatformHelper implements PlatformHelper {
         return ModList.get().getModContainerById(UniverseGate.MOD_ID)
                 .map(container -> container.getModInfo().getVersion().toString())
                 .orElse("0.0.0");
+    }
+
+    @Override
+    public boolean isModLoaded(String modId) {
+        return modId != null && ModList.get().isLoaded(modId);
     }
 
     @Override
@@ -143,6 +151,20 @@ public final class NeoForgePlatformHelper implements PlatformHelper {
     @Override
     public void sendToPlayer(ServerPlayer player, CustomPacketPayload payload) {
         PacketDistributor.sendToPlayer(player, payload);
+    }
+
+    @Override
+    public void sendEntityPairingData(ServerEntity serverEntity,
+                                      ServerPlayer player,
+                                      Consumer<Packet<? super ClientGamePacketListener>> consumer) {
+        //? if >=1.21.11 {
+        /*serverEntity.sendPairingData(player, consumer);
+        *///?} else {
+        serverEntity.sendPairingData(
+                player,
+                new net.neoforged.neoforge.network.bundle.PacketAndPayloadAcceptor<>(consumer)
+        );
+        //?}
     }
 
     static void onEntityAttributeCreation(EntityAttributeCreationEvent event) {
