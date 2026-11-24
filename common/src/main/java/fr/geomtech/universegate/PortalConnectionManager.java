@@ -317,7 +317,16 @@ public final class PortalConnectionManager {
     }
 
     public static void syncKeyboardLitFromNearbyCore(ServerLevel level, BlockPos keyboardPos) {
-        boolean lit = hasActiveCoreNear(level, keyboardPos, KEYBOARD_RADIUS_XZ, KEYBOARD_RADIUS_Y);
+        boolean lit;
+        if (level.getBlockState(keyboardPos).is(ModBlocks.PORTAL_KEYBOARD)) {
+            // Player-built keyboards follow the portal their crocodile clips are wired to.
+            BlockPos corePos = WireNetwork.findWiredCore(level, keyboardPos);
+            lit = corePos != null
+                    && level.getBlockEntity(corePos) instanceof PortalCoreBlockEntity core
+                    && core.isActiveOrOpening();
+        } else {
+            lit = hasActiveCoreNear(level, keyboardPos, KEYBOARD_RADIUS_XZ, KEYBOARD_RADIUS_Y);
+        }
         setKeyboardLit(level, keyboardPos, lit);
     }
 
@@ -327,13 +336,21 @@ public final class PortalConnectionManager {
                 for (int dz = -KEYBOARD_RADIUS_XZ; dz <= KEYBOARD_RADIUS_XZ; dz++) {
                     BlockPos p = corePos.offset(dx, dy, dz);
                     var state = level.getBlockState(p);
-                    if (!isKeyboardBlock(state)) continue;
+                    if (!state.is(ModBlocks.PORTAL_NATURAL_KEYBOARD)) continue;
                     if (lit) {
                         setKeyboardLit(level, p, true);
                     } else {
                         syncKeyboardLitFromNearbyCore(level, p);
                     }
                 }
+            }
+        }
+        // Player-built keyboards may sit anywhere along the wires, however far from the gate.
+        for (BlockPos keyboard : WireNetwork.findWiredKeyboards(level, corePos)) {
+            if (lit) {
+                setKeyboardLit(level, keyboard, true);
+            } else {
+                syncKeyboardLitFromNearbyCore(level, keyboard);
             }
         }
     }
@@ -343,6 +360,19 @@ public final class PortalConnectionManager {
         if (corePos == null) return;
 
         if (!(level.getBlockEntity(corePos) instanceof PortalCoreBlockEntity core)) return;
+        if (core.isRiftLightningLink()) return;
+        if (!core.isOutboundTravelEnabled()) return;
+
+        forceCloseOneSide(level, corePos);
+    }
+
+    /** A player-built keyboard closes only the portal its crocodile clips are wired to. */
+    public static void forceCloseFromWiredKeyboard(ServerLevel level, BlockPos keyboardPos) {
+        BlockPos corePos = WireNetwork.findWiredCore(level, keyboardPos);
+        if (corePos == null) return;
+
+        if (!(level.getBlockEntity(corePos) instanceof PortalCoreBlockEntity core)) return;
+        if (!core.isActiveOrOpening()) return;
         if (core.isRiftLightningLink()) return;
         if (!core.isOutboundTravelEnabled()) return;
 
@@ -521,17 +551,13 @@ public final class PortalConnectionManager {
         var state = level.getBlockState(pos);
         if (!state.is(ModBlocks.PORTAL_FRAME)) return;
         if (!state.hasProperty(PortalFrameBlock.ACTIVE)
-                || !state.hasProperty(PortalFrameBlock.UNSTABLE)
-                || !state.hasProperty(PortalFrameBlock.BLINK_ON)) {
+                || !state.hasProperty(PortalFrameBlock.UNSTABLE)) {
             return;
         }
 
-        boolean blinkOn = active && unstable;
-
         var updated = state
                 .setValue(PortalFrameBlock.ACTIVE, active)
-                .setValue(PortalFrameBlock.UNSTABLE, unstable)
-                .setValue(PortalFrameBlock.BLINK_ON, blinkOn);
+                .setValue(PortalFrameBlock.UNSTABLE, unstable);
         if (state.equals(updated)) return;
 
         level.setBlock(pos, updated, 3);

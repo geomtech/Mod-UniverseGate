@@ -11,9 +11,12 @@ import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.world.InteractionHand;
 import net.minecraft.world.InteractionResult;
+import net.minecraft.world.ItemInteractionResult;
 import net.minecraft.world.MenuProvider;
 import net.minecraft.world.Containers;
+import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.context.BlockPlaceContext;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.level.Level;
@@ -166,7 +169,7 @@ public class PortalKeyboardBlock extends BaseEntityBlock {
     /*// The keyboard's items are dropped by its block entity (BlockEntity.preRemoveSideEffects).
     @Override
     protected void affectNeighborsAfterRemoval(BlockState state, ServerLevel level, BlockPos pos, boolean movedByPiston) {
-        PortalConnectionManager.forceCloseFromKeyboard(level, pos);
+        PortalConnectionManager.forceCloseFromWiredKeyboard(level, pos);
         super.affectNeighborsAfterRemoval(state, level, pos, movedByPiston);
     }
     *///?} else {
@@ -174,7 +177,7 @@ public class PortalKeyboardBlock extends BaseEntityBlock {
     public void onRemove(BlockState state, Level level, BlockPos pos, BlockState newState, boolean movedByPiston) {
         if (!level.isClientSide() && !state.is(newState.getBlock())) {
             if (level instanceof ServerLevel sl) {
-                PortalConnectionManager.forceCloseFromKeyboard(sl, pos);
+                PortalConnectionManager.forceCloseFromWiredKeyboard(sl, pos);
             }
             BlockEntity be = level.getBlockEntity(pos);
             if (be instanceof PortalKeyboardBlockEntity keyboard) {
@@ -184,6 +187,15 @@ public class PortalKeyboardBlock extends BaseEntityBlock {
         super.onRemove(state, level, pos, newState, movedByPiston);
     }
     //?}
+
+    @Override
+    public ItemInteractionResult useItemOn(ItemStack stack, BlockState state, Level level, BlockPos pos,
+                                           Player player, InteractionHand hand, BlockHitResult hit) {
+        if (stack.is(ModItems.CROCODILE_CLIP_ITEM)) {
+            return ItemInteractionResult.SKIP_DEFAULT_BLOCK_INTERACTION;
+        }
+        return ItemInteractionResult.PASS_TO_DEFAULT_BLOCK_INTERACTION;
+    }
 
     @Override
     protected InteractionResult useWithoutItem(BlockState state, Level level, BlockPos pos, Player player, BlockHitResult hit) {

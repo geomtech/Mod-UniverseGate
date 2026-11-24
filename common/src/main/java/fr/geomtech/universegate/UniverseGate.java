@@ -31,6 +31,7 @@ public final class UniverseGate {
 		if (contentRegistered) return;
 		contentRegistered = true;
 
+		ModSounds.register();
 		ModBlocks.register();
 		ModFluids.register();
 		ModEntityTypes.register();
@@ -39,7 +40,6 @@ public final class UniverseGate {
 		ModBlockEntities.register();
 		ModFeatures.register();
 		ModMenuTypes.register();
-		ModSounds.register();
 		ModParticles.register();
 		ModVillagers.register();
 		UniverseGatePoiHelper.registerLightningAntennaPoi();

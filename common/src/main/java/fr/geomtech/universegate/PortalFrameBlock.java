@@ -65,7 +65,7 @@ public class PortalFrameBlock extends Block implements EntityBlock {
     //?}
 
     public static int lightLevel(BlockState state) {
-        return state.getValue(ACTIVE) && state.getValue(BLINK_ON) ? 12 : 0;
+        return state.getValue(ACTIVE) ? 10 : 0;
     }
 
     @Override

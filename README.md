@@ -39,7 +39,7 @@ UniverseGate energy is measured in **FE** (Forge Energy) and speaks the standard
 3.  Connect the Portal Core (or Frame) to your energy network using Conduits.
     *   *Opening a portal uses a dynamic cost: base **1200 FE**, then increases with distance and if dimensions differ.*
     *   *Maintaining the connection costs **120 FE/s** (more while the vortex is unstable).*
-4.  Place a **Portal Controller** nearby (within 8 blocks).
+4.  Place a **Portal Controller**, attach **Crocodile Clips** to both the controller and the portal (frame or core), and connect them with **Electric Wire**.
 5.  Optional: craft a **Mobile Portal Controller** to dial from your hand while standing near a portal.
 
 ### 3. Entering The Rift (Unstable Link)

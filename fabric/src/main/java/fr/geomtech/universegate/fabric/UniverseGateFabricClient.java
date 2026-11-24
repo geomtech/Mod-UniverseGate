@@ -91,6 +91,7 @@ public class UniverseGateFabricClient implements ClientModInitializer {
 		BlockEntityRenderers.register(ModBlockEntities.FLUID_PIPE, FluidPipeBlockEntityRenderer::new);
 		BlockEntityRenderers.register(ModBlockEntities.PORTAL_CORE, fr.geomtech.universegate.PortalGateRenderer::new);
 		BlockEntityRenderers.register(ModBlockEntities.CROCODILE_CLIP, fr.geomtech.universegate.CableTerminalRenderer::new);
+		BlockEntityRenderers.register(ModBlockEntities.ELECTRIC_WIRE, fr.geomtech.universegate.ElectricWireRenderer::new);
 		BlockEntityRenderers.register(ModBlockEntities.LIGHTNING_ANTENNA, fr.geomtech.universegate.CableTerminalRenderer::new);
 		//? if >=1.21.11 {
 		/*BlockRenderLayerMap.putBlock(ModBlocks.FLUID_PIPE, ChunkSectionLayer.TRANSLUCENT);

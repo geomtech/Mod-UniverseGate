@@ -98,5 +98,24 @@
         "attenuation_distance": 24
       }
     ]
+  },
+  "electric_wire_break": {
+    "sounds": [
+      "universegate:electric_wire_break_1",
+      "universegate:electric_wire_break_2",
+      "universegate:electric_wire_break_3"
+    ]
+  },
+  "electric_wire_place": {
+    "sounds": [
+      "universegate:electric_wire_place_1",
+      "universegate:electric_wire_place_2"
+    ]
+  },
+  "electric_wire_step": {
+    "sounds": [
+      "universegate:electric_wire_step_1",
+      "universegate:electric_wire_step_2"
+    ]
   }
 }

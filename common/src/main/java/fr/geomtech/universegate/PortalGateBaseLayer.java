@@ -34,7 +34,7 @@ final class PortalGateBaseLayer implements PortalGateLayer {
     public void render(PortalGateRenderContext ctx, PoseStack poseStack, MultiBufferSource buffer) {
         if (renderBuried(ctx, poseStack, buffer)) return;
         VertexConsumer consumer = buffer.getBuffer(PortalGateRenderTypes.GATE_SOLID);
-        BASE.render(consumer, poseStack.last().pose(), ctx.xAxis(), 0.0F, (tag, base, angle) -> coreColor(ctx));
+        BASE.render(consumer, poseStack.last().pose(), ctx.xAxis(), 0.0F, ctx.brightness(), (tag, base, angle) -> coreColor(ctx));
     }
 
     /**
@@ -96,7 +96,7 @@ final class PortalGateBaseLayer implements PortalGateLayer {
         float inner = (float) Math.sqrt(Math.max(0.0F, PortalGateRingLayer.INNER_RADIUS * PortalGateRingLayer.INNER_RADIUS - dy * dy));
         float cx = PortalGateRingLayer.CENTER_H;
         float[][] slots = {{cx - outer, cx - inner}, {cx + inner, cx + outer}};
-        int rimTop = 0x2B2B2B, rimSide = 0x141414;
+        int rimTop = PortalGateMesh.shade(0x2B2B2B, ctx.brightness()), rimSide = PortalGateMesh.shade(0x141414, ctx.brightness());
         float top = groundV + 1.5F;
         for (float[] slot : slots) {
             float a = slot[0] - 1.0F, b = slot[1] + 1.0F; // ouverture, un peu plus large que l'anneau
@@ -121,7 +121,7 @@ final class PortalGateBaseLayer implements PortalGateLayer {
 
     private static int coreColor(PortalGateRenderContext ctx) {
         if (ctx.unstable()) return (ctx.tick() / 3L) % 2L == 0L ? 0xFFFFFF : 0x8A8A8A;
-        return ctx.running() ? 0xFFFFFF : 0x7A7A7A;
+        return (ctx.running() || ctx.cooldownBlinkOn()) ? 0xFFFFFF : PortalGateMesh.shade(0x7A7A7A, ctx.brightness());
     }
 
     private static PortalGateMesh build() {
@@ -153,6 +153,7 @@ final class PortalGateBaseLayer implements PortalGateLayer {
                 int g = PortalGatePatterns.frame(h, y);
                 if (y == PLINTH_HEIGHT - 1) g = Math.max(g, 0x2B);
                 color[i] = PortalGatePatterns.gray(g);
+                if (g >= 0x80) tag[i] = TAG_CORE;
             }
         }
         return PortalGateMesh.build(WIDTH, HEIGHT, color, tag, ORIGIN_H, 0, 0.0F, 16.0F,

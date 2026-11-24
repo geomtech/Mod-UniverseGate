@@ -13,7 +13,9 @@ import net.minecraft.world.level.LevelAccessor;
 import net.minecraft.world.level.LevelReader;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.Blocks;
+import net.minecraft.world.level.block.EntityBlock;
 import net.minecraft.world.level.block.Mirror;
+import net.minecraft.world.level.block.RenderShape;
 import net.minecraft.world.level.block.Rotation;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.block.state.StateDefinition;
@@ -38,7 +40,7 @@ import java.util.Map;
  * corner or step), like redstone dust. Wires link anything that conducts: other wires, crocodile
  * clips and the base of the lightning antenna (see {@link WireNetwork}).
  */
-public class ElectricWireBlock extends Block {
+public class ElectricWireBlock extends Block implements EntityBlock {
 
     public static final DirectionProperty FACING = BlockStateProperties.FACING;
     public static final EnumProperty<RedstoneSide> NORTH = EnumProperty.create("north", RedstoneSide.class);
@@ -76,6 +78,16 @@ public class ElectricWireBlock extends Block {
             state = state.setValue(side, RedstoneSide.NONE);
         }
         this.registerDefaultState(state);
+    }
+
+    @Override
+    public ElectricWireBlockEntity newBlockEntity(BlockPos pos, BlockState state) {
+        return new ElectricWireBlockEntity(pos, state);
+    }
+
+    @Override
+    protected RenderShape getRenderShape(BlockState state) {
+        return RenderShape.INVISIBLE;
     }
 
     @Override
@@ -127,6 +139,30 @@ public class ElectricWireBlock extends Block {
         return withConnections(level, currentPos, state);
     }
 
+    @Override
+    protected void onPlace(BlockState state, Level level, BlockPos pos, BlockState oldState, boolean movedByPiston) {
+        super.onPlace(state, level, pos, oldState, movedByPiston);
+        if (!oldState.is(this) && level instanceof net.minecraft.server.level.ServerLevel serverLevel) {
+            WireNetwork.syncWiredKeyboardsAround(serverLevel, pos);
+        }
+    }
+
+    //? if >=1.21.11 {
+    /*@Override
+    protected void affectNeighborsAfterRemoval(BlockState state, net.minecraft.server.level.ServerLevel level, BlockPos pos, boolean movedByPiston) {
+        super.affectNeighborsAfterRemoval(state, level, pos, movedByPiston);
+        WireNetwork.syncWiredKeyboardsAround(level, pos);
+    }
+    *///?} else {
+    @Override
+    protected void onRemove(BlockState state, Level level, BlockPos pos, BlockState newState, boolean movedByPiston) {
+        super.onRemove(state, level, pos, newState, movedByPiston);
+        if (!state.is(newState.getBlock()) && level instanceof net.minecraft.server.level.ServerLevel serverLevel) {
+            WireNetwork.syncWiredKeyboardsAround(serverLevel, pos);
+        }
+    }
+    //?}
+
     /**
      * Wires also link across edges (inner corners, outer corners, steps), so a wire placed or removed
      * diagonally from this one does not reach it through {@code updateShape}: refresh those here, as
@@ -152,17 +188,97 @@ public class ElectricWireBlock extends Block {
         }
     }
 
+    /**
+     * Updates which sides of this wire connect, strictly capped at 2 connections (no T-junctions or crosses):
+     * existing valid connections are kept first, then remaining slots accept terminals or wires that are not
+     * already full (preferring straight-through pairs over bends).
+     */
     public static BlockState withConnections(BlockGetter level, BlockPos pos, BlockState state) {
         Direction attach = state.getValue(FACING);
+        Map<Direction, RedstoneSide> chosen = new EnumMap<>(Direction.class);
+        Map<Direction, Link> candidates = new EnumMap<>(Direction.class);
+
         for (Direction direction : Direction.values()) {
-            RedstoneSide side = RedstoneSide.NONE;
-            if (direction.getAxis() != attach.getAxis()) {
-                Link link = link(level, pos, attach, direction);
-                if (link != null) side = link.side();
+            if (direction.getAxis() == attach.getAxis()) continue;
+            Link link = link(level, pos, attach, direction);
+            if (link == null) continue;
+            if (!canConnectToTarget(level, pos, link.target())) continue;
+            if (state.getValue(SIDES.get(direction)) != RedstoneSide.NONE && chosen.size() < 2) {
+                chosen.put(direction, link.side());
+            } else {
+                candidates.put(direction, link);
             }
+        }
+
+        // If we have 1 connection and its straight-opposite side is a candidate, prefer going straight.
+        if (chosen.size() == 1) {
+            Direction opp = chosen.keySet().iterator().next().getOpposite();
+            Link oppLink = candidates.remove(opp);
+            if (oppLink != null) chosen.put(opp, oppLink.side());
+        } else if (chosen.isEmpty() && candidates.size() > 2) {
+            // If placing between 3+ free neighbours, prefer an opposite straight-through pair.
+            for (Direction d : candidates.keySet()) {
+                if (candidates.containsKey(d.getOpposite())) {
+                    chosen.put(d, candidates.get(d).side());
+                    chosen.put(d.getOpposite(), candidates.get(d.getOpposite()).side());
+                    break;
+                }
+            }
+        }
+
+        // Fill remaining slot(s) up to 2, preferring terminals and wires already pointing back to us.
+        if (chosen.size() < 2) {
+            for (var entry : candidates.entrySet()) {
+                if (chosen.size() >= 2) break;
+                BlockPos targetPos = entry.getValue().target();
+                BlockState targetState = level.getBlockState(targetPos);
+                if (isTerminal(targetState) || isConnectedTo(level, targetPos, targetState, pos)) {
+                    chosen.put(entry.getKey(), entry.getValue().side());
+                }
+            }
+        }
+        if (chosen.size() < 2) {
+            for (var entry : candidates.entrySet()) {
+                if (chosen.size() >= 2) break;
+                chosen.putIfAbsent(entry.getKey(), entry.getValue().side());
+            }
+        }
+
+        for (Direction direction : Direction.values()) {
+            RedstoneSide side = chosen.getOrDefault(direction, RedstoneSide.NONE);
             state = state.setValue(SIDES.get(direction), side);
         }
         return state;
+    }
+
+    private static boolean canConnectToTarget(BlockGetter level, BlockPos fromPos, BlockPos targetPos) {
+        BlockState targetState = level.getBlockState(targetPos);
+        if (isTerminal(targetState)) return true;
+        if (!isWire(targetState)) return false;
+        return countConnections(targetState) < 2 || isConnectedTo(level, targetPos, targetState, fromPos);
+    }
+
+    public static int countConnections(BlockState state) {
+        if (!isWire(state)) return 0;
+        Direction attach = state.getValue(FACING);
+        int count = 0;
+        for (Direction d : Direction.values()) {
+            if (d.getAxis() == attach.getAxis()) continue;
+            if (state.getValue(SIDES.get(d)) != RedstoneSide.NONE) count++;
+        }
+        return count;
+    }
+
+    public static boolean isConnectedTo(BlockGetter level, BlockPos wirePos, BlockState wireState, BlockPos targetPos) {
+        if (!isWire(wireState)) return false;
+        Direction attach = wireState.getValue(FACING);
+        for (Direction d : Direction.values()) {
+            if (d.getAxis() == attach.getAxis()) continue;
+            if (wireState.getValue(SIDES.get(d)) == RedstoneSide.NONE) continue;
+            Link back = link(level, wirePos, attach, d);
+            if (back != null && back.target().equals(targetPos)) return true;
+        }
+        return false;
     }
 
     /**
