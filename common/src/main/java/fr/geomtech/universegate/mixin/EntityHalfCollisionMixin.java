@@ -4,48 +4,46 @@ import fr.geomtech.universegate.seamless.physics.PortalHalfCollisionHandler;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.phys.AABB;
+import net.minecraft.world.phys.Vec3;
 import net.minecraft.world.phys.shapes.VoxelShape;
 import org.jetbrains.annotations.Nullable;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Shadow;
 import org.spongepowered.asm.mixin.injection.At;
-import org.spongepowered.asm.mixin.injection.Redirect;
+import org.spongepowered.asm.mixin.injection.Inject;
+import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 
 import java.util.List;
 
 /**
- * Intercepts collider collection inside {@link Entity#collideBoundingBox} so entities straddling an
- * active outbound portal ignore blocks directly behind the source aperture and collide with the
- * destination portal's exit geometry instead.
+ * Intercepts {@link Entity#collideBoundingBox} at {@code HEAD} (compatible with Lithium's
+ * {@code @Overwrite} on {@code collideBoundingBox}) so entities straddling an active portal
+ * ignore blocks directly behind the source aperture and collide with the destination portal's
+ * exit geometry instead.
  */
 @Mixin(Entity.class)
 public abstract class EntityHalfCollisionMixin {
 
     @Shadow
-    private static List<VoxelShape> collectColliders(@Nullable Entity entity,
-                                                     Level level,
-                                                     List<VoxelShape> collisions,
-                                                     AABB boundingBox) {
+    private static Vec3 collideWithShapes(Vec3 movement, AABB boundingBox, List<VoxelShape> shapes) {
         throw new AssertionError();
     }
 
-    @Redirect(
-            method = "collideBoundingBox",
-            at = @At(
-                    value = "INVOKE",
-                    target = "Lnet/minecraft/world/entity/Entity;collectColliders(Lnet/minecraft/world/entity/Entity;Lnet/minecraft/world/level/Level;Ljava/util/List;Lnet/minecraft/world/phys/AABB;)Ljava/util/List;"
-            )
-    )
-    private static List<VoxelShape> universegate$applyPortalHalfCollision(@Nullable Entity entity,
-                                                                          Level level,
-                                                                          List<VoxelShape> initialCollisions,
-                                                                          AABB sweptBox) {
-        List<VoxelShape> vanilla = collectColliders(entity, level, initialCollisions, sweptBox);
+    @Inject(method = "collideBoundingBox", at = @At("HEAD"), cancellable = true)
+    private static void universegate$applyPortalHalfCollision(@Nullable Entity entity,
+                                                              Vec3 movement,
+                                                              AABB boundingBox,
+                                                              Level level,
+                                                              List<VoxelShape> initialCollisions,
+                                                              CallbackInfoReturnable<Vec3> cir) {
         if (entity == null || level == null) {
-            return vanilla;
+            return;
         }
-        List<VoxelShape> adjusted = PortalHalfCollisionHandler.buildHalfThroughCollisionShapes(
-                entity, level, sweptBox, vanilla);
-        return adjusted != null ? adjusted : vanilla;
+        AABB sweptBox = boundingBox.expandTowards(movement);
+        List<VoxelShape> adjusted = PortalHalfCollisionHandler.resolveHalfThroughColliders(
+                entity, level, sweptBox, initialCollisions);
+        if (adjusted != null) {
+            cir.setReturnValue(collideWithShapes(movement, boundingBox, adjusted));
+        }
     }
 }

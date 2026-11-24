@@ -35,6 +35,38 @@ public final class PortalHalfCollisionHandler {
     private PortalHalfCollisionHandler() {}
 
     /**
+     * Lithium-safe entrypoint invoked at {@code HEAD} of {@link Entity#collideBoundingBox}.
+     * Checks portal proximity FIRST so non-straddling entities return {@code null} immediately
+     * (letting Lithium / vanilla handle collision at full speed) without calling private
+     * {@code Entity#collectColliders}.
+     */
+    public static @Nullable List<VoxelShape> resolveHalfThroughColliders(Entity entity,
+                                                                         Level level,
+                                                                         AABB sweptBox,
+                                                                         List<VoxelShape> initialCollisions) {
+        if (entity == null || level == null || entity.isRemoved()) {
+            return null;
+        }
+        PortalOverlap overlap = findOverlappingOutboundPortal(level, entity.position(), sweptBox);
+        if (overlap == null) {
+            return null;
+        }
+
+        List<VoxelShape> vanillaShapes = new ArrayList<>(initialCollisions.size() + 16);
+        if (!initialCollisions.isEmpty()) {
+            vanillaShapes.addAll(initialCollisions);
+        }
+        var worldBorder = level.getWorldBorder();
+        if (worldBorder.isInsideCloseToBorder(entity, sweptBox)) {
+            vanillaShapes.add(worldBorder.getCollisionShape());
+        }
+        for (VoxelShape blockShape : level.getBlockCollisions(entity, sweptBox)) {
+            vanillaShapes.add(blockShape);
+        }
+        return filterAndAugmentShapes(entity, sweptBox, vanillaShapes, overlap);
+    }
+
+    /**
      * Checks if {@code entity} with swept bounding box {@code sweptBox} currently overlaps an active
      * outbound portal. If so, returns an adjusted collision list where blocks strictly behind the
      * source portal plane inside the aperture are suppressed and destination-side collision shapes
@@ -52,7 +84,13 @@ public final class PortalHalfCollisionHandler {
         if (overlap == null) {
             return null;
         }
+        return filterAndAugmentShapes(entity, sweptBox, vanillaBlockShapes, overlap);
+    }
 
+    private static List<VoxelShape> filterAndAugmentShapes(Entity entity,
+                                                           AABB sweptBox,
+                                                           List<VoxelShape> vanillaBlockShapes,
+                                                           PortalOverlap overlap) {
         PortalTransform transform = overlap.transform();
         List<VoxelShape> filtered = new ArrayList<>(vanillaBlockShapes.size() + 8);
         for (VoxelShape shape : vanillaBlockShapes) {

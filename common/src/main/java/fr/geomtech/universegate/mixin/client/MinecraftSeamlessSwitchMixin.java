@@ -7,10 +7,8 @@ import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.screens.Screen;
 import org.jetbrains.annotations.Nullable;
 import org.spongepowered.asm.mixin.Mixin;
-import org.spongepowered.asm.mixin.Shadow;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
-import org.spongepowered.asm.mixin.injection.Redirect;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 
 /**
@@ -22,19 +20,11 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 public abstract class MinecraftSeamlessSwitchMixin {
 
     //? if <1.21.11 {
-    @Shadow
-    private void updateScreenAndTick(Screen screen) {}
-
-    @Redirect(
-            method = "setLevel(Lnet/minecraft/client/multiplayer/ClientLevel;Lnet/minecraft/client/gui/screens/ReceivingLevelScreen$Reason;)V",
-            at = @At(
-                    value = "INVOKE",
-                    target = "Lnet/minecraft/client/Minecraft;updateScreenAndTick(Lnet/minecraft/client/gui/screens/Screen;)V"
-            )
-    )
-    private void universegate$suppressReceivingScreen(Minecraft self, Screen screen) {
-        if (!SeamlessSwitchCoordinator.isSuppressingLoadingScreen()) {
-            this.updateScreenAndTick(screen);
+    @Inject(method = "updateScreenAndTick", at = @At("HEAD"), cancellable = true)
+    private void universegate$suppressReceivingScreen(Screen screen, CallbackInfo ci) {
+        if (SeamlessSwitchCoordinator.isSuppressingLoadingScreen()
+                && screen instanceof net.minecraft.client.gui.screens.ReceivingLevelScreen) {
+            ci.cancel();
         }
     }
     //?}

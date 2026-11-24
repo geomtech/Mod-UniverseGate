@@ -59,7 +59,7 @@ public abstract class ClientPacketListenerRespawnMixin {
     }
 
     //? if >=1.21.11 {
-    /*@Inject(method = "startWaitingForNewLevel", at = @At("HEAD"), cancellable = true)
+    /*@Inject(method = "startWaitingForNewLevel", at = @At("HEAD"), cancellable = true, require = 0)
     private void universegate$suppressWaitingScreen(LocalPlayer player,
                                                     ClientLevel newLevel,
                                                     LevelLoadingScreen.Reason reason,
@@ -69,7 +69,7 @@ public abstract class ClientPacketListenerRespawnMixin {
         }
     }
     *///?} else {
-    @Inject(method = "startWaitingForNewLevel", at = @At("HEAD"), cancellable = true)
+    @Inject(method = "startWaitingForNewLevel", at = @At("HEAD"), cancellable = true, require = 0)
     private void universegate$suppressWaitingScreen(LocalPlayer player,
                                                     ClientLevel newLevel,
                                                     ReceivingLevelScreen.Reason reason,

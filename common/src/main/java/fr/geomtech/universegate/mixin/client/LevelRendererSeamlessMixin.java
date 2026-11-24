@@ -115,7 +115,8 @@ public abstract class LevelRendererSeamlessMixin {
                     target = "Lnet/minecraft/client/renderer/LevelRenderer;renderSectionLayer(Lnet/minecraft/client/renderer/RenderType;DDDLorg/joml/Matrix4f;Lorg/joml/Matrix4f;)V",
                     ordinal = 2,
                     shift = At.Shift.AFTER
-            )
+            ),
+            require = 0
     )
     private void universegate$renderSeamlessPortals(DeltaTracker deltaTracker,
                                                     boolean renderBlockOutline,
