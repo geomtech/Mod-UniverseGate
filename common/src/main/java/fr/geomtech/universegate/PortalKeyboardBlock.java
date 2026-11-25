@@ -206,6 +206,9 @@ public class PortalKeyboardBlock extends BaseEntityBlock {
             MenuHelper.open(sp, provider);
             fr.geomtech.universegate.net.UniverseGateNetwork.sendPortalListToPlayer(sp, pos);
             fr.geomtech.universegate.net.UniverseGateNetwork.sendPortalKeyboardStatusToPlayer(sp, pos);
+            if (be instanceof PortalActivatorBlockEntity) {
+                fr.geomtech.universegate.net.UniverseGateNetwork.sendPortalActivatorTargetToPlayer(sp, pos);
+            }
         }
         return InteractionResult.CONSUME;
     }

@@ -1,10 +1,12 @@
 package fr.geomtech.universegate.net;
 
 import fr.geomtech.universegate.compat.Compat;
-import fr.geomtech.universegate.DarkEnergyNetworkHelper;
 import fr.geomtech.universegate.EnergyNetworkHelper;
 import fr.geomtech.universegate.ModBlocks;
 import fr.geomtech.universegate.ModSounds;
+import fr.geomtech.universegate.PortalActivatorBlockEntity;
+import fr.geomtech.universegate.PortalDialResult;
+import fr.geomtech.universegate.PortalDialService;
 import fr.geomtech.universegate.PortalConnectionManager;
 import fr.geomtech.universegate.PortalCoreBlockEntity;
 import fr.geomtech.universegate.PortalInfo;
@@ -13,7 +15,6 @@ import fr.geomtech.universegate.PortalKeyboardMenu;
 import fr.geomtech.universegate.PortalMobileKeyboardMenu;
 import fr.geomtech.universegate.PortalNaturalKeyboardBlockEntity;
 import fr.geomtech.universegate.PortalNaturalKeyboardMenu;
-import fr.geomtech.universegate.PortalRiftHelper;
 import fr.geomtech.universegate.PortalRegistrySavedData;
 import fr.geomtech.universegate.WireNetwork;
 import fr.geomtech.universegate.platform.Services;
@@ -29,7 +30,7 @@ public final class UniverseGateNetwork {
 
     private UniverseGateNetwork() {}
 
-    public static final UUID DARK_DIMENSION_ID = UUID.fromString("66666666-6666-6666-6666-666666666666");
+    public static final UUID DARK_DIMENSION_ID = PortalDialService.DARK_DIMENSION_ID;
     private static final int CORE_SEARCH_RADIUS_XZ = 8;
     private static final int CORE_SEARCH_RADIUS_Y = 4;
 
@@ -38,6 +39,7 @@ public final class UniverseGateNetwork {
         Services.PLATFORM.registerClientboundPayload(PortalListPayload.TYPE, PortalListPayload.STREAM_CODEC);
         Services.PLATFORM.registerClientboundPayload(PortalCoreNamePayload.TYPE, PortalCoreNamePayload.STREAM_CODEC);
         Services.PLATFORM.registerClientboundPayload(PortalKeyboardStatusPayload.TYPE, PortalKeyboardStatusPayload.STREAM_CODEC);
+        Services.PLATFORM.registerClientboundPayload(PortalActivatorTargetPayload.TYPE, PortalActivatorTargetPayload.STREAM_CODEC);
         Services.PLATFORM.registerClientboundPayload(PortalConnectionErrorPayload.TYPE, PortalConnectionErrorPayload.STREAM_CODEC);
         Services.PLATFORM.registerClientboundPayload(PortalFieldCollapsePayload.TYPE, PortalFieldCollapsePayload.STREAM_CODEC);
         SeamlessNetwork.registerPayloads();
@@ -52,6 +54,25 @@ public final class UniverseGateNetwork {
 
                 boolean isNaturalKeyboard = access.naturalKeyboard();
                 BlockPos corePos = access.corePos();
+                if (level.getBlockEntity(access.controllerPos()) instanceof PortalActivatorBlockEntity activator) {
+                    PortalRegistrySavedData registry = PortalRegistrySavedData.get(Compat.server(player));
+                    UUID selectedId = payload.targetPortalId();
+                    boolean validDestination = DARK_DIMENSION_ID.equals(selectedId)
+                            || registry.get(selectedId) != null;
+                    boolean selfDestination = corePos != null
+                            && level.getBlockEntity(corePos) instanceof PortalCoreBlockEntity sourceCore
+                            && selectedId.equals(sourceCore.getPortalId());
+                    if (!validDestination || selfDestination) {
+                        ModSounds.playAt(level, payload.keyboardPos(), ModSounds.PORTAL_ERROR, 0.9F, 1.0F);
+                        sendPortalConnectionError(player, "Destination de portail invalide.");
+                        return;
+                    }
+                    activator.setTargetPortalId(selectedId);
+                    sendPortalActivatorTargetToPlayer(player, access.controllerPos());
+                    sendPortalKeyboardStatusToPlayer(player, access.controllerPos());
+                    return;
+                }
+
                 if (corePos == null) {
                     if (!isNaturalKeyboard && level.getBlockState(access.controllerPos()).is(ModBlocks.PORTAL_KEYBOARD)) {
                         ModSounds.playAt(level, payload.keyboardPos(), ModSounds.PORTAL_ERROR, 0.9F, 1.0F);
@@ -64,67 +85,13 @@ public final class UniverseGateNetwork {
                     return;
                 }
 
-                if (!(level.getBlockEntity(corePos) instanceof PortalCoreBlockEntity coreBe)) return;
+                if (!(level.getBlockEntity(corePos) instanceof PortalCoreBlockEntity)) return;
 
-                // Ouvrir Stargate A<->B
-                boolean isFromRift = EnergyNetworkHelper.isRiftDimension(level);
-                UUID targetPortalId = payload.targetPortalId();
-
-                // Logic for Dark Dimension
-                if (payload.targetPortalId().equals(DARK_DIMENSION_ID)) {
-                    boolean charged = coreBe.isDarkEnergyComplete();
-                    boolean linked = DarkEnergyNetworkHelper.isPortalPowered(level, corePos);
-                    if (!charged || !linked) {
-                        ModSounds.playAt(level, payload.keyboardPos(), ModSounds.PORTAL_ERROR, 0.9F, 1.0F);
-                        if (!charged) {
-                            sendPortalConnectionError(player, "Énergie Noire insuffisante pour la Dark Dimension.");
-                        } else {
-                            sendPortalConnectionError(player, "La destination Dark est verrouillée: générateur noir non relié.");
-                        }
-                        return;
-                    }
-
-                    PortalRegistrySavedData.PortalEntry darkTarget = PortalRiftHelper.ensureDarkDimensionTarget(level);
-                    if (darkTarget == null) {
-                        ModSounds.playAt(level, payload.keyboardPos(), ModSounds.PORTAL_ERROR, 0.9F, 1.0F);
-                        sendPortalConnectionError(player, "Aucun portail Dark disponible pour le moment.");
-                        return;
-                    }
-                    targetPortalId = darkTarget.id();
-                }
-
-                // Cost logic: free from Rift/natural keyboard, otherwise dynamic
-                boolean requiresOpenEnergy = !isFromRift && !isNaturalKeyboard;
-                int openEnergyCost = requiresOpenEnergy
-                        ? EnergyNetworkHelper.getPortalOpenEnergyCost(level, corePos, targetPortalId)
-                        : 0;
-
-                if (requiresOpenEnergy && EnergyNetworkHelper.getAvailableEnergyForPortal(level, corePos) < openEnergyCost) {
-                    ModSounds.playAt(level, payload.keyboardPos(), ModSounds.PORTAL_ERROR, 0.9F, 1.0F);
-                    sendPortalConnectionError(player, "Énergie insuffisante pour l'ouverture du portail (" + openEnergyCost + " FE requis).");
-                    sendPortalKeyboardStatusToPlayer(player, access.controllerPos());
-                    return;
-                }
-
-                boolean ok = PortalConnectionManager.openBothSides(
-                        level,
-                        corePos,
-                        targetPortalId,
-                        false,
-                        isNaturalKeyboard
-                );
-                if (ok) {
-                    if (requiresOpenEnergy) {
-                        boolean consumed = EnergyNetworkHelper.consumePortalEnergy(level, corePos, openEnergyCost);
-                        if (!consumed) {
-                            PortalConnectionManager.forceCloseOneSide(level, corePos);
-                            ModSounds.playAt(level, payload.keyboardPos(), ModSounds.PORTAL_ERROR, 0.9F, 1.0F);
-                            sendPortalConnectionError(player, "Énergie insuffisante pour l'ouverture du portail (" + openEnergyCost + " FE requis).");
-                        }
-                    }
-                } else {
+                PortalDialResult result = PortalDialService.dial(
+                        level, corePos, payload.targetPortalId(), isNaturalKeyboard);
+                if (!result.success()) {
                     ModSounds.playAt(level, corePos, ModSounds.PORTAL_ERROR, 0.9F, 1.0F);
-                    sendPortalConnectionError(player, "Le portail cible est introuvable ou déjà actif.");
+                    sendPortalConnectionError(player, result.errorMessage());
                 }
                 sendPortalKeyboardStatusToPlayer(player, access.controllerPos());
             });
@@ -222,6 +189,16 @@ public final class UniverseGateNetwork {
             disconnectAllowed = canDisconnectFromKeyboard(core);
         }
         Services.PLATFORM.sendToPlayer(player, new PortalKeyboardStatusPayload(keyboardPos, active, disconnectAllowed));
+    }
+
+    public static void sendPortalActivatorTargetToPlayer(net.minecraft.server.level.ServerPlayer player,
+                                                         BlockPos activatorPos) {
+        if (!(Compat.serverLevel(player).getBlockEntity(activatorPos)
+                instanceof PortalActivatorBlockEntity activator)) return;
+        Services.PLATFORM.sendToPlayer(
+                player,
+                new PortalActivatorTargetPayload(activatorPos, activator.getTargetPortalId())
+        );
     }
 
     private static boolean canDisconnectFromKeyboard(PortalCoreBlockEntity core) {

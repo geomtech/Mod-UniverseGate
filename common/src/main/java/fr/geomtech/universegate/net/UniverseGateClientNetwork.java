@@ -15,7 +15,9 @@ public final class UniverseGateClientNetwork {
             Minecraft.getInstance().execute(() -> {
                 Minecraft client = Minecraft.getInstance();
                 if (client.screen instanceof PortalKeyboardScreen screen) {
-                    screen.setPortals(payload.portals());
+                    if (screen.getKeyboardPos().equals(payload.keyboardPos())) {
+                        screen.setPortals(payload.portals());
+                    }
                 }
             });
         });
@@ -27,6 +29,16 @@ public final class UniverseGateClientNetwork {
                     if (screen.getKeyboardPos().equals(payload.keyboardPos())) {
                         screen.setPortalStatus(payload.active(), payload.disconnectAllowed());
                     }
+                }
+            });
+        });
+
+        ClientServices.CLIENT.registerClientReceiver(PortalActivatorTargetPayload.TYPE, payload -> {
+            Minecraft.getInstance().execute(() -> {
+                Minecraft client = Minecraft.getInstance();
+                if (client.screen instanceof PortalKeyboardScreen screen
+                        && screen.getKeyboardPos().equals(payload.activatorPos())) {
+                    screen.setActivatorTarget(payload.targetPortalId());
                 }
             });
         });

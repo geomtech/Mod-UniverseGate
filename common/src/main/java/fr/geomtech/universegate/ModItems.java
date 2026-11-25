@@ -131,6 +131,11 @@ public final class ModItems {
             new BlockItem(ModBlocks.PORTAL_KEYBOARD, blockItemProperties("portal_keyboard"))
     );
 
+    public static final Item PORTAL_ACTIVATOR_ITEM = register(
+            "portal_activator",
+            new BlockItem(ModBlocks.PORTAL_ACTIVATOR, blockItemProperties("portal_activator"))
+    );
+
     public static final Item PORTAL_NATURAL_KEYBOARD_ITEM = register(
             "portal_natural_keyboard",
             new BlockItem(ModBlocks.PORTAL_NATURAL_KEYBOARD, blockItemProperties("portal_natural_keyboard"))

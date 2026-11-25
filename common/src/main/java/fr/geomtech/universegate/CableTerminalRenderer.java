@@ -113,7 +113,8 @@ public final class CableTerminalRenderer<T extends BlockEntity> extends Immediat
             waitingForCore = (core || frame) && right == null;
             retryAt = level.getGameTime() + 20;
             boolean onMast = !antenna && support.is(ModBlocks.LIGHTNING_ANTENNA);
-            keyboardFacing = !antenna && support.is(ModBlocks.PORTAL_KEYBOARD)
+            keyboardFacing = !antenna && (support.is(ModBlocks.PORTAL_KEYBOARD)
+                            || support.is(ModBlocks.PORTAL_ACTIVATOR))
                     ? support.getValue(PortalKeyboardBlock.FACING) : null;
             Vec3 mast = antenna ? Vec3.ZERO : onMast
                     ? Vec3.atLowerCornerOf(LightningAntennaBlock.basePos(supportPos,support).subtract(pos)) : null;

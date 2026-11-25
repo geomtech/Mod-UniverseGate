@@ -62,6 +62,11 @@ public final class UniverseGateNeoForgeClient {
 
     public UniverseGateNeoForgeClient(IEventBus modBus) {
         UniverseGateClientNetwork.registerClient();
+        //? if 1.21.1 {
+        if (fr.geomtech.universegate.neoforge.create.CreateCompatMixinPlugin.isSupported()) {
+            fr.geomtech.universegate.neoforge.create.CarriageTeleportClient.register();
+        }
+        //?}
 
         modBus.addListener(FMLClientSetupEvent.class, event -> event.enqueueWork(() -> {
             //? if >=1.21.11 {

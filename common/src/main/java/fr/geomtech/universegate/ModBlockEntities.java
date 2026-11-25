@@ -25,6 +25,13 @@ public final class ModBlockEntities {
                     type(PortalKeyboardBlockEntity::new, ModBlocks.PORTAL_KEYBOARD)
             );
 
+    public static final BlockEntityType<PortalActivatorBlockEntity> PORTAL_ACTIVATOR =
+            Registry.register(
+                    BuiltInRegistries.BLOCK_ENTITY_TYPE,
+                    ResourceLocation.fromNamespaceAndPath(UniverseGate.MOD_ID, "portal_activator"),
+                    type(PortalActivatorBlockEntity::new, ModBlocks.PORTAL_ACTIVATOR)
+            );
+
     public static final BlockEntityType<PortalNaturalKeyboardBlockEntity> PORTAL_NATURAL_KEYBOARD =
             Registry.register(
                     BuiltInRegistries.BLOCK_ENTITY_TYPE,

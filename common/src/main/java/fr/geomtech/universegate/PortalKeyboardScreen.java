@@ -26,6 +26,7 @@ import net.minecraft.util.Mth;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
+import java.util.UUID;
 import java.util.function.BooleanSupplier;
 
 public class PortalKeyboardScreen extends AbstractContainerScreen<AbstractContainerMenu> {
@@ -66,6 +67,8 @@ public class PortalKeyboardScreen extends AbstractContainerScreen<AbstractContai
     private final BlockPos keyboardPos;
     private final BooleanSupplier darkPoweredSupplier;
     private final boolean naturalKeyboard;
+    private final boolean configurationMode;
+    private UUID selectedPortalId;
 
     private record VisiblePortalRow(PortalInfo portal, int y, boolean darkLocked) {}
 
@@ -95,6 +98,9 @@ public class PortalKeyboardScreen extends AbstractContainerScreen<AbstractContai
         this.keyboardPos = keyboardPos;
         this.darkPoweredSupplier = darkPoweredSupplier;
         this.naturalKeyboard = naturalKeyboard;
+        this.configurationMode = resolveConfigurationMode(keyboardPos);
+        PortalActivatorBlockEntity activator = getActivator(keyboardPos);
+        this.selectedPortalId = activator == null ? null : activator.getTargetPortalId();
         this.imageWidth = 256;
         this.imageHeight = 172;
         this.inventoryLabelY = 10000;
@@ -133,6 +139,18 @@ public class PortalKeyboardScreen extends AbstractContainerScreen<AbstractContai
         throw new IllegalArgumentException("Unsupported keyboard menu type: " + menu.getClass().getName());
     }
 
+    private static boolean resolveConfigurationMode(BlockPos keyboardPos) {
+        return getActivator(keyboardPos) != null;
+    }
+
+    private static PortalActivatorBlockEntity getActivator(BlockPos keyboardPos) {
+        var client = net.minecraft.client.Minecraft.getInstance();
+        if (client.level == null) return null;
+        return client.level.getBlockEntity(keyboardPos) instanceof PortalActivatorBlockEntity activator
+                ? activator
+                : null;
+    }
+
     private boolean lastPoweredState = false;
 
     @Override
@@ -147,6 +165,12 @@ public class PortalKeyboardScreen extends AbstractContainerScreen<AbstractContai
 
     public BlockPos getKeyboardPos() {
         return keyboardPos;
+    }
+
+    public void setActivatorTarget(UUID targetPortalId) {
+        if (!configurationMode) return;
+        selectedPortalId = targetPortalId;
+        rebuildPortalButtons();
     }
 
     /** Appelé par le handler réseau client quand la liste arrive */
@@ -207,6 +231,7 @@ public class PortalKeyboardScreen extends AbstractContainerScreen<AbstractContai
                 .bounds(leftPos + imageWidth - 88, topPos + 10, 78, 16)
                 .build();
         this.addRenderableWidget(disconnectButton);
+        disconnectButton.visible = !configurationMode;
         updateDisconnectButton();
 
         ensurePortalButtons();
@@ -244,7 +269,16 @@ public class PortalKeyboardScreen extends AbstractContainerScreen<AbstractContai
             return;
         }
 
-        activationRequested = true;
+        if (configurationMode) {
+            selectedPortalId = row.portal().id();
+            PortalActivatorBlockEntity activator = getActivator(keyboardPos);
+            if (activator != null) {
+                activator.setTargetPortalId(selectedPortalId);
+            }
+            rebuildPortalButtons();
+        } else {
+            activationRequested = true;
+        }
         ClientServices.CLIENT.sendToServer(new ConnectPortalPayload(this.getKeyboardPos(), row.portal().id()));
     }
 
@@ -283,8 +317,16 @@ public class PortalKeyboardScreen extends AbstractContainerScreen<AbstractContai
         String buttonText = darkLocked
                 ? "??? > " + portal.name()
                 : dimShort + " > " + portal.name();
+        boolean selected = configurationMode && portal.id().equals(selectedPortalId);
+        if (selected) {
+            buttonText = Component.translatable("gui.universegate.portal_activator_selected").getString()
+                    + " " + buttonText;
+        }
 
         Component label = Component.literal(trimToWidth(buttonText, ROW_BUTTON_WIDTH - 12));
+        if (selected) {
+            return label.copy().withStyle(ChatFormatting.GREEN);
+        }
         if (darkLocked) {
             return label.copy()
                     .withStyle(ChatFormatting.GRAY)

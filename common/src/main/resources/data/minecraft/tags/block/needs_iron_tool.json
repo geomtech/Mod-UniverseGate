@@ -19,6 +19,7 @@
     "universegate:mob_cloner_controller",
     "universegate:portal_core",
     "universegate:portal_frame",
-    "universegate:portal_keyboard"
+    "universegate:portal_keyboard",
+    "universegate:portal_activator"
   ]
 }

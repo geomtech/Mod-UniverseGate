@@ -27,8 +27,10 @@ import net.minecraft.world.level.Level;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.tags.FluidTags;
+import net.minecraft.tags.TagKey;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.inventory.AbstractContainerMenu;
+import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.phys.AABB;
@@ -56,6 +58,8 @@ public class PortalCoreBlockEntity extends BlockEntity implements PosMenuProvide
     private static final long OPENING_DURATION_FALLBACK_TICKS = 20L * 9L;
     private static final long PLAYER_PASS_CHUNK_FORCE_TICKS = 20L * 15L;
     private static final long TICK_DURATION_MILLIS = 50L;
+    private static final TagKey<Block> PRESERVED_PORTAL_BLOCKS = TagKey.create(Registries.BLOCK,
+            ResourceLocation.fromNamespaceAndPath(UniverseGate.MOD_ID, "portal_preserved"));
 
     private UUID portalId;
     private String portalName = "";
@@ -78,7 +82,7 @@ public class PortalCoreBlockEntity extends BlockEntity implements PosMenuProvide
     private long openingCompleteGameTime = 0L;
     private long keepChunkForcedUntilGameTime = 0L;
     private boolean restorePending = false;
-    private final List<BlockPos> wiredFieldCells = new ArrayList<>();
+    private final List<BlockPos> preservedFieldCells = new ArrayList<>();
     private boolean outboundChunkForceClaimed = false;
     private int darkEnergyAmount = 0;
     public static final int DARK_ENERGY_THRESHOLD = 400;
@@ -316,7 +320,7 @@ public class PortalCoreBlockEntity extends BlockEntity implements PosMenuProvide
         refreshInstabilityVisuals(sl, now);
         refreshAndSyncEndpoint(sl, false);
         // These cells keep their real blocks, so they cannot trigger PortalFieldBlock.entityInside.
-        for (BlockPos cell : wiredFieldCells) {
+        for (BlockPos cell : preservedFieldCells) {
             for (var entity : sl.getEntities(null, new AABB(cell).deflate(.001))) {
                 PortalTeleportHandler.tryTeleport(entity, cell, this);
                 if (!active) return;
@@ -328,11 +332,11 @@ public class PortalCoreBlockEntity extends BlockEntity implements PosMenuProvide
         BlockState field = ModBlocks.PORTAL_FIELD.defaultBlockState()
                 .setValue(PortalFieldBlock.AXIS, frame.right().getAxis())
                 .setValue(PortalFieldBlock.UNSTABLE, unstable);
-        wiredFieldCells.clear();
+        preservedFieldCells.clear();
         for (BlockPos pos : frame.interior()) {
             BlockState current = level.getBlockState(pos);
-            if (hasWiring(level, pos, current)) {
-                wiredFieldCells.add(pos);
+            if (current.is(PRESERVED_PORTAL_BLOCKS) || hasWiring(level, pos, current)) {
+                preservedFieldCells.add(pos);
                 continue;
             }
             BlockState desired = field.setValue(PortalFieldBlock.WATERLOGGED, level.getFluidState(pos).is(FluidTags.WATER));
@@ -937,7 +941,7 @@ public class PortalCoreBlockEntity extends BlockEntity implements PosMenuProvide
                 ? resolveRemoteEndpoint().orElse(lastSyncedEndpointSnapshot)
                 : null;
 
-        wiredFieldCells.clear();
+        preservedFieldCells.clear();
         boolean previouslyEmitting = emitsRedstoneSignal();
         this.active = false;
         this.opening = false;

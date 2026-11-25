@@ -2,8 +2,10 @@ package fr.geomtech.universegate;
 
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
+import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.ChatFormatting;
 import net.minecraft.network.chat.Component;
+import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
@@ -49,6 +51,7 @@ public final class PortalTeleportHandler {
     private static final double PORTAL_MIN_EXIT_OFFSET = 0.35D;
     private static final double PORTAL_FIELD_CLEARANCE = 0.22D;
     private static final double PORTAL_MINECART_EXTRA_OFFSET = 0.18D;
+    private static final ResourceLocation CREATE_CARRIAGE = ResourceLocation.fromNamespaceAndPath("create", "carriage_contraption");
 
     private static final double PURSUING_MOB_SEARCH_RADIUS_XZ = 8.0D;
     private static final double PURSUING_MOB_SEARCH_RADIUS_Y = 5.0D;
@@ -84,7 +87,8 @@ public final class PortalTeleportHandler {
             entity = root;
         }
 
-        if (!PortalCrossingTracker.shouldCrossPortal(sourceLevel, entity, core)) {
+        if (CREATE_CARRIAGE.equals(BuiltInRegistries.ENTITY_TYPE.getKey(entity.getType()))
+                || !PortalCrossingTracker.shouldCrossPortal(sourceLevel, entity, core)) {
             return;
         }
 

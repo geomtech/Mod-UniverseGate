@@ -1,0 +1,18 @@
+{
+  "type": "minecraft:crafting_shapeless",
+  "ingredients": [
+    {
+      "item": "universegate:portal_keyboard"
+    },
+    {
+      "item": "minecraft:redstone"
+    },
+    {
+      "item": "minecraft:repeater"
+    }
+  ],
+  "result": {
+    "count": 1,
+    "id": "universegate:portal_activator"
+  }
+}

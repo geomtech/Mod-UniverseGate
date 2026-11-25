@@ -84,7 +84,8 @@ public class CrocodileClipBlock extends Block implements EntityBlock {
         return state.is(ModBlocks.PORTAL_FRAME)
                 || state.is(ModBlocks.PORTAL_CORE)
                 || state.is(ModBlocks.LIGHTNING_ANTENNA)
-                || state.is(ModBlocks.PORTAL_KEYBOARD);
+                || state.is(ModBlocks.PORTAL_KEYBOARD)
+                || state.is(ModBlocks.PORTAL_ACTIVATOR);
     }
 
     @Override

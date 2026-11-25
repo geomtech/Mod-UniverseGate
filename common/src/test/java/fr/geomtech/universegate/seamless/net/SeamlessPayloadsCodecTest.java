@@ -1,6 +1,7 @@
 package fr.geomtech.universegate.seamless.net;
 
 import com.mojang.datafixers.util.Pair;
+import fr.geomtech.universegate.net.PortalActivatorTargetPayload;
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.Unpooled;
 import io.netty.handler.codec.DecoderException;
@@ -84,6 +85,23 @@ class SeamlessPayloadsCodecTest {
         } finally {
             raw.release();
         }
+    }
+
+    @Test
+    void portalActivatorTargetPayloadRoundtripsConfiguredAndEmptyTargets() {
+        BlockPos activatorPos = new BlockPos(-12, 80, 47);
+        UUID targetId = UUID.randomUUID();
+
+        assertEquals(
+                new PortalActivatorTargetPayload(activatorPos, targetId),
+                roundtrip(PortalActivatorTargetPayload.STREAM_CODEC,
+                        new PortalActivatorTargetPayload(activatorPos, targetId))
+        );
+        assertEquals(
+                new PortalActivatorTargetPayload(activatorPos, null),
+                roundtrip(PortalActivatorTargetPayload.STREAM_CODEC,
+                        new PortalActivatorTargetPayload(activatorPos, null))
+        );
     }
 
     @Test

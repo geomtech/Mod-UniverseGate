@@ -166,6 +166,14 @@ public final class ModBlocks {
                     .lightLevel(PortalKeyboardBlock::lightLevel)))
     );
 
+    public static final Block PORTAL_ACTIVATOR = register(
+            "portal_activator",
+            new PortalActivatorBlock(properties("portal_activator", BlockBehaviour.Properties.ofFullCopy(Blocks.OBSIDIAN)
+                    .strength(60.0f, 1200.0f)
+                    .requiresCorrectToolForDrops()
+                    .lightLevel(PortalKeyboardBlock::lightLevel)))
+    );
+
     public static final Block PORTAL_NATURAL_KEYBOARD = register(
             "portal_natural_keyboard",
             new PortalNaturalKeyboardBlock(properties("portal_natural_keyboard", BlockBehaviour.Properties.ofFullCopy(Blocks.OBSIDIAN)

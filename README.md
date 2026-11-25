@@ -40,7 +40,13 @@ UniverseGate energy is measured in **FE** (Forge Energy) and speaks the standard
     *   *Opening a portal uses a dynamic cost: base **1200 FE**, then increases with distance and if dimensions differ.*
     *   *Maintaining the connection costs **120 FE/s** (more while the vortex is unstable).*
 4.  Place a **Portal Controller**, attach **Crocodile Clips** to both the controller and the portal (frame or core), and connect them with **Electric Wire**.
-5.  Optional: craft a **Mobile Portal Controller** to dial from your hand while standing near a portal.
+5.  Optional: use a **Portal Redstone Activator** for automation. Configure its destination, wire it to the gate, then send a redstone pulse to open that preset destination. It triggers on the rising edge and follows the normal portal energy rules.
+6.  Optional: craft a **Mobile Portal Controller** to dial from your hand while standing near a portal.
+
+#### Create trains (optional)
+UniverseGate preserves `create:track` when a portal opens or closes. Train travel requires **Create 6.0.10 on NeoForge for Minecraft 1.21.1** and an open, stable portal connection.
+
+Lay a straight, level Create track perpendicular to each frame and directly on top of the Portal Core. Keep each approach and exit straight and long enough for the entire train. Within one dimension, the track can end at the core or continue through the opening. The whole train transfers at once and stops on the destination track. Players aboard keep their viewing direction relative to their carriage, and the active driver retains the same Create controls, even if the client briefly respawns the carriage after the jump. Normal control-release inputs and interaction-distance checks still apply. On a continuous source track, if the exit is unavailable, the train waits until the exit clears; reverse away to cancel. A continuous exit uses the destination portal's front (controller) side. Interdimensional links require terminal tracks at both portals, with no rails on the other side of either opening. Create schedules can route through those interdimensional links, but not through links within a single dimension.
 
 ### 3. Entering The Rift (Unstable Link)
 To reach the Rift for the first time, you need to force an unstable connection:

@@ -1,0 +1,6 @@
+{
+  "parent": "universegate:block/portal_keyboard_lit",
+  "textures": {
+    "keys": "minecraft:block/redstone_lamp_on"
+  }
+}

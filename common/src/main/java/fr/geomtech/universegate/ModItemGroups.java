@@ -23,6 +23,7 @@ public final class ModItemGroups {
                 output.accept(ModItems.PORTAL_CORE_ITEM);
                 output.accept(ModItems.PORTAL_FRAME_ITEM);
                 output.accept(ModItems.PORTAL_KEYBOARD_ITEM);
+                output.accept(ModItems.PORTAL_ACTIVATOR_ITEM);
                 output.accept(ModItems.PORTAL_NATURAL_KEYBOARD_ITEM);
                 output.accept(ModItems.PORTAL_MOBILE_KEYBOARD);
                 output.accept(ModItems.LIGHTNING_ANTENNA_ITEM);

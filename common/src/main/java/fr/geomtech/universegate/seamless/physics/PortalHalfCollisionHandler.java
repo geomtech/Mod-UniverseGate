@@ -193,20 +193,27 @@ public final class PortalHalfCollisionHandler {
             return new PortalOverlap(transform, destLevel);
         }
 
-        // Client side: look up synced remote endpoint & remote ClientLevel
-        PortalRemoteEndpointPayload endpoint = ClientRemoteWorldManager.getInstance().getEndpoint(corePos);
-        if (endpoint == null || !endpoint.isActive()) {
-            return null;
+        return level.isClientSide() ? ClientAccess.resolveOverlap(level, corePos, sourceNormal, box) : null;
+    }
+
+    private static final class ClientAccess {
+
+        private static @Nullable PortalOverlap resolveOverlap(Level level, BlockPos corePos, Direction sourceNormal, AABB box) {
+            ClientRemoteWorldManager manager = ClientRemoteWorldManager.getInstance();
+            PortalRemoteEndpointPayload endpoint = manager.getEndpoint(corePos);
+            if (endpoint == null || !endpoint.isActive()) {
+                return null;
+            }
+            PortalTransform transform = new PortalTransform(
+                    corePos, sourceNormal, endpoint.targetCorePos(), endpoint.exitNormal());
+            if (!PortalCrossingMath.overlapsPortalCorridor(box, transform)) {
+                return null;
+            }
+            Level destLevel = endpoint.targetDim().equals(level.dimension())
+                    ? level
+                    : manager.getRemoteLevel(endpoint.targetDim());
+            return new PortalOverlap(transform, destLevel);
         }
-        PortalTransform transform = new PortalTransform(
-                corePos, sourceNormal, endpoint.targetCorePos(), endpoint.exitNormal());
-        if (!PortalCrossingMath.overlapsPortalCorridor(box, transform)) {
-            return null;
-        }
-        Level destLevel = endpoint.targetDim().equals(level.dimension())
-                ? level
-                : ClientRemoteWorldManager.getInstance().getRemoteLevel(endpoint.targetDim());
-        return new PortalOverlap(transform, destLevel);
     }
 
     private record PortalOverlap(PortalTransform transform, @Nullable Level destinationLevel) {}

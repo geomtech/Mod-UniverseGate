@@ -53,6 +53,16 @@ public final class UniverseGateNeoForge {
         modBus.addListener(RegisterCapabilitiesEvent.class, NeoForgeEnergyCompat::onRegisterCapabilities);
 
         IEventBus gameBus = NeoForge.EVENT_BUS;
+        //? if 1.21.1 {
+        if (fr.geomtech.universegate.neoforge.create.CreateCompatMixinPlugin.isSupported()) {
+            gameBus.addListener(ServerTickEvent.Pre.class, event ->
+                    fr.geomtech.universegate.neoforge.create.CreatePortalTracks.tick(event.getServer()));
+            gameBus.addListener(EventPriority.LOWEST, ServerTickEvent.Post.class, event ->
+                    fr.geomtech.universegate.neoforge.create.CreatePortalTracks.syncRemovedConnections(event.getServer()));
+            gameBus.addListener(ServerStoppedEvent.class, event ->
+                    fr.geomtech.universegate.neoforge.create.CreatePortalTracks.stop(event.getServer()));
+        }
+        //?}
         gameBus.addListener(ChunkEvent.Load.class, event -> {
             if (event.getLevel() instanceof ServerLevel && event.getChunk() instanceof LevelChunk chunk) {
                 CrocodileClipEntity.restoreMissing(chunk);
@@ -117,5 +127,12 @@ public final class UniverseGateNeoForge {
         });
 
         UniverseGate.init();
+        //? if 1.21.1 {
+        if (fr.geomtech.universegate.neoforge.create.CreateCompatMixinPlugin.isSupported()) {
+            fr.geomtech.universegate.platform.Services.PLATFORM.registerClientboundPayload(
+                    fr.geomtech.universegate.neoforge.create.CarriageTeleportPayload.TYPE,
+                    fr.geomtech.universegate.neoforge.create.CarriageTeleportPayload.STREAM_CODEC);
+        }
+        //?}
     }
 }

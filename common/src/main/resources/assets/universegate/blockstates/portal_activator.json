@@ -1,0 +1,12 @@
+{
+  "variants": {
+    "facing=north,lit=false": { "model": "universegate:block/portal_activator" },
+    "facing=east,lit=false": { "model": "universegate:block/portal_activator", "y": 90 },
+    "facing=south,lit=false": { "model": "universegate:block/portal_activator", "y": 180 },
+    "facing=west,lit=false": { "model": "universegate:block/portal_activator", "y": 270 },
+    "facing=north,lit=true": { "model": "universegate:block/portal_activator_lit" },
+    "facing=east,lit=true": { "model": "universegate:block/portal_activator_lit", "y": 90 },
+    "facing=south,lit=true": { "model": "universegate:block/portal_activator_lit", "y": 180 },
+    "facing=west,lit=true": { "model": "universegate:block/portal_activator_lit", "y": 270 }
+  }
+}

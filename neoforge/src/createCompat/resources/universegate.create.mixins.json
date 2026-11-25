@@ -1,0 +1,9 @@
+{
+  "required": true,
+  "package": "fr.geomtech.universegate.neoforge.create.mixin",
+  "plugin": "fr.geomtech.universegate.neoforge.create.CreateCompatMixinPlugin",
+  "compatibilityLevel": "JAVA_21",
+  "mixins": ["CarriageMixin", "TrainMixin", "CarriageContraptionEntityMixin"],
+  "client": ["ControlsHandlerAccessor", "ControlsHandlerMixin"],
+  "injectors": { "defaultRequire": 1 }
+}

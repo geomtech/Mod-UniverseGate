@@ -26,11 +26,31 @@ neoForge {
 
 neoForge.addModdingDependenciesTo(sourceSets.e2eTest)
 
+def createCompat = project.name == '1.21.1'
+if (createCompat) {
+	sourceSets.main.java.srcDir(rootProject.file('neoforge/src/createCompat/java'))
+	sourceSets.main.resources.srcDir(rootProject.file('neoforge/src/createCompat/resources'))
+	repositories {
+		maven {
+			url = 'https://maven.createmod.net'
+			content {
+				includeGroup 'com.simibubi.create'
+				includeGroup 'net.createmod.ponder'
+			}
+		}
+	}
+	dependencies {
+		compileOnly('com.simibubi.create:create-1.21.1:6.0.10-281') { transitive = false }
+		compileOnly('net.createmod.ponder:ponder-neoforge:1.0.82+mc1.21.1') { transitive = false }
+	}
+}
+
 processResources {
 	def props = [
 			'version'          : project.version,
 			'neoforge_version' : project.neoforge_version,
-			'minecraft_range'  : project.neoforge_minecraft_range
+			'minecraft_range'  : project.neoforge_minecraft_range,
+			'create_mixins'    : createCompat ? '[[mixins]]\nconfig = "universegate.create.mixins.json"\nrequiredMods = ["create"]' : ''
 	]
 	inputs.properties props
 

@@ -20,6 +20,8 @@ config = "universegate.mixins.json"
 [[mixins]]
 config = "universegate.client.mixins.json"
 
+${create_mixins}
+
 [[dependencies.universegate]]
 modId = "neoforge"
 type = "required"
