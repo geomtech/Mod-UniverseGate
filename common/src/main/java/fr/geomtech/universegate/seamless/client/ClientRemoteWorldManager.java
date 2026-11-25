@@ -452,7 +452,19 @@ public final class ClientRemoteWorldManager {
                 ClientboundLevelChunkWithLightPacket vanillaPacket = payload.decodePacket(connection.registryAccess());
                 int cx = vanillaPacket.getX();
                 int cz = vanillaPacket.getZ();
-                accessor.universegate$updateLevelChunk(cx, cz, vanillaPacket.getChunkData());
+                var chunkData = vanillaPacket.getChunkData();
+                activeLevel.getChunkSource().replaceWithPacketData(
+                        cx,
+                        cz,
+                        chunkData.getReadBuffer(),
+                        //? if >=1.21.11 {
+                        /*chunkData.getHeightmaps(),
+                        *///?} else {
+                        chunkData.getHeightmaps(),
+                        //?}
+                        // The server's destination chunks will provide authoritative block entities after the respawn.
+                        ignoredBlockEntityTag -> {}
+                );
                 net.minecraft.world.level.chunk.LevelChunk chunk = activeLevel.getChunkSource().getChunk(cx, cz, false);
                 if (chunk != null) {
                     var lightEngine = activeLevel.getChunkSource().getLightEngine();
@@ -469,7 +481,9 @@ public final class ClientRemoteWorldManager {
                 *///?} else {
                 accessor.universegate$applyLightData(cx, cz, vanillaPacket.getLightData());
                 //?}
-            } catch (Throwable ignored) {
+            } catch (RuntimeException exception) {
+                UniverseGate.LOGGER.warn("Failed to preseed chunk ({}, {}) in {} after seamless dimension switch",
+                        payload.chunkX(), payload.chunkZ(), payload.dim(), exception);
             }
         }
         activeLevel.pollLightUpdates();
