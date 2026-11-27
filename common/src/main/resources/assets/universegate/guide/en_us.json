@@ -9,7 +9,7 @@
           "title": "UniverseGate"
         },
         {
-          "text": "UniverseGate lets you build a network of energy-powered portals, travel between villages, reach a mysterious dimension called the Rift, then master dark energy and ZPCs."
+          "text": "UniverseGate lets you build a network of energy-powered portals, travel between villages and reach a mysterious dimension: the Rift."
         },
         {
           "title": "How to read this guide"
@@ -115,7 +115,7 @@
           "title": "Energy from other mods"
         },
         {
-          "text": "UniverseGate energy speaks NeoForge FE and, on Fabric, Team Reborn Energy (1 FE = 1 E). Cables from Stellaris and other mods plug into condensers and conduits (in and out) and into the ZPC Interface (out), up to 1,000 FE per tick per block. None of these mods is required."
+          "text": "UniverseGate energy speaks NeoForge FE and, on Fabric, Team Reborn Energy (1 FE = 1 E). Cables from Stellaris and other mods plug into condensers and conduits (in and out), up to 1,000 FE per tick per block. None of these mods is required."
         }
       ]
     },
@@ -219,7 +219,7 @@
           ]
         },
         {
-          "text": "Rift Cubes are huge white temples. Their Guardian, a giant Rift Shade, wakes up the first time someone nears the emitter: it drops a Rift Core, the key ZPC ingredient."
+          "text": "Rift Cubes are huge white temples. Their Guardian, a giant Rift Shade, wakes up the first time someone nears the emitter: it drops a Rift Core."
         },
         {
           "text": "Portals in the Rift run on ambient energy: the way back is easy if you have a frame."
@@ -265,44 +265,10 @@
       "icon": "universegate:zpc",
       "elements": [
         {
-          "title": "Dark matter and dark energy"
+          "title": "Work in progress"
         },
         {
-          "scene": "dark_energy",
-          "captions": [
-            "The Rift Refiner turns Rift Crystals into Dark Matter (156 mB per crystal).",
-            "Fluid Pipes carry the Dark Matter.",
-            "The Dark Energy Generator burns 250 mB of Dark Matter per unit of Dark Energy.",
-            "Dark Energy Conduits carry it to a portal or a machine.",
-            "The ZPC Interface recharges its ZPCs: 10,000,000 FE per unit of Dark Energy.",
-            "It then powers the whole energy network it is connected to."
-          ]
-        },
-        {
-          "recipes": [
-            "rift_refiner",
-            "fluid_pipe",
-            "dark_energy_generator",
-            "dark_energy_conduit"
-          ]
-        },
-        {
-          "title": "The Dark Dimension"
-        },
-        {
-          "text": "A Portal Core that stored 400 units of Dark Energy, linked to a running generator, unlocks the Dark Dimension destination: a link to the Rift without waiting for lightning."
-        },
-        {
-          "title": "ZPCs"
-        },
-        {
-          "text": "A ZPC stores up to 40 billion FE. Every Ancient City hides one, and any loot chest has a small chance to hold one. A crafted ZPC comes out empty. The interface holds 3: right-click to insert, sneak + right-click to engage them."
-        },
-        {
-          "recipes": [
-            "zpc",
-            "zpc_interface_controller"
-          ]
+          "text": "This part of the mod is still in development. It will be covered here later."
         }
       ]
     },
@@ -389,19 +355,6 @@
             "meteorological_condenser",
             "meteorological_catalyst",
             "parabola_block"
-          ]
-        },
-        {
-          "title": "Dark energy & ZPC"
-        },
-        {
-          "recipes": [
-            "rift_refiner",
-            "fluid_pipe",
-            "dark_energy_generator",
-            "dark_energy_conduit",
-            "zpc",
-            "zpc_interface_controller"
           ]
         },
         {

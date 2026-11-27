@@ -9,7 +9,7 @@
           "title": "UniverseGate"
         },
         {
-          "text": "UniverseGate te permet de bâtir un réseau de portails alimentés en énergie, de voyager entre les villages, de rejoindre une dimension mystérieuse, le Rift, puis d'apprivoiser l'énergie sombre et les ZPC."
+          "text": "UniverseGate te permet de bâtir un réseau de portails alimentés en énergie, de voyager entre les villages et de rejoindre une dimension mystérieuse : le Rift."
         },
         {
           "title": "Comment lire ce guide"
@@ -115,7 +115,7 @@
           "title": "Énergie des autres mods"
         },
         {
-          "text": "L'énergie d'UniverseGate parle le FE de NeoForge et, sur Fabric, Team Reborn Energy (1 FE = 1 E). Les câbles de Stellaris et des autres mods se branchent sur les condensateurs et les conduits (entrée et sortie) et sur l'interface ZPC (sortie), jusqu'à 1 000 FE par tick et par bloc. Aucun de ces mods n'est requis."
+          "text": "L'énergie d'UniverseGate parle le FE de NeoForge et, sur Fabric, Team Reborn Energy (1 FE = 1 E). Les câbles de Stellaris et des autres mods se branchent sur les condensateurs et les conduits (entrée et sortie), jusqu'à 1 000 FE par tick et par bloc. Aucun de ces mods n'est requis."
         }
       ]
     },
@@ -219,7 +219,7 @@
           ]
         },
         {
-          "text": "Les Rift Cubes sont d'immenses temples blancs. Leur gardien, une Rift Shade géante, se réveille la première fois qu'on approche de l'émetteur : il lâche un noyau du Rift, l'ingrédient clé du ZPC."
+          "text": "Les Rift Cubes sont d'immenses temples blancs. Leur gardien, une Rift Shade géante, se réveille la première fois qu'on approche de l'émetteur : il lâche un noyau du Rift."
         },
         {
           "text": "Les portails du Rift sont alimentés par l'énergie ambiante : le retour est facile si tu as un cadre."
@@ -265,44 +265,10 @@
       "icon": "universegate:zpc",
       "elements": [
         {
-          "title": "Matière noire et énergie sombre"
+          "title": "En cours de développement"
         },
         {
-          "scene": "dark_energy",
-          "captions": [
-            "Le raffineur du Rift change les cristaux du Rift en matière noire (156 mB par cristal).",
-            "Les tuyaux à fluide transportent la matière noire.",
-            "Le générateur d'énergie sombre brûle 250 mB de matière noire par unité d'énergie sombre.",
-            "Les conduits d'énergie sombre la transportent vers un portail ou une machine.",
-            "L'interface ZPC recharge ses ZPC : 10 000 000 FE par unité d'énergie sombre.",
-            "Elle alimente ensuite tout le réseau d'énergie auquel elle est reliée."
-          ]
-        },
-        {
-          "recipes": [
-            "rift_refiner",
-            "fluid_pipe",
-            "dark_energy_generator",
-            "dark_energy_conduit"
-          ]
-        },
-        {
-          "title": "La dimension sombre"
-        },
-        {
-          "text": "Un cœur de portail qui a stocké 400 unités d'énergie sombre, relié à un générateur en marche, débloque la destination Dimension sombre : un lien vers le Rift sans attendre la foudre."
-        },
-        {
-          "title": "Les ZPC"
-        },
-        {
-          "text": "Un ZPC stocke jusqu'à 40 milliards de FE. Chaque cité antique en cache un, et tout coffre a une petite chance d'en contenir. Un ZPC fabriqué sort vide. L'interface en accueille 3 : clic droit pour insérer, accroupi + clic droit pour les enclencher."
-        },
-        {
-          "recipes": [
-            "zpc",
-            "zpc_interface_controller"
-          ]
+          "text": "Cette partie du mod est encore en cours de développement. Elle sera présentée ici plus tard."
         }
       ]
     },
@@ -389,19 +355,6 @@
             "meteorological_condenser",
             "meteorological_catalyst",
             "parabola_block"
-          ]
-        },
-        {
-          "title": "Énergie sombre & ZPC"
-        },
-        {
-          "recipes": [
-            "rift_refiner",
-            "fluid_pipe",
-            "dark_energy_generator",
-            "dark_energy_conduit",
-            "zpc",
-            "zpc_interface_controller"
           ]
         },
         {
