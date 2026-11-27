@@ -37,25 +37,43 @@
           "title": "Les Bâtisseurs"
         },
         {
-          "text": "Bien avant nous, ce monde était habité par une race d'êtres très avancés technologiquement. Ils ont disparu, mais ils nous ont légué leurs portails : des anneaux capables de relier deux points du monde, et même plus loin."
+          "text": "Bien avant nous, ce monde était habité par une race d'êtres très avancés technologiquement : les Bâtisseurs. Ils ont couvert le monde de portails, jusque dans les villages. Puis ils ont disparu. Personne ne sait pourquoi… pas encore."
         },
         {
-          "placeholder": "Comment s'appelaient-ils ? Pourquoi ont-ils disparu ? Comment les villageois ont-ils appris à se servir de leurs portails ?"
+          "title": "La naissance du Rift"
         },
         {
-          "title": "Le Rift"
+          "text": "Un jour, l'un de leurs portails a ouvert une brèche entre les univers. Rien de tout cela n'était prévu : la brèche a déclenché une explosion cosmique, comme un petit big bang, qui a donné naissance à une nouvelle dimension."
         },
         {
-          "text": "Le Rift est une dimension perdue, comme un bug dans la trame du monde : un endroit qui n'aurait jamais dû exister. Tout y est noir et blanc, le sol flotte dans le vide, et une étrange énergie ambiante suffit à alimenter les portails."
+          "text": "Le Rift est né par accident, comme un bug dans la trame du monde. Tout y est noir et blanc, le sol flotte dans le vide, et une énergie étrange y circule partout."
         },
         {
-          "placeholder": "Pourquoi la foudre ouvre-t-elle un passage vers le Rift ? Les Bâtisseurs y sont-ils allés ?"
+          "title": "Les protocoles de secours"
         },
         {
-          "title": "Les habitants du Rift"
+          "text": "Les premiers Bâtisseurs à franchir la brèche sont restés coincés dans le Rift. Pour que cela n'arrive plus jamais, ils ont ajouté des protocoles de sécurité dans chaque cœur de portail : dans le Rift, les portails puisent dans l'énergie naturelle de la dimension, pour que le retour reste toujours possible."
         },
         {
-          "placeholder": "Que sont les Rift Shades, les Rift Beasts et les gardiens des Rift Cubes ? Qui a bâti les Rift Cubes, et que protègent-ils ?"
+          "text": "Une surcharge, comme un éclair, réveille ces protocoles et force le cœur à ouvrir un lien vers le Rift."
+        },
+        {
+          "title": "Les erreurs"
+        },
+        {
+          "text": "Les Rift Shades et les Rift Beasts sont des erreurs : des êtres arrachés à plusieurs univers et ramenés dans cette dimension par la brèche."
+        },
+        {
+          "title": "Les Rift Cubes"
+        },
+        {
+          "text": "Les Rift Cubes, ces immenses temples blancs, restent un mystère. Même les Bâtisseurs ignoraient qui les avait construits, et ce que leurs gardiens protègent."
+        },
+        {
+          "title": "Les villages"
+        },
+        {
+          "text": "Les Bâtisseurs avaient aussi installé des portails dans les villages. Avec le temps, les villageois ont perdu le savoir-faire. C'est toi qui leur réapprends à s'en servir : les ingénieurs des portails t'en sont reconnaissants, et ils te le montrent quand tu croises leurs expéditions."
         }
       ]
     },
