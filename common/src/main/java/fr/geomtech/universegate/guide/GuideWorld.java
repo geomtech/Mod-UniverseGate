@@ -51,7 +51,8 @@ import net.minecraft.world.level.ExplosionDamageCalculator;
 import net.minecraft.world.level.block.entity.FuelValues;
 import net.minecraft.world.level.border.WorldBorder;
 import net.minecraft.world.level.storage.LevelData;
-import net.minecraft.world.level.ExplosionParticleInfo;
+import net.minecraft.core.particles.ExplosionParticleInfo;
+import net.minecraft.world.attribute.EnvironmentAttributeSystem;
 *///?} else {
 import net.minecraft.util.profiling.InactiveProfiler;
 import net.minecraft.world.item.crafting.RecipeManager;
@@ -292,6 +293,11 @@ public final class GuideWorld extends Level {
 
     //? if >=1.21.11 {
     /*@Override
+    public EnvironmentAttributeSystem environmentAttributes() {
+        return host.environmentAttributes();
+    }
+
+    @Override
     public int getSeaLevel() {
         return 63;
     }
