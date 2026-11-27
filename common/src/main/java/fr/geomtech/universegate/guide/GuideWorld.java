@@ -140,7 +140,8 @@ public final class GuideWorld extends Level {
         for (int pass = 0; pass < 2; pass++) {
             for (Map.Entry<BlockPos, BlockState> entry : List.copyOf(blocks.entrySet())) {
                 BlockState updated = Block.updateFromNeighbourShapes(entry.getValue(), this, entry.getKey());
-                if (updated != entry.getValue()) put(entry.getKey(), updated);
+                // Only connections change here: a block the scene placed never vanishes.
+                if (updated != entry.getValue() && !updated.isAir()) put(entry.getKey(), updated);
             }
         }
     }

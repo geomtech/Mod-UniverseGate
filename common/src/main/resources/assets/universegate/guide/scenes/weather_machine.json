@@ -4,18 +4,6 @@
     {
       "place": [
         {
-          "block": "universegate:meteorological_controller",
-          "at": [
-            0,
-            0,
-            1
-          ]
-        }
-      ]
-    },
-    {
-      "place": [
-        {
           "block": "universegate:meteorological_condenser",
           "from": [
             1,
@@ -27,6 +15,21 @@
             1,
             0
           ]
+        }
+      ]
+    },
+    {
+      "place": [
+        {
+          "block": "universegate:meteorological_controller",
+          "at": [
+            1,
+            1,
+            1
+          ],
+          "props": {
+            "facing": "south"
+          }
         }
       ]
     },

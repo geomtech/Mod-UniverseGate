@@ -5,16 +5,14 @@
       "place": [
         {
           "block": "universegate:solar_panel",
-          "from": [
-            0,
+          "at": [
+            1,
             0,
             0
           ],
-          "to": [
-            1,
-            0,
-            1
-          ]
+          "props": {
+            "facing": "south"
+          }
         }
       ]
     },
@@ -55,7 +53,10 @@
             4,
             0,
             1
-          ]
+          ],
+          "props": {
+            "facing": "south"
+          }
         }
       ]
     },

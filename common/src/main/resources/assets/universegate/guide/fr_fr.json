@@ -238,8 +238,8 @@
         {
           "scene": "weather_machine",
           "captions": [
-            "Pose le contrôleur météorologique.",
-            "À côté (à 1 bloc au plus), empile 2 condenseurs météorologiques.",
+            "Empile 2 condenseurs météorologiques.",
+            "Fixe le contrôleur météorologique, le petit écran, sur le condenseur du haut.",
             "Au sommet, pose le catalyseur météorologique.",
             "Mets-y un cristal d'énergie : il sera consommé à chaque activation.",
             "Relie la tour au réseau d'énergie.",

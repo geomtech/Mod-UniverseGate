@@ -8,6 +8,7 @@ import com.mojang.math.Axis;
 import fr.geomtech.universegate.ModBlocks;
 import fr.geomtech.universegate.PortalCoreBlock;
 import fr.geomtech.universegate.PortalFrameBlock;
+import fr.geomtech.universegate.PortalGateGeometry;
 import fr.geomtech.universegate.PortalRingSegments;
 import fr.geomtech.universegate.UniverseGate;
 import fr.geomtech.universegate.compat.ImmediateBlockEntityRenderer;
@@ -45,11 +46,11 @@ import java.util.Optional;
  * <p>Scene file (assets/universegate/guide/scenes/&lt;id&gt;.json) with {"world": true}:
  * <pre>{"world": true, "steps": [ {"duration": 60,
  *     "place": [ {"block": "universegate:electric_wire", "from": [0,0,0], "to": [3,0,0], "props": {"facing": "down"}} ],
- *     "ring": {"core": [0,0,0], "right": "east", "pieces": [1, 2]},
+ *     "ring": {"core": [0,0,0], "right": "east", "segments": [1, 2]},
  *     "form": {"core": [0,0,0], "right": "east"},
  *     "set": [ same as place, but the block changes in place instead of dropping in ],
  *     "remove": [ [1,0,0] ] } ]}</pre>
- * "ring" places portal ring segments around a core (pieces 1 to 6), "form" assembles the gate
+ * "ring" places portal ring segments (1 to 6) or single pieces (1 to 17) around a core, "form" assembles the gate
  * (the 3D ring then replaces the blocks).
  */
 final class GuideScene3D implements SceneView {
@@ -75,12 +76,17 @@ final class GuideScene3D implements SceneView {
     }
 
     private final List<Step> steps;
+    private final BlockState floor;
+    private final List<BlockPos> floorCells;
     private final float centerX, centerY, centerZ, radius;
     private GuideWorld world;
     private int builtStep = -1;
 
-    private GuideScene3D(List<Step> steps, float cx, float cy, float cz, float radius) {
+    private GuideScene3D(List<Step> steps, BlockState floor, List<BlockPos> floorCells,
+                         float cx, float cy, float cz, float radius) {
         this.steps = steps;
+        this.floor = floor;
+        this.floorCells = floorCells;
         this.centerX = cx;
         this.centerY = cy;
         this.centerZ = cz;
@@ -109,10 +115,13 @@ final class GuideScene3D implements SceneView {
                     if (state == null) continue;
                     BlockPos from = pos(place.getAsJsonArray(place.has("at") ? "at" : "from"));
                     BlockPos to = place.has("to") ? pos(place.getAsJsonArray("to")) : from;
+                    List<BlockState> column = column(state, place.getAsJsonObject("props"));
                     for (BlockPos p : BlockPos.betweenClosed(from, to)) {
-                        BlockPos pos = p.immutable();
-                        ops.add(new Place(pos, state));
-                        if (drop) dropped.add(pos);
+                        for (int i = 0; i < column.size(); i++) {
+                            BlockPos pos = p.above(i).immutable();
+                            ops.add(new Place(pos, column.get(i)));
+                            if (drop) dropped.add(pos);
+                        }
                     }
                 }
             }
@@ -120,13 +129,19 @@ final class GuideScene3D implements SceneView {
                 JsonObject ring = step.getAsJsonObject("ring");
                 BlockPos core = pos(ring.getAsJsonArray("core"));
                 Direction right = horizontal(ring);
-                if (ring.has("pieces")) {
-                    for (JsonElement piece : ring.getAsJsonArray("pieces")) {
-                        int index = piece.getAsInt();
-                        BlockPos cell = PortalRingSegments.cell(core, right, index);
-                        ops.add(new Place(cell, PortalRingSegments.anchorState(index, right)));
-                        dropped.add(cell);
+                List<Integer> pieces = new ArrayList<>();
+                if (ring.has("segments")) {
+                    for (JsonElement segment : ring.getAsJsonArray("segments")) {
+                        for (int piece : PortalGateGeometry.segmentPieces(segment.getAsInt() - 1)) pieces.add(piece);
                     }
+                }
+                if (ring.has("pieces")) {
+                    for (JsonElement piece : ring.getAsJsonArray("pieces")) pieces.add(piece.getAsInt());
+                }
+                for (int index : pieces) {
+                    BlockPos cell = PortalRingSegments.cell(core, right, index);
+                    ops.add(new Place(cell, PortalRingSegments.anchorState(index, right)));
+                    dropped.add(cell);
                 }
             }
             if (step.has("form")) {
@@ -146,10 +161,27 @@ final class GuideScene3D implements SceneView {
             steps.add(new Step(Math.max(20, duration), List.copyOf(ops), List.copyOf(dropped)));
         }
         if (steps.isEmpty() || minX > maxX) return null;
+        // A floor under the scene, as in game: wires, clips and machines need something to stand on.
+        List<BlockPos> floorCells = new ArrayList<>();
+        BlockState floor = null;
+        JsonElement floorJson = json.get("floor");
+        boolean noFloor = floorJson != null && floorJson.isJsonPrimitive() && floorJson.getAsJsonPrimitive().isBoolean()
+                && !floorJson.getAsBoolean();
+        if (!noFloor) {
+            String id = floorJson != null && floorJson.isJsonPrimitive() && floorJson.getAsJsonPrimitive().isString()
+                    ? floorJson.getAsString() : "minecraft:smooth_stone";
+            floor = state(id, null);
+        }
+        if (floor != null) {
+            for (int x = minX - 1; x <= maxX + 1; x++) {
+                for (int z = minZ - 1; z <= maxZ + 1; z++) floorCells.add(new BlockPos(x, minY - 1, z));
+            }
+            minY -= 1;
+        }
         float cx = (minX + maxX + 1) / 2.0F, cy = (minY + maxY + 1) / 2.0F, cz = (minZ + maxZ + 1) / 2.0F;
         float rx = (maxX - minX + 1) / 2.0F, ry = (maxY - minY + 1) / 2.0F, rz = (maxZ - minZ + 1) / 2.0F;
         float radius = Mth.sqrt(rx * rx + ry * ry + rz * rz);
-        return new GuideScene3D(steps, cx, cy, cz, Math.max(1.0F, radius));
+        return new GuideScene3D(steps, floor, List.copyOf(floorCells), cx, cy, cz, Math.max(1.0F, radius));
     }
 
     /** The "right" direction of a ring (east or south; anything else means east). */
@@ -187,6 +219,28 @@ final class GuideScene3D implements SceneView {
             }
         }
         return state;
+    }
+
+    /**
+     * Tall machines (solar panel, parabola, lightning antenna) are a column of "part" blocks in game.
+     * Unless the scene names a part, the whole column is placed, bottom first.
+     */
+    private static List<BlockState> column(BlockState state, JsonObject props) {
+        Property<?> part = state.getBlock().getStateDefinition().getProperty("part");
+        if (part == null || (props != null && props.has("part"))) return List.of(state);
+        List<BlockState> column = new ArrayList<>();
+        for (String name : new String[] { "base", "lower", "upper", "top" }) {
+            BlockState piece = with(state, part, name);
+            if (column.isEmpty() ? !name.equals(partName(piece, part)) : piece == column.get(column.size() - 1)) {
+                return List.of(state);
+            }
+            column.add(piece);
+        }
+        return column;
+    }
+
+    private static <T extends Comparable<T>> String partName(BlockState state, Property<T> property) {
+        return property.getName(state.getValue(property));
     }
 
     private static <T extends Comparable<T>> BlockState with(BlockState state, Property<T> property, String value) {
@@ -236,6 +290,7 @@ final class GuideScene3D implements SceneView {
         if (world == null) return false;
         if (builtStep == step) return true;
         world.clear();
+        for (BlockPos pos : floorCells) world.put(pos, floor);
         for (int i = 0; i <= step; i++) {
             for (Op op : steps.get(i).ops) {
                 if (op instanceof Place place) world.put(place.pos(), place.state());

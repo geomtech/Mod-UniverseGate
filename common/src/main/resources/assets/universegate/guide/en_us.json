@@ -238,8 +238,8 @@
         {
           "scene": "weather_machine",
           "captions": [
-            "Place the Meteorological Controller.",
-            "Next to it (within 1 block), stack 2 Meteorological Condensers.",
+            "Stack 2 Meteorological Condensers.",
+            "Fix the Meteorological Controller, the small screen, on the top condenser.",
             "On top, place the Meteorological Catalyst.",
             "Put an Energy Crystal in it: each activation uses it up.",
             "Connect the tower to the energy network.",
