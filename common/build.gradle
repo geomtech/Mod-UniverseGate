@@ -30,6 +30,7 @@ dependencies {
 
 test {
 	useJUnitPlatform()
+	maxHeapSize = '1g'
 	testLogging {
 		events 'passed', 'skipped', 'failed'
 		exceptionFormat 'full'

@@ -13,6 +13,7 @@ public final class ModParticles {
      * (e.g. AsyncParticles' GPU acceleration) fall back to the vanilla rendering path for it.
      */
     public static final SimpleParticleType SPARK = register("spark");
+    public static final SimpleParticleType PORTAL_INK = register("portal_ink");
 
     private static SimpleParticleType register(String id) {
         // The SimpleParticleType constructor is protected in vanilla: use an anonymous subclass.

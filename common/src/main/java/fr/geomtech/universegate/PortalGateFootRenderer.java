@@ -40,12 +40,13 @@ public final class PortalGateFootRenderer {
         }
         float brightness = PortalGateRenderer.sampleBrightness(level, origin, right);
         int top = PortalGateMesh.shade(0x2B2B2B, brightness), side = PortalGateMesh.shade(0x141414, brightness);
-        var solid = buffer.getBuffer(PortalGateRenderTypes.GATE_SOLID);
+        var solid = GateSolidBuffer.begin(buffer);
         for (var box : PortalBuriedFloor.SOCKETS) {
             if ((covered & (1 << (box.column() + 2))) == 0) continue;
             PortalGateMesh.box(solid, poses.last().pose(), right.getAxis() == Direction.Axis.X,
                     box.h0(), box.h1(), 16, box.top(), box.z0(), box.z1(), box.floor() ? 0 : top, box.floor() ? 0 : side);
         }
+        GateSolidBuffer.end(solid);
     }
 
     private static void renderBlock(Level level, BlockPos pos, BlockState state, PoseStack poses, MultiBufferSource buffer) {
