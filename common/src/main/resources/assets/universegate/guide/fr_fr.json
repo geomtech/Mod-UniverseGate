@@ -1,0 +1,422 @@
+{
+  "chapters": [
+    {
+      "id": "welcome",
+      "title": "Bienvenue",
+      "icon": "universegate:portal_core",
+      "elements": [
+        {
+          "title": "UniverseGate"
+        },
+        {
+          "text": "UniverseGate te permet de bâtir un réseau de portails alimentés en énergie, de voyager entre les villages, de rejoindre une dimension mystérieuse, le Rift, puis d'apprivoiser l'énergie sombre et les ZPC."
+        },
+        {
+          "title": "Comment lire ce guide"
+        },
+        {
+          "text": "Chaque chapitre suit la progression du mod. Les scènes animées montrent les constructions bloc par bloc : ◀ et ▶▶ changent d'étape, || met en pause, ↻ fait tourner la scène. Survole un objet pour voir son nom."
+        },
+        {
+          "text": "Les crafts sont lus directement dans les fichiers du mod : ils sont toujours à jour. L'onglet Progrès du jeu (UniverseGate) suit aussi toute l'aventure."
+        },
+        {
+          "title": "Par où commencer ?"
+        },
+        {
+          "text": "1. Produis de l'énergie (chapitre Énergie).\n2. Construis ton premier portail.\n3. Force un lien instable vers le Rift pendant un orage.\n4. Rapporte du Rift de quoi fabriquer un vrai contrôleur de portail."
+        }
+      ]
+    },
+    {
+      "id": "lore",
+      "title": "Histoire & lore",
+      "icon": "universegate:rift_core",
+      "elements": [
+        {
+          "title": "Les Bâtisseurs"
+        },
+        {
+          "text": "Bien avant nous, ce monde était habité par une race d'êtres très avancés technologiquement. Ils ont disparu, mais ils nous ont légué leurs portails : des anneaux capables de relier deux points du monde, et même plus loin."
+        },
+        {
+          "placeholder": "Comment s'appelaient-ils ? Pourquoi ont-ils disparu ? Comment les villageois ont-ils appris à se servir de leurs portails ?"
+        },
+        {
+          "title": "Le Rift"
+        },
+        {
+          "text": "Le Rift est une dimension perdue, comme un bug dans la trame du monde : un endroit qui n'aurait jamais dû exister. Tout y est noir et blanc, le sol flotte dans le vide, et une étrange énergie ambiante suffit à alimenter les portails."
+        },
+        {
+          "placeholder": "Pourquoi la foudre ouvre-t-elle un passage vers le Rift ? Les Bâtisseurs y sont-ils allés ?"
+        },
+        {
+          "title": "Les habitants du Rift"
+        },
+        {
+          "placeholder": "Que sont les Rift Shades, les Rift Beasts et les gardiens des Rift Cubes ? Qui a bâti les Rift Cubes, et que protègent-ils ?"
+        }
+      ]
+    },
+    {
+      "id": "energy",
+      "title": "Énergie",
+      "icon": "universegate:energy_condenser",
+      "elements": [
+        {
+          "title": "Produire et stocker l'énergie"
+        },
+        {
+          "text": "Tout fonctionne à l'énergie, mesurée en FE. Un réseau commence par un condensateur d'énergie : c'est à la fois la batterie (20 000 FE) et le cœur du réseau."
+        },
+        {
+          "scene": "energy_basics",
+          "captions": [
+            "Pose des panneaux solaires. Ils doivent voir le ciel et ne produisent que le jour.",
+            "Relie-les avec des conduits d'énergie.",
+            "Le condensateur d'énergie stocke ce qu'ils produisent.",
+            "Le moniteur d'énergie affiche l'énergie stockée, la capacité et les machines reliées.",
+            "La nuit, un générateur à combustion brûle n'importe quel combustible, ou des cristaux du Rift (24 000 FE chacun), jusqu'à 480 FE/s."
+          ]
+        },
+        {
+          "recipes": [
+            "solar_panel",
+            "energy_conduit",
+            "energy_condenser",
+            "energy_monitor",
+            "combustion_generator",
+            "energy_crystal"
+          ]
+        },
+        {
+          "title": "Énergie des autres mods"
+        },
+        {
+          "text": "L'énergie d'UniverseGate parle le FE de NeoForge et, sur Fabric, Team Reborn Energy (1 FE = 1 E). Les câbles de Stellaris et des autres mods se branchent sur les condensateurs et les conduits (entrée et sortie) et sur l'interface ZPC (sortie), jusqu'à 1 000 FE par tick et par bloc. Aucun de ces mods n'est requis."
+        }
+      ]
+    },
+    {
+      "id": "portal",
+      "title": "Construire un portail",
+      "icon": "universegate:portal_frame",
+      "elements": [
+        {
+          "title": "Le portail"
+        },
+        {
+          "text": "Un portail se construit autour d'un cœur de portail : 6 segments d'anneau, ou bien un cadre classique de 5×6 blocs (intérieur 3×4) avec le cœur au milieu en bas. Les deux méthodes se mélangent."
+        },
+        {
+          "scene": "portal_build",
+          "captions": [
+            "Pose le cœur de portail : il sera au centre, en bas.",
+            "Complète la base avec des blocs de cadre.",
+            "Monte les deux côtés : 4 blocs de haut.",
+            "Ferme le haut. Avec les segments d'anneau, un aperçu translucide montre où poser chaque arc.",
+            "Relie le portail à un réseau d'énergie. Ouvrir coûte au moins 1 200 FE (plus selon la distance et la dimension), puis 120 FE/s.",
+            "Pose un contrôleur de portail. Accroche des pinces crocodile au contrôleur et au portail, puis relie-les avec du fil électrique.",
+            "Compose l'adresse d'un autre portail du réseau : il s'ouvre."
+          ]
+        },
+        {
+          "recipes": [
+            "portal_core",
+            "portal_frame",
+            "portal_ring_segment"
+          ]
+        },
+        {
+          "title": "Composer une adresse"
+        },
+        {
+          "text": "Donne un nom à ton portail, puis choisis une destination dans le contrôleur. Le contrôleur demande des matériaux du Rift (bloc du vide, émetteur de lumière) : pour ton premier voyage, il faut forcer un lien instable (chapitre Le Rift)."
+        },
+        {
+          "recipes": [
+            "portal_keyboard",
+            "crocodile_clip",
+            "electric_wire",
+            "portal_mobile_keyboard",
+            "portal_activator"
+          ]
+        },
+        {
+          "text": "Le contrôleur mobile compose depuis ta main, près d'un portail. L'activateur redstone ouvre une destination préréglée à chaque impulsion."
+        },
+        {
+          "title": "Portails des villages"
+        },
+        {
+          "text": "Les grands villages (au moins 9 villageois adultes) reçoivent leur propre portail, avec un contrôleur naturel qui ouvre gratuitement. L'ingénieur des portails, un nouveau métier, part parfois en expédition dans le réseau et récompense les joueurs présents à son arrivée."
+        }
+      ]
+    },
+    {
+      "id": "rift",
+      "title": "Le Rift",
+      "icon": "universegate:rift_crystal",
+      "elements": [
+        {
+          "title": "Forcer un lien instable"
+        },
+        {
+          "text": "Le premier voyage vers le Rift se fait grâce à la foudre."
+        },
+        {
+          "scene": "rift_link",
+          "captions": [
+            "Il te faut un portail complet.",
+            "Fabrique une antenne paratonnerre (4 blocs de haut) et pose-la à découvert.",
+            "Relie la base de l'antenne au portail : pinces crocodile sur le portail, puis fil électrique rouge et bleu.",
+            "Attends un orage, ou déclenche-le avec la machine météo.",
+            "La foudre frappe l'antenne : la charge descend les fils et ouvre un lien instable vers le Rift. Attention, il est instable !"
+          ]
+        },
+        {
+          "recipes": [
+            "lightning_antenna",
+            "lightning_antenna_from_charged_rod"
+          ]
+        },
+        {
+          "title": "Dans le Rift"
+        },
+        {
+          "text": "Le Rift est une dimension sombre, faite de vide. Tu y trouveras du bois de kelo, de la viande du Rift et des cristaux du Rift : sur les Rift Shades, ou en amas sur le sol (pioche, Fortune fonctionne)."
+        },
+        {
+          "items": [
+            "universegate:kelo_log",
+            "universegate:rift_meat",
+            "universegate:rift_crystal",
+            "universegate:rift_crystal_cluster",
+            "universegate:void_block",
+            "universegate:light_beam_emitter"
+          ]
+        },
+        {
+          "text": "Les Rift Cubes sont d'immenses temples blancs. Leur gardien, une Rift Shade géante, se réveille la première fois qu'on approche de l'émetteur : il lâche un noyau du Rift, l'ingrédient clé du ZPC."
+        },
+        {
+          "text": "Les portails du Rift sont alimentés par l'énergie ambiante : le retour est facile si tu as un cadre."
+        }
+      ]
+    },
+    {
+      "id": "weather",
+      "title": "Machine météo",
+      "icon": "universegate:meteorological_controller",
+      "elements": [
+        {
+          "title": "Changer la météo"
+        },
+        {
+          "scene": "weather_machine",
+          "captions": [
+            "Pose le contrôleur météorologique.",
+            "À côté (à 1 bloc au plus), empile 2 condenseurs météorologiques.",
+            "Au sommet, le catalyseur météorologique : mets-y un cristal d'énergie.",
+            "Relie la tour au réseau d'énergie.",
+            "Ajoute une parabole sur le même réseau (120 FE/s). Après 5 minutes de charge, choisis Clair, Pluie ou Orage (2 500 FE, 10 minutes)."
+          ]
+        },
+        {
+          "recipes": [
+            "meteorological_controller",
+            "meteorological_condenser",
+            "meteorological_catalyst",
+            "parabola_block"
+          ]
+        },
+        {
+          "text": "L'orage est le moyen le plus simple de foudroyer ton antenne."
+        }
+      ]
+    },
+    {
+      "id": "dark",
+      "title": "Énergie sombre & ZPC",
+      "icon": "universegate:zpc",
+      "elements": [
+        {
+          "title": "Matière noire et énergie sombre"
+        },
+        {
+          "scene": "dark_energy",
+          "captions": [
+            "Le raffineur du Rift change les cristaux du Rift en matière noire (156 mB par cristal).",
+            "Les tuyaux à fluide transportent la matière noire.",
+            "Le générateur d'énergie sombre brûle 250 mB de matière noire par unité d'énergie sombre.",
+            "Les conduits d'énergie sombre la transportent vers un portail ou une machine.",
+            "L'interface ZPC recharge ses ZPC : 10 000 000 FE par unité d'énergie sombre.",
+            "Elle alimente ensuite tout le réseau d'énergie auquel elle est reliée."
+          ]
+        },
+        {
+          "recipes": [
+            "rift_refiner",
+            "fluid_pipe",
+            "dark_energy_generator",
+            "dark_energy_conduit"
+          ]
+        },
+        {
+          "title": "La dimension sombre"
+        },
+        {
+          "text": "Un cœur de portail qui a stocké 400 unités d'énergie sombre, relié à un générateur en marche, débloque la destination Dimension sombre : un lien vers le Rift sans attendre la foudre."
+        },
+        {
+          "title": "Les ZPC"
+        },
+        {
+          "text": "Un ZPC stocke jusqu'à 40 milliards de FE. Chaque cité antique en cache un, et tout coffre a une petite chance d'en contenir. Un ZPC fabriqué sort vide. L'interface en accueille 3 : clic droit pour insérer, accroupi + clic droit pour les enclencher."
+        },
+        {
+          "recipes": [
+            "zpc",
+            "zpc_interface_controller"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "cloning",
+      "title": "ADN & clonage",
+      "icon": "universegate:dna_extractor",
+      "elements": [
+        {
+          "title": "Extraire l'ADN"
+        },
+        {
+          "text": "Vise une créature (14 blocs au plus) avec l'extracteur d'ADN et maintiens le clic droit 20 secondes. Chaque extraction coûte 64 cristaux du Rift. L'échantillon sert 100 fois, plus 50 par niveau de Solidité."
+        },
+        {
+          "recipes": [
+            "dna_extractor"
+          ]
+        },
+        {
+          "title": "Cloner"
+        },
+        {
+          "scene": "mob_cloning",
+          "captions": [
+            "Il faut un générateur d'énergie sombre en marche.",
+            "Relie-le au cloneur avec des conduits d'énergie sombre.",
+            "Le cloneur a besoin d'espace libre au-dessus de lui.",
+            "Mets le cloneur et son contrôleur sur le même réseau d'énergie, insère l'ADN et lance le clonage."
+          ]
+        },
+        {
+          "recipes": [
+            "mob_cloner",
+            "mob_cloner_controller"
+          ]
+        },
+        {
+          "text": "Un clone coûte au moins 1 milliard de FE, plus pour les monstres et les boss : un ZPC est presque indispensable."
+        }
+      ]
+    },
+    {
+      "id": "crafts",
+      "title": "Tous les crafts",
+      "icon": "minecraft:crafting_table",
+      "elements": [
+        {
+          "title": "Portails"
+        },
+        {
+          "recipes": [
+            "portal_core",
+            "portal_frame",
+            "portal_ring_segment",
+            "portal_keyboard",
+            "portal_mobile_keyboard",
+            "portal_activator",
+            "crocodile_clip",
+            "electric_wire",
+            "lightning_antenna",
+            "lightning_antenna_from_charged_rod"
+          ]
+        },
+        {
+          "title": "Énergie"
+        },
+        {
+          "recipes": [
+            "energy_crystal",
+            "solar_panel",
+            "combustion_generator",
+            "energy_conduit",
+            "energy_condenser",
+            "energy_monitor"
+          ]
+        },
+        {
+          "title": "Météo"
+        },
+        {
+          "recipes": [
+            "meteorological_controller",
+            "meteorological_condenser",
+            "meteorological_catalyst",
+            "parabola_block"
+          ]
+        },
+        {
+          "title": "Énergie sombre & ZPC"
+        },
+        {
+          "recipes": [
+            "rift_refiner",
+            "fluid_pipe",
+            "dark_energy_generator",
+            "dark_energy_conduit",
+            "zpc",
+            "zpc_interface_controller"
+          ]
+        },
+        {
+          "title": "ADN & clonage"
+        },
+        {
+          "recipes": [
+            "dna_extractor",
+            "mob_cloner",
+            "mob_cloner_controller"
+          ]
+        },
+        {
+          "title": "Rift"
+        },
+        {
+          "recipes": [
+            "kelo_planks_from_kelo_log",
+            "cooked_rift_meat_from_smelting_rift_meat"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "settings",
+      "title": "Réglages",
+      "icon": "minecraft:comparator",
+      "elements": [
+        {
+          "title": "Affichage"
+        },
+        {
+          "text": "La vue en direct montre la destination à travers un portail ouvert. Désactive-la si ton PC peine ou avec certains shaders."
+        },
+        {
+          "setting": "live_portal_view"
+        }
+      ]
+    }
+  ]
+}

@@ -1,0 +1,422 @@
+{
+  "chapters": [
+    {
+      "id": "welcome",
+      "title": "Welcome",
+      "icon": "universegate:portal_core",
+      "elements": [
+        {
+          "title": "UniverseGate"
+        },
+        {
+          "text": "UniverseGate lets you build a network of energy-powered portals, travel between villages, reach a mysterious dimension called the Rift, then master dark energy and ZPCs."
+        },
+        {
+          "title": "How to read this guide"
+        },
+        {
+          "text": "Chapters follow the mod's progression. Animated scenes show each build block by block: ◀ and ▶▶ change step, || pauses, ↻ turns the scene. Hover an item to see its name."
+        },
+        {
+          "text": "Recipes are read straight from the mod's files, so they are always up to date. The UniverseGate advancement tab also follows the whole adventure."
+        },
+        {
+          "title": "Where to start?"
+        },
+        {
+          "text": "1. Produce energy (Energy chapter).\n2. Build your first portal.\n3. Force an unstable link to the Rift during a thunderstorm.\n4. Bring back from the Rift what you need to craft a real Portal Controller."
+        }
+      ]
+    },
+    {
+      "id": "lore",
+      "title": "Story & lore",
+      "icon": "universegate:rift_core",
+      "elements": [
+        {
+          "title": "The Builders"
+        },
+        {
+          "text": "Long before us, this world was home to a technologically advanced race. They are gone, but they left us their portals: rings able to link two places of the world, and even further."
+        },
+        {
+          "placeholder": "What were they called? Why did they vanish? How did villagers learn to use their portals?"
+        },
+        {
+          "title": "The Rift"
+        },
+        {
+          "text": "The Rift is a lost dimension, like a bug in the fabric of the world: a place that should never have existed. Everything there is black and white, the ground floats in the void, and a strange ambient energy is enough to power portals."
+        },
+        {
+          "placeholder": "Why does lightning open a way to the Rift? Did the Builders go there?"
+        },
+        {
+          "title": "Dwellers of the Rift"
+        },
+        {
+          "placeholder": "What are the Rift Shades, the Rift Beasts and the guardians of the Rift Cubes? Who built the Rift Cubes, and what do they protect?"
+        }
+      ]
+    },
+    {
+      "id": "energy",
+      "title": "Energy",
+      "icon": "universegate:energy_condenser",
+      "elements": [
+        {
+          "title": "Producing and storing energy"
+        },
+        {
+          "text": "Everything runs on energy, measured in FE. A network starts with an Energy Condenser: both the battery (20,000 FE) and the heart of the network."
+        },
+        {
+          "scene": "energy_basics",
+          "captions": [
+            "Place Solar Panels. They must see the sky and only work during the day.",
+            "Connect them with Energy Conduits.",
+            "The Energy Condenser stores what they produce.",
+            "The Energy Monitor shows stored energy, capacity and connected devices.",
+            "At night, a Combustion Generator burns any furnace fuel, or Rift Crystals (24,000 FE each), up to 480 FE/s."
+          ]
+        },
+        {
+          "recipes": [
+            "solar_panel",
+            "energy_conduit",
+            "energy_condenser",
+            "energy_monitor",
+            "combustion_generator",
+            "energy_crystal"
+          ]
+        },
+        {
+          "title": "Energy from other mods"
+        },
+        {
+          "text": "UniverseGate energy speaks NeoForge FE and, on Fabric, Team Reborn Energy (1 FE = 1 E). Cables from Stellaris and other mods plug into condensers and conduits (in and out) and into the ZPC Interface (out), up to 1,000 FE per tick per block. None of these mods is required."
+        }
+      ]
+    },
+    {
+      "id": "portal",
+      "title": "Building a portal",
+      "icon": "universegate:portal_frame",
+      "elements": [
+        {
+          "title": "The portal"
+        },
+        {
+          "text": "A portal is built around a Portal Core: 6 Portal Ring Segments, or a classic 5×6 frame (3×4 inside) with the core at the bottom centre. Both methods can be mixed."
+        },
+        {
+          "scene": "portal_build",
+          "captions": [
+            "Place the Portal Core: it sits at the bottom centre.",
+            "Complete the base with Portal Frames.",
+            "Build both sides: 4 blocks high.",
+            "Close the top. With ring segments, a translucent preview shows where each arc goes.",
+            "Connect the portal to an energy network. Opening costs at least 1,200 FE (more with distance and across dimensions), then 120 FE/s.",
+            "Place a Portal Controller. Attach Crocodile Clips to the controller and the portal, then connect them with Electric Wire.",
+            "Dial another portal of the network: it opens."
+          ]
+        },
+        {
+          "recipes": [
+            "portal_core",
+            "portal_frame",
+            "portal_ring_segment"
+          ]
+        },
+        {
+          "title": "Dialing"
+        },
+        {
+          "text": "Name your portal, then pick a destination in the controller. The controller needs Rift materials (Void Block, Light Beam Emitter): for your first trip, force an unstable link (The Rift chapter)."
+        },
+        {
+          "recipes": [
+            "portal_keyboard",
+            "crocodile_clip",
+            "electric_wire",
+            "portal_mobile_keyboard",
+            "portal_activator"
+          ]
+        },
+        {
+          "text": "The Mobile Portal Controller dials from your hand near a portal. The Portal Redstone Activator opens a preset destination on each pulse."
+        },
+        {
+          "title": "Village portals"
+        },
+        {
+          "text": "Large villages (at least 9 adult villagers) get their own gate, with a Natural Portal Controller that opens for free. The Portal Engineer, a new profession, sometimes travels the network and rewards players who are there when they arrive."
+        }
+      ]
+    },
+    {
+      "id": "rift",
+      "title": "The Rift",
+      "icon": "universegate:rift_crystal",
+      "elements": [
+        {
+          "title": "Forcing an unstable link"
+        },
+        {
+          "text": "Your first trip to the Rift is powered by lightning."
+        },
+        {
+          "scene": "rift_link",
+          "captions": [
+            "You need a complete portal.",
+            "Craft a Lightning Antenna (4 blocks tall) and place it out in the open.",
+            "Wire the antenna's base to the portal: Crocodile Clips on the portal, then red and blue Electric Wire.",
+            "Wait for a thunderstorm, or make one with the weather machine.",
+            "Lightning strikes the antenna: the charge runs down the wires and opens an unstable link to the Rift. Careful, it is unstable!"
+          ]
+        },
+        {
+          "recipes": [
+            "lightning_antenna",
+            "lightning_antenna_from_charged_rod"
+          ]
+        },
+        {
+          "title": "Inside the Rift"
+        },
+        {
+          "text": "The Rift is a dark, void-based dimension. Find Kelo Wood, Rift Meat and Rift Crystals there: from Rift Shades, or as clusters on the ground (pickaxe, Fortune works)."
+        },
+        {
+          "items": [
+            "universegate:kelo_log",
+            "universegate:rift_meat",
+            "universegate:rift_crystal",
+            "universegate:rift_crystal_cluster",
+            "universegate:void_block",
+            "universegate:light_beam_emitter"
+          ]
+        },
+        {
+          "text": "Rift Cubes are huge white temples. Their Guardian, a giant Rift Shade, wakes up the first time someone nears the emitter: it drops a Rift Core, the key ZPC ingredient."
+        },
+        {
+          "text": "Portals in the Rift run on ambient energy: the way back is easy if you have a frame."
+        }
+      ]
+    },
+    {
+      "id": "weather",
+      "title": "Weather machine",
+      "icon": "universegate:meteorological_controller",
+      "elements": [
+        {
+          "title": "Changing the weather"
+        },
+        {
+          "scene": "weather_machine",
+          "captions": [
+            "Place the Meteorological Controller.",
+            "Next to it (within 1 block), stack 2 Meteorological Condensers.",
+            "On top, the Meteorological Catalyst: put an Energy Crystal in it.",
+            "Connect the tower to the energy network.",
+            "Add a Parabola on the same network (120 FE/s). After a 5 minute charge, pick Clear, Rain or Thunder (2,500 FE, 10 minutes)."
+          ]
+        },
+        {
+          "recipes": [
+            "meteorological_controller",
+            "meteorological_condenser",
+            "meteorological_catalyst",
+            "parabola_block"
+          ]
+        },
+        {
+          "text": "Thunder is the easiest way to strike your antenna."
+        }
+      ]
+    },
+    {
+      "id": "dark",
+      "title": "Dark energy & ZPC",
+      "icon": "universegate:zpc",
+      "elements": [
+        {
+          "title": "Dark matter and dark energy"
+        },
+        {
+          "scene": "dark_energy",
+          "captions": [
+            "The Rift Refiner turns Rift Crystals into Dark Matter (156 mB per crystal).",
+            "Fluid Pipes carry the Dark Matter.",
+            "The Dark Energy Generator burns 250 mB of Dark Matter per unit of Dark Energy.",
+            "Dark Energy Conduits carry it to a portal or a machine.",
+            "The ZPC Interface recharges its ZPCs: 10,000,000 FE per unit of Dark Energy.",
+            "It then powers the whole energy network it is connected to."
+          ]
+        },
+        {
+          "recipes": [
+            "rift_refiner",
+            "fluid_pipe",
+            "dark_energy_generator",
+            "dark_energy_conduit"
+          ]
+        },
+        {
+          "title": "The Dark Dimension"
+        },
+        {
+          "text": "A Portal Core that stored 400 units of Dark Energy, linked to a running generator, unlocks the Dark Dimension destination: a link to the Rift without waiting for lightning."
+        },
+        {
+          "title": "ZPCs"
+        },
+        {
+          "text": "A ZPC stores up to 40 billion FE. Every Ancient City hides one, and any loot chest has a small chance to hold one. A crafted ZPC comes out empty. The interface holds 3: right-click to insert, sneak + right-click to engage them."
+        },
+        {
+          "recipes": [
+            "zpc",
+            "zpc_interface_controller"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "cloning",
+      "title": "DNA & cloning",
+      "icon": "universegate:dna_extractor",
+      "elements": [
+        {
+          "title": "Extracting DNA"
+        },
+        {
+          "text": "Aim at a mob (up to 14 blocks away) with the DNA Extractor and hold right-click for 20 seconds. Each extraction costs 64 Rift Crystals. A sample has 100 uses, plus 50 per level of Unbreaking."
+        },
+        {
+          "recipes": [
+            "dna_extractor"
+          ]
+        },
+        {
+          "title": "Cloning"
+        },
+        {
+          "scene": "mob_cloning",
+          "captions": [
+            "You need a running Dark Energy Generator.",
+            "Link it to the Mob Cloner with Dark Energy Conduits.",
+            "The cloner needs free space above it.",
+            "Put the cloner and its controller on the same energy network, insert the DNA and start cloning."
+          ]
+        },
+        {
+          "recipes": [
+            "mob_cloner",
+            "mob_cloner_controller"
+          ]
+        },
+        {
+          "text": "A clone costs at least 1 billion FE, more for monsters and bosses: a ZPC is practically required."
+        }
+      ]
+    },
+    {
+      "id": "crafts",
+      "title": "All recipes",
+      "icon": "minecraft:crafting_table",
+      "elements": [
+        {
+          "title": "Portals"
+        },
+        {
+          "recipes": [
+            "portal_core",
+            "portal_frame",
+            "portal_ring_segment",
+            "portal_keyboard",
+            "portal_mobile_keyboard",
+            "portal_activator",
+            "crocodile_clip",
+            "electric_wire",
+            "lightning_antenna",
+            "lightning_antenna_from_charged_rod"
+          ]
+        },
+        {
+          "title": "Energy"
+        },
+        {
+          "recipes": [
+            "energy_crystal",
+            "solar_panel",
+            "combustion_generator",
+            "energy_conduit",
+            "energy_condenser",
+            "energy_monitor"
+          ]
+        },
+        {
+          "title": "Weather"
+        },
+        {
+          "recipes": [
+            "meteorological_controller",
+            "meteorological_condenser",
+            "meteorological_catalyst",
+            "parabola_block"
+          ]
+        },
+        {
+          "title": "Dark energy & ZPC"
+        },
+        {
+          "recipes": [
+            "rift_refiner",
+            "fluid_pipe",
+            "dark_energy_generator",
+            "dark_energy_conduit",
+            "zpc",
+            "zpc_interface_controller"
+          ]
+        },
+        {
+          "title": "DNA & cloning"
+        },
+        {
+          "recipes": [
+            "dna_extractor",
+            "mob_cloner",
+            "mob_cloner_controller"
+          ]
+        },
+        {
+          "title": "Rift"
+        },
+        {
+          "recipes": [
+            "kelo_planks_from_kelo_log",
+            "cooked_rift_meat_from_smelting_rift_meat"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "settings",
+      "title": "Settings",
+      "icon": "minecraft:comparator",
+      "elements": [
+        {
+          "title": "Display"
+        },
+        {
+          "text": "The live view shows the destination through an open portal. Turn it off if your PC struggles or with some shaders."
+        },
+        {
+          "setting": "live_portal_view"
+        }
+      ]
+    }
+  ]
+}

@@ -1,0 +1,124 @@
+{
+  "steps": [
+    {
+      "place": [
+        {
+          "item": "universegate:portal_core",
+          "at": [
+            2,
+            0,
+            0
+          ]
+        },
+        {
+          "item": "universegate:portal_frame",
+          "from": [
+            0,
+            0,
+            0
+          ],
+          "to": [
+            1,
+            0,
+            0
+          ]
+        },
+        {
+          "item": "universegate:portal_frame",
+          "from": [
+            3,
+            0,
+            0
+          ],
+          "to": [
+            4,
+            0,
+            0
+          ]
+        },
+        {
+          "item": "universegate:portal_frame",
+          "from": [
+            0,
+            1,
+            0
+          ],
+          "to": [
+            0,
+            4,
+            0
+          ]
+        },
+        {
+          "item": "universegate:portal_frame",
+          "from": [
+            4,
+            1,
+            0
+          ],
+          "to": [
+            4,
+            4,
+            0
+          ]
+        },
+        {
+          "item": "universegate:portal_frame",
+          "from": [
+            0,
+            5,
+            0
+          ],
+          "to": [
+            4,
+            5,
+            0
+          ]
+        }
+      ]
+    },
+    {
+      "place": [
+        {
+          "item": "universegate:lightning_antenna",
+          "at": [
+            8,
+            0,
+            2
+          ]
+        }
+      ]
+    },
+    {
+      "place": [
+        {
+          "item": "universegate:crocodile_clip",
+          "at": [
+            5,
+            0,
+            1
+          ]
+        },
+        {
+          "item": "universegate:electric_wire",
+          "from": [
+            6,
+            0,
+            2
+          ],
+          "to": [
+            7,
+            0,
+            2
+          ]
+        }
+      ]
+    },
+    {
+      "duration": 60
+    },
+    {
+      "duration": 80
+    }
+  ]
+}

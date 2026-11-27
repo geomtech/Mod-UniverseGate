@@ -1,0 +1,12 @@
+{
+  "steps": [
+    {"place": [{"item": "universegate:solar_panel", "from": [0, 0, 0], "to": [1, 0, 1]}]},
+    {"place": [{"item": "universegate:energy_conduit", "from": [2, 0, 0], "to": [3, 0, 0]}]},
+    {"place": [{"item": "universegate:energy_condenser", "at": [4, 0, 0]}]},
+    {"place": [{"item": "universegate:energy_monitor", "at": [4, 0, 1]}]},
+    {"place": [
+      {"item": "universegate:energy_conduit", "at": [3, 0, -1]},
+      {"item": "universegate:combustion_generator", "at": [3, 0, -2]}
+    ]}
+  ]
+}

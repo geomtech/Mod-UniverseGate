@@ -1,0 +1,12 @@
+{
+  "steps": [
+    {"place": [{"item": "universegate:dark_energy_generator", "at": [0, 0, 0]}]},
+    {"place": [{"item": "universegate:dark_energy_conduit", "from": [1, 0, 0], "to": [2, 0, 0]}]},
+    {"place": [{"item": "universegate:mob_cloner", "at": [3, 0, 0]}]},
+    {"place": [
+      {"item": "universegate:energy_conduit", "from": [3, 0, 1], "to": [3, 0, 2]},
+      {"item": "universegate:mob_cloner_controller", "at": [4, 0, 2]},
+      {"item": "universegate:energy_condenser", "at": [2, 0, 2]}
+    ]}
+  ]
+}
