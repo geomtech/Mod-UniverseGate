@@ -126,6 +126,11 @@ public final class ModItems {
             new BlockItem(ModBlocks.PORTAL_FRAME, blockItemProperties("portal_frame"))
     );
 
+    public static final Item PORTAL_RING_SEGMENT = register(
+            "portal_ring_segment",
+            new PortalRingSegmentItem(properties("portal_ring_segment").stacksTo(16))
+    );
+
     public static final Item PORTAL_KEYBOARD_ITEM = register(
             "portal_keyboard",
             new BlockItem(ModBlocks.PORTAL_KEYBOARD, blockItemProperties("portal_keyboard"))

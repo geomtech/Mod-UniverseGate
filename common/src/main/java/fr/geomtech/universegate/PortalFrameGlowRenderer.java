@@ -29,6 +29,7 @@ public class PortalFrameGlowRenderer extends ImmediateBlockEntityRenderer<Portal
         Level level = blockEntity.getLevel();
         if (level == null) return;
         if (!state.hasProperty(PortalFrameBlock.ACTIVE)) return;
+        if (!state.getValue(PortalFrameBlock.FORMED) && state.getValue(PortalFrameBlock.PIECE) != 0) return;
 
         boolean active = state.getValue(PortalFrameBlock.ACTIVE);
         if (active && state.hasProperty(PortalFrameBlock.BLINK_ON) && !state.getValue(PortalFrameBlock.BLINK_ON)) return;

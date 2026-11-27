@@ -130,9 +130,15 @@ public class PortalCoreBlockEntity extends BlockEntity implements PosMenuProvide
 
     public void onBroken() {
         if (!(level instanceof ServerLevel sl)) return;
-        // Le Core part : le cadre redevient visible (sans toucher au Core, en cours de retrait).
-        applyFormed(sl, net.minecraft.core.Direction.EAST, false);
-        applyFormed(sl, net.minecraft.core.Direction.SOUTH, false);
+        // Le Core part : il ne peut plus dessiner son cadre.
+        Direction right = PortalGateGeometry.rememberedRight(getBlockState());
+        if (right != null) {
+            applyFormed(sl, right, false);
+        } else {
+            applyFormed(sl, Direction.EAST, false);
+            applyFormed(sl, Direction.SOUTH, false);
+        }
+        PortalRingSegments.dropSegments(sl, worldPosition);
 
         // Si actif, ferme localement (et tente de fermer l’autre côté si possible)
         if (isActiveOrOpening()) {
@@ -149,26 +155,30 @@ public class PortalCoreBlockEntity extends BlockEntity implements PosMenuProvide
     // Quand le cadre est complet, le Core et les blocs du cadre passent en FORMED : ils deviennent invisibles
     // et PortalGateRenderer dessine l'anneau 3D à leur place.
     private void refreshFormation(ServerLevel sl) {
-        net.minecraft.core.Direction right = PortalFrameDetector.find(sl, worldPosition)
+        Direction previous = PortalGateGeometry.resolveRight(sl, worldPosition);
+        Direction right = PortalFrameDetector.find(sl, worldPosition)
                 .map(PortalFrameDetector.FrameMatch::right)
                 .orElse(null);
         boolean wasFormed = getBlockState().is(ModBlocks.PORTAL_CORE) && getBlockState().getValue(PortalCoreBlock.FORMED);
         if (right == null) {
-            if (wasFormed) clearFormation(sl);
-            return;
+            if (!wasFormed) return;
+            if (previous == null) {
+                applyFormed(sl, Direction.EAST, false);
+                applyFormed(sl, Direction.SOUTH, false);
+                setCoreFormed(sl, null);
+                return;
+            }
+            if (!sl.isLoaded(worldPosition.relative(previous, -2)) || !sl.isLoaded(worldPosition.relative(previous, 2))) return;
+            if (PortalGateGeometry.frameMask(sl, worldPosition, previous) == PortalGateGeometry.CORE_MASK) {
+                setCoreFormed(sl, null);
+                return;
+            }
+            right = previous;
         }
         // Clearing the perpendicular footprint every tick can unform the neighbouring gate's clip support.
-        if (formedRight != null && formedRight != right) applyFormed(sl, formedRight, false);
-        formedRight = right;
+        if (previous != null && previous != right) applyFormed(sl, previous, false);
         applyFormed(sl, right, true);
-        setCoreFormed(sl, true);
-    }
-
-    private void clearFormation(ServerLevel sl) {
-        formedRight = null;
-        applyFormed(sl, net.minecraft.core.Direction.EAST, false);
-        applyFormed(sl, net.minecraft.core.Direction.SOUTH, false);
-        setCoreFormed(sl, false);
+        setCoreFormed(sl, right);
     }
 
     private void applyFormed(ServerLevel sl, net.minecraft.core.Direction right, boolean formed) {
@@ -185,11 +195,13 @@ public class PortalCoreBlockEntity extends BlockEntity implements PosMenuProvide
         }
     }
 
-    private void setCoreFormed(ServerLevel sl, boolean formed) {
+    private void setCoreFormed(ServerLevel sl, @Nullable Direction right) {
+        formedRight = right;
         BlockState state = getBlockState();
-        if (state.is(ModBlocks.PORTAL_CORE) && state.getValue(PortalCoreBlock.FORMED) != formed) {
-            sl.setBlock(worldPosition, state.setValue(PortalCoreBlock.FORMED, formed), 3);
-        }
+        if (!state.is(ModBlocks.PORTAL_CORE)) return;
+        BlockState updated = state.setValue(PortalCoreBlock.FORMED, right != null)
+                .setValue(PortalCoreBlock.AXIS, right == null ? Direction.Axis.Y : right.getAxis());
+        if (updated != state) sl.setBlock(worldPosition, updated, 3);
     }
 
     // ---------- Ticking ----------

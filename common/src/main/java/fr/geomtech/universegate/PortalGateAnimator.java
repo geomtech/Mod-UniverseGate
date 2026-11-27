@@ -6,7 +6,6 @@ import net.minecraft.core.particles.ParticleTypes;
 import net.minecraft.sounds.SoundSource;
 import net.minecraft.util.RandomSource;
 import net.minecraft.world.level.Level;
-import net.minecraft.world.level.block.state.BlockState;
 
 /**
  * Animation de l'anneau 3D d'un portail construit, entièrement côté client.
@@ -220,12 +219,8 @@ public final class PortalGateAnimator {
         return new double[]{xAxis ? h : 0.0D, v, xAxis ? 0.0D : h};
     }
 
-    /** Orientation du portail, déduite des blocs de cadre masqués à côté du Core. */
+    /** Orientation du modèle, conservée quand un bloc du cadre manque. */
     static Direction resolveRight(Level level, BlockPos core) {
-        BlockState east = level.getBlockState(core.east());
-        if (east.is(ModBlocks.PORTAL_FRAME) && east.getValue(PortalFrameBlock.FORMED)) return Direction.EAST;
-        BlockState south = level.getBlockState(core.south());
-        if (south.is(ModBlocks.PORTAL_FRAME) && south.getValue(PortalFrameBlock.FORMED)) return Direction.SOUTH;
-        return null;
+        return PortalGateGeometry.resolveRight(level, core);
     }
 }

@@ -22,6 +22,7 @@ public final class ModItemGroups {
             .displayItems((parameters, output) -> {
                 output.accept(ModItems.PORTAL_CORE_ITEM);
                 output.accept(ModItems.PORTAL_FRAME_ITEM);
+                output.accept(ModItems.PORTAL_RING_SEGMENT);
                 output.accept(ModItems.PORTAL_KEYBOARD_ITEM);
                 output.accept(ModItems.PORTAL_ACTIVATOR_ITEM);
                 output.accept(ModItems.PORTAL_NATURAL_KEYBOARD_ITEM);

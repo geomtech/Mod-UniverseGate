@@ -7,7 +7,6 @@ import java.util.concurrent.CopyOnWriteArrayList;
 public final class PortalGateLayers {
 
     private static final List<PortalGateLayer> LAYERS = new CopyOnWriteArrayList<>(List.of(
-            new PortalGateBaseLayer(),
             new PortalGateRingLayer(),
             new PortalMembraneLayer(),
             new PortalArcLayer()

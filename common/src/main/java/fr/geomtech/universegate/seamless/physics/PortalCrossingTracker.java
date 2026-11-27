@@ -17,6 +17,7 @@ import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.item.ItemEntity;
 import net.minecraft.world.entity.projectile.Projectile;
 import net.minecraft.world.entity.vehicle.AbstractMinecart;
+import net.minecraft.world.level.BlockGetter;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.phys.Vec3;
 
@@ -37,14 +38,25 @@ public final class PortalCrossingTracker {
     private static final Map<UUID, ApproachDirection> LAST_APPROACH = new HashMap<>();
     private static final Map<UUID, PlayerPosSample> PLAYER_PREV_POS = new HashMap<>();
     private static final Map<UUID, ResourceKey<Level>> COOLDOWN_DIMS = new HashMap<>();
+    private static final Map<UUID, DeferredPlayerCrossing> DEFERRED_PLAYER_CROSSINGS = new HashMap<>();
     private static final long STALE_SAMPLE_TICKS = 40L;
 
     private PortalCrossingTracker() {}
+
+    public static void deferPlayerCrossing(UUID playerId, ResourceKey<Level> dim, BlockPos fieldPos) {
+        DEFERRED_PLAYER_CROSSINGS.put(playerId, new DeferredPlayerCrossing(dim, fieldPos.immutable()));
+    }
+
+    static @org.jetbrains.annotations.Nullable BlockPos takeDeferredPlayerCrossing(UUID playerId, ResourceKey<Level> dim) {
+        DeferredPlayerCrossing crossing = DEFERRED_PLAYER_CROSSINGS.remove(playerId);
+        return crossing != null && crossing.dim().equals(dim) ? crossing.fieldPos() : null;
+    }
 
     /**
      * Runs once at the end of every server tick (AFTER {@code ServerConnectionListener#tick} and
      * {@code ServerPlayer#doTick}):
      * <ol>
+     *   <li>Processes field contacts after movement packets have finalized the player's position and look.</li>
      *   <li>Evicts post-crossing hysteresis cooldowns as soon as the player steps away from the exit
      *       portal, so sprinting back in later can never hit a stale cooldown.</li>
      *   <li>Performs a lightweight swept segment check along {@code [prevPos, currPos]} to catch fast
@@ -56,9 +68,16 @@ public final class PortalCrossingTracker {
     public static void tickServerPlayers(MinecraftServer server) {
         for (ServerPlayer player : server.getPlayerList().getPlayers()) {
             if (player == null || player.isRemoved() || !player.isAlive()) {
+                if (player != null) {
+                    DEFERRED_PLAYER_CROSSINGS.remove(player.getUUID());
+                }
                 continue;
             }
             UUID playerId = player.getUUID();
+            BlockPos deferredField = takeDeferredPlayerCrossing(playerId, player.level().dimension());
+            if (deferredField != null && player.level().getBlockState(deferredField).is(ModBlocks.PORTAL_FIELD)) {
+                PortalTeleportHandler.tryTeleport(player, deferredField);
+            }
             ServerLevel level = Compat.serverLevel(player);
             ResourceKey<Level> dim = level.dimension();
             long now = level.getGameTime();
@@ -87,16 +106,17 @@ public final class PortalCrossingTracker {
                     && (now - prevSample.gameTime()) <= STALE_SAMPLE_TICKS) {
                 double distSqr = prevSample.pos().distanceToSqr(currPos);
                 if (distSqr > 0.04D && distSqr < 100.0D) {
-                    int steps = distSqr > 0.64D ? 4 : 2;
                     double sampleYOffset = Math.min(0.6D, player.getBbHeight() * 0.4D);
-                    for (int i = 1; i <= steps; i++) {
-                        double t = (double) i / (double) steps;
-                        Vec3 p = prevSample.pos().lerp(currPos, t);
-                        BlockPos bp = BlockPos.containing(p.x, p.y + sampleYOffset, p.z);
-                        if (level.getBlockState(bp).is(ModBlocks.PORTAL_FIELD)) {
-                            PortalTeleportHandler.tryTeleport(player, bp);
-                            break;
-                        }
+                    BlockPos sweptField = BlockGetter.traverseBlocks(
+                            prevSample.pos().add(0.0D, sampleYOffset, 0.0D),
+                            currPos.add(0.0D, sampleYOffset, 0.0D),
+                            level,
+                            (world, pos) -> world.isLoaded(pos) && world.getBlockState(pos).is(ModBlocks.PORTAL_FIELD)
+                                    ? pos.immutable() : null,
+                            world -> null
+                    );
+                    if (sweptField != null) {
+                        PortalTeleportHandler.tryTeleport(player, sweptField);
                     }
                 }
             }
@@ -257,6 +277,7 @@ public final class PortalCrossingTracker {
     }
 
     public static void onEntityRemoved(UUID entityId) {
+        DEFERRED_PLAYER_CROSSINGS.remove(entityId);
         COOLDOWNS.clearEntity(entityId);
         COOLDOWN_DIMS.remove(entityId);
         LAST_SAMPLES.remove(entityId);
@@ -265,6 +286,7 @@ public final class PortalCrossingTracker {
     }
 
     public static void clearAll() {
+        DEFERRED_PLAYER_CROSSINGS.clear();
         COOLDOWNS.clearAll();
         COOLDOWN_DIMS.clear();
         LAST_SAMPLES.clear();
@@ -277,4 +299,6 @@ public final class PortalCrossingTracker {
     private record ApproachDirection(BlockPos corePos, Direction inwardNormal, long gameTime) {}
 
     private record PlayerPosSample(ResourceKey<Level> dim, Vec3 pos, long gameTime) {}
+
+    private record DeferredPlayerCrossing(ResourceKey<Level> dim, BlockPos fieldPos) {}
 }

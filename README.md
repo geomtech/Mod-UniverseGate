@@ -5,6 +5,7 @@ UniverseGate is a portal-focused mod for **Fabric** and **NeoForge** that introd
 ## Main Features
 
 - **Advanced Portals**: Build 3x4 gateways fueled by a new energy system.
+- **Continuous Player Orientation**: Crossing a portal rotates your viewing direction with the destination gate while preserving pitch, including when strafing or walking backwards.
 - **Portal Network**: Name your portals and dial any other gate in the network using the **Portal Controller** or the handheld **Mobile Portal Controller**.
 - **Energy System**: Generate power with **Solar Panels** and **Combustion Generators**, store it in **Energy Condensers**, transport it via **Energy Conduits** and watch it with the **Energy Monitor**.
 - **The Rift Dimension**: A hostile, void-like world filled with unique resources like **Kelo Wood**, **Rift Crystals**, and dangerous **Rift Shades**.
@@ -34,14 +35,14 @@ UniverseGate energy is measured in **FE** (Forge Energy) and speaks the standard
 *   None of these mods is required: without them, UniverseGate works exactly the same.
 
 ### 2. Building a Portal
-1.  Construct a **Portal Frame** with a **3x4 interior** (5x6 outer size).
-2.  Place the **Portal Core** at the **bottom center** of the frame.
-3.  Connect the Portal Core (or Frame) to your energy network using Conduits.
+1.  Place the **Portal Core**, then build its ring around it with **6 Portal Ring Segments** (crafted from 3 Portal Frames each). Hold a segment near the core: a translucent preview shows the missing arcs and highlights the aimed one (red if obstructed); right-click to place it. Breaking any part of a segment returns the whole segment, and breaking the core returns all placed segments.
+    *   *Classic construction still works: a **Portal Frame** with a **3x4 interior** (5x6 outer size) and the **Portal Core** at the **bottom center**. Both methods can be mixed.*
+2.  Connect the Portal Core (or Frame) to your energy network using Conduits.
     *   *Opening a portal uses a dynamic cost: base **1200 FE**, then increases with distance and if dimensions differ.*
     *   *Maintaining the connection costs **120 FE/s** (more while the vortex is unstable).*
-4.  Place a **Portal Controller**, attach **Crocodile Clips** to both the controller and the portal (frame or core), and connect them with **Electric Wire**.
-5.  Optional: use a **Portal Redstone Activator** for automation. Configure its destination, wire it to the gate, then send a redstone pulse to open that preset destination. It triggers on the rising edge and follows the normal portal energy rules.
-6.  Optional: craft a **Mobile Portal Controller** to dial from your hand while standing near a portal.
+3.  Place a **Portal Controller**, attach **Crocodile Clips** to both the controller and the portal (frame or core), and connect them with **Electric Wire**. On a buried portal, the terminal sits on the nearest ring socket.
+4.  Optional: use a **Portal Redstone Activator** for automation. Configure its destination, wire it to the gate, then send a redstone pulse to open that preset destination. It triggers on the rising edge and follows the normal portal energy rules.
+5.  Optional: craft a **Mobile Portal Controller** to dial from your hand while standing near a portal.
 
 #### Create trains (optional)
 UniverseGate preserves `create:track` when a portal opens or closes. Train travel requires **Create 6.0.10 on NeoForge for Minecraft 1.21.1** and an open, stable portal connection.
@@ -159,6 +160,19 @@ The project is a multi-loader Gradle build:
 The build uses [Stonecutter](https://stonecutter.kikugie.dev/) so the same code can target several Minecraft versions (see [versions/README.md](versions/README.md)).
 
 Run `./gradlew build` (JDK 21+). The jars end up in `fabric/versions/<mc>/build/libs/` and `neoforge/versions/<mc>/build/libs/`. Dev servers: `./gradlew :fabric:1.21.1:runServer` or `./gradlew :neoforge:1.21.1:runServer`.
+
+### Traversal regression tests
+
+Run `./gradlew :common:1.21.1:test --tests '*PortalCrossingTrackerTest' :common:1.21.11:test --tests '*PortalCrossingTrackerTest'` (use `.\gradlew.bat` on Windows).
+These headless integration tests exercise the real field callback, crossing tracker and teleport handler, with simulated world services and player transport, not a live server or client.
+They cover deferred teleportation after position/look finalization, backwards/sideways movement, removed fields, fast swept crossings without loading chunks, and restoration of passenger hierarchies when a vehicle teleport fails.
+
+### Portal model hitboxes
+
+Formed portals use the pixel silhouette of the 3D ring for collision and selection, including sections that extend beyond the construction blocks. Classic frame blocks retain cubic hitboxes until the gate forms. The Core remains a full cube for collision.
+The ring hitbox stays fixed during rotation. Buried gates use the surrounding terrain and low socket rims to form a walkable threshold. Above ground, players can build their own platforms around the Core.
+
+Run `./gradlew :common:1.21.1:test --tests '*PortalGateGeometryTest' :common:1.21.11:test --tests '*PortalGateGeometryTest'` for headless collision and ray-selection regressions on both orientations.
 
 ## License
 

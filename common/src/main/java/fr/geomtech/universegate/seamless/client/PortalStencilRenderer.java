@@ -16,10 +16,10 @@ import com.mojang.blaze3d.vertex.PoseStack;
 import com.mojang.blaze3d.vertex.Tesselator;
 import com.mojang.blaze3d.vertex.VertexFormat;
 import com.mojang.blaze3d.vertex.VertexSorting;
+import fr.geomtech.universegate.PortalBuriedFloor;
 import fr.geomtech.universegate.PortalCoreBlockEntity;
 import fr.geomtech.universegate.PortalFrameDetector;
-import fr.geomtech.universegate.PortalGateBaseLayer;
-import fr.geomtech.universegate.PortalGateRenderer;
+import fr.geomtech.universegate.PortalGateFootRenderer;
 import fr.geomtech.universegate.UniverseGate;
 import fr.geomtech.universegate.mixin.client.CameraAccessor;
 import fr.geomtech.universegate.mixin.client.LevelRendererAccessor;
@@ -259,8 +259,8 @@ public final class PortalStencilRenderer {
             }
 
             double distSqr = portalCenter.distanceToSqr(camPos);
-            boolean sourceBuried = PortalGateBaseLayer.isBuried(activeLevel, corePos, sourceRight);
-            result.add(new PortalCandidate(corePos, endpoint, transform, targetLevel, remoteEntry, distSqr, sourceBuried));
+            result.add(new PortalCandidate(corePos, endpoint, transform, targetLevel, remoteEntry, distSqr,
+                    PortalBuriedFloor.isBuried(activeLevel, corePos, sourceRight)));
         }
 
         result.sort(Comparator.comparingDouble(PortalCandidate::distSqr));
@@ -302,7 +302,7 @@ public final class PortalStencilRenderer {
         GL11.glStencilFunc(GL11.GL_EQUAL, parentStencil, 0xFF);
         GL11.glStencilOp(GL11.GL_KEEP, GL11.GL_KEEP, GL11.GL_INCR);
 
-        drawApertureDisc(transform, candidate.sourceBuried(), mainCamPos, mainFrustumMatrix, mainProjectionMatrix);
+        drawApertureDisc(transform, candidate.buried(), mainCamPos, mainFrustumMatrix, mainProjectionMatrix);
 
         // 2) Clear depth to 1.0 AND fill destination sky/fog background color ONLY inside childStencil
         Vec3 skyColor = resolveDestinationBackgroundColor(candidate.targetLevel(), remoteCamPos, partialTick);
@@ -357,7 +357,7 @@ public final class PortalStencilRenderer {
         GL11.glStencilFunc(GL11.GL_EQUAL, childStencil, 0xFF);
         GL11.glStencilOp(GL11.GL_KEEP, GL11.GL_KEEP, GL11.GL_DECR);
 
-        drawApertureDisc(transform, candidate.sourceBuried(), mainCamPos, mainFrustumMatrix, mainProjectionMatrix);
+        drawApertureDisc(transform, candidate.buried(), mainCamPos, mainFrustumMatrix, mainProjectionMatrix);
 
         // Restore GL state cleanly for the main pass
         RenderSystem.enableDepthTest();
@@ -625,16 +625,13 @@ public final class PortalStencilRenderer {
                 }
                 for (BlockEntity be : chunk.getBlockEntities().values()) {
                     BlockPos bePos = be.getBlockPos();
-                    // For the destination portal's own core, render ONLY its base (buried floor + sockets / plinth)
-                    // so buried floors have no hole at the threshold, without drawing a duplicate ring/membrane.
-                    if (bePos.equals(targetCorePos)) {
-                        if (be instanceof PortalCoreBlockEntity targetCore) {
-                            poseStack.pushPose();
+                    if (bePos.equals(targetCorePos) && be instanceof PortalCoreBlockEntity core) {
+                        Direction right = transform.targetRight().getAxis() == Direction.Axis.X ? Direction.EAST : Direction.SOUTH;
+                        poseStack.pushPose();
+                        try {
                             poseStack.translate(bePos.getX() - remoteCamPos.x, bePos.getY() - remoteCamPos.y, bePos.getZ() - remoteCamPos.z);
-                            try {
-                                PortalGateRenderer.renderBaseOnly(targetCore, partialTick, poseStack, bufferSource);
-                            } catch (Throwable ignored) {
-                            }
+                            PortalGateFootRenderer.render(core, right, poseStack, bufferSource);
+                        } finally {
                             poseStack.popPose();
                         }
                         continue;
@@ -676,8 +673,7 @@ public final class PortalStencilRenderer {
         return skyColor;
     }
 
-    private static void drawApertureDisc(PortalTransform transform,
-                                         boolean sourceBuried,
+    private static void drawApertureDisc(PortalTransform transform, boolean buried,
                                          Vec3 camPos,
                                          Matrix4f frustumMatrix,
                                          Matrix4f projectionMatrix) {
@@ -689,9 +685,11 @@ public final class PortalStencilRenderer {
         double rx = transform.sourceRight().getStepX();
         double rz = transform.sourceRight().getStepZ();
         double radius = PortalTransform.APERTURE_RADIUS;
-        // When the portal base is buried in the floor, clip the bottom of the aperture disc at the
-        // floor surface (coreY + 1.0) so PortalGateBaseLayer.renderBuried is never cut out in depth.
-        double relMinY = sourceBuried ? (transform.sourceCorePos().getY() + 1.0D - center.y) : -radius;
+        // For a buried gate the triangle fan starts on the floor chord, so no stencil pixels land below it.
+        double floorOffset = transform.sourceCorePos().getY() + 1.0D - center.y;
+        double start = buried ? Math.asin(floorOffset / radius) : 0.0D;
+        double sweep = buried ? Math.PI - 2.0D * start : 2.0D * Math.PI;
+        float fanY = (float) (buried ? cy + floorOffset : cy);
 
         Matrix4f savedProj = new Matrix4f(RenderSystem.getProjectionMatrix());
         Matrix4fStack mvStack = RenderSystem.getModelViewStack();
@@ -706,51 +704,18 @@ public final class PortalStencilRenderer {
 
         try {
             BufferBuilder builder = Tesselator.getInstance().begin(VertexFormat.Mode.TRIANGLES, DefaultVertexFormat.POSITION);
-            if (relMinY > -radius + 1.0E-4D && relMinY < radius) {
-                double startAngle = Math.asin(relMinY / radius);
-                double endAngle = Math.PI - startAngle;
-                double step = (endAngle - startAngle) / APERTURE_SEGMENTS;
-                for (int i = 0; i < APERTURE_SEGMENTS; i++) {
-                    double a0 = startAngle + step * i;
-                    double a1 = startAngle + step * (i + 1);
-                    float x0 = (float) (cx + Math.cos(a0) * radius * rx);
-                    float y0 = (float) (cy + Math.sin(a0) * radius);
-                    float z0 = (float) (cz + Math.cos(a0) * radius * rz);
-
-                    float x1 = (float) (cx + Math.cos(a1) * radius * rx);
-                    float y1 = (float) (cy + Math.sin(a1) * radius);
-                    float z1 = (float) (cz + Math.cos(a1) * radius * rz);
-
-                    builder.addVertex(frustumMatrix, (float) cx, (float) cy, (float) cz);
-                    builder.addVertex(frustumMatrix, x0, y0, z0);
-                    builder.addVertex(frustumMatrix, x1, y1, z1);
-                }
-                // Closing chord triangle along y = cy + relMinY between left and right intersections
-                double chordHalf = Math.sqrt(Math.max(0.0D, radius * radius - relMinY * relMinY));
-                float yFloor = (float) (cy + relMinY);
-                float xLeft = (float) (cx - chordHalf * rx);
-                float zLeft = (float) (cz - chordHalf * rz);
-                float xRight = (float) (cx + chordHalf * rx);
-                float zRight = (float) (cz + chordHalf * rz);
-                builder.addVertex(frustumMatrix, (float) cx, (float) cy, (float) cz);
-                builder.addVertex(frustumMatrix, xLeft, yFloor, zLeft);
-                builder.addVertex(frustumMatrix, xRight, yFloor, zRight);
-            } else {
-                for (int i = 0; i < APERTURE_SEGMENTS; i++) {
-                    double a0 = (Math.PI * 2.0D * i) / APERTURE_SEGMENTS;
-                    double a1 = (Math.PI * 2.0D * (i + 1)) / APERTURE_SEGMENTS;
-                    float x0 = (float) (cx + Math.cos(a0) * radius * rx);
-                    float y0 = (float) (cy + Math.sin(a0) * radius);
-                    float z0 = (float) (cz + Math.cos(a0) * radius * rz);
-
-                    float x1 = (float) (cx + Math.cos(a1) * radius * rx);
-                    float y1 = (float) (cy + Math.sin(a1) * radius);
-                    float z1 = (float) (cz + Math.cos(a1) * radius * rz);
-
-                    builder.addVertex(frustumMatrix, (float) cx, (float) cy, (float) cz);
-                    builder.addVertex(frustumMatrix, x0, y0, z0);
-                    builder.addVertex(frustumMatrix, x1, y1, z1);
-                }
+            for (int i = 0; i < APERTURE_SEGMENTS; i++) {
+                double a0 = start + sweep * i / APERTURE_SEGMENTS;
+                double a1 = start + sweep * (i + 1) / APERTURE_SEGMENTS;
+                float x0 = (float) (cx + Math.cos(a0) * radius * rx);
+                float y0 = (float) (cy + Math.sin(a0) * radius);
+                float z0 = (float) (cz + Math.cos(a0) * radius * rz);
+                float x1 = (float) (cx + Math.cos(a1) * radius * rx);
+                float y1 = (float) (cy + Math.sin(a1) * radius);
+                float z1 = (float) (cz + Math.cos(a1) * radius * rz);
+                builder.addVertex(frustumMatrix, (float) cx, fanY, (float) cz);
+                builder.addVertex(frustumMatrix, x0, y0, z0);
+                builder.addVertex(frustumMatrix, x1, y1, z1);
             }
             var mesh = builder.build();
             if (mesh != null) {
@@ -821,7 +786,7 @@ public final class PortalStencilRenderer {
             ClientLevel targetLevel,
             ClientRemoteWorldManager.RemoteWorldEntry remoteEntry,
             double distSqr,
-            boolean sourceBuried
+            boolean buried
     ) {}
     //?}
 }

@@ -1,0 +1,12 @@
+{
+  "type": "minecraft:crafting_shapeless",
+  "ingredients": [
+    "universegate:portal_frame",
+    "universegate:portal_frame",
+    "universegate:portal_frame"
+  ],
+  "result": {
+    "count": 1,
+    "id": "universegate:portal_ring_segment"
+  }
+}
