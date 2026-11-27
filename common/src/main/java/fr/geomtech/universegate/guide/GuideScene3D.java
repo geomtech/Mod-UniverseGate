@@ -309,7 +309,7 @@ final class GuideScene3D implements SceneView {
         if (core.is(ModBlocks.PORTAL_CORE)) {
             world.put(form.core(), core.setValue(PortalCoreBlock.FORMED, true).setValue(PortalCoreBlock.AXIS, form.right().getAxis()));
         }
-        for (int piece = 1; piece <= 6; piece++) {
+        for (int piece = 1; piece <= PortalGateGeometry.PIECE_COUNT; piece++) {
             BlockPos cell = PortalRingSegments.cell(form.core(), form.right(), piece);
             BlockState frame = world.getBlockState(cell);
             if (frame.is(ModBlocks.PORTAL_FRAME)) world.put(cell, frame.setValue(PortalFrameBlock.FORMED, true));
