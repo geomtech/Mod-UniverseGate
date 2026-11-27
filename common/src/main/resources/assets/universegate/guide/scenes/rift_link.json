@@ -1,0 +1,187 @@
+{
+  "world": true,
+  "steps": [
+    {
+      "place": [
+        {
+          "block": "universegate:portal_core",
+          "at": [
+            0,
+            0,
+            0
+          ]
+        }
+      ],
+      "ring": {
+        "core": [
+          0,
+          0,
+          0
+        ],
+        "right": "east",
+        "segments": [
+          1,
+          2,
+          3,
+          4,
+          5,
+          6
+        ]
+      }
+    },
+    {
+      "form": {
+        "core": [
+          0,
+          0,
+          0
+        ],
+        "right": "east"
+      },
+      "place": [
+        {
+          "block": "universegate:lightning_antenna",
+          "at": [
+            5,
+            0,
+            2
+          ],
+          "props": {
+            "part": "base"
+          }
+        },
+        {
+          "block": "universegate:lightning_antenna",
+          "at": [
+            5,
+            1,
+            2
+          ],
+          "props": {
+            "part": "lower"
+          }
+        },
+        {
+          "block": "universegate:lightning_antenna",
+          "at": [
+            5,
+            2,
+            2
+          ],
+          "props": {
+            "part": "upper"
+          }
+        },
+        {
+          "block": "universegate:lightning_antenna",
+          "at": [
+            5,
+            3,
+            2
+          ],
+          "props": {
+            "part": "top"
+          }
+        }
+      ]
+    },
+    {
+      "place": [
+        {
+          "block": "universegate:crocodile_clip",
+          "at": [
+            0,
+            0,
+            1
+          ],
+          "props": {
+            "facing": "north"
+          }
+        },
+        {
+          "block": "universegate:electric_wire",
+          "from": [
+            1,
+            0,
+            1
+          ],
+          "to": [
+            4,
+            0,
+            1
+          ],
+          "props": {
+            "facing": "down"
+          }
+        },
+        {
+          "block": "universegate:electric_wire",
+          "at": [
+            4,
+            0,
+            2
+          ],
+          "props": {
+            "facing": "down"
+          }
+        }
+      ]
+    },
+    {
+      "duration": 60,
+      "set": [
+        {
+          "block": "universegate:lightning_antenna",
+          "at": [
+            5,
+            0,
+            2
+          ],
+          "props": {
+            "part": "base",
+            "charged": "true"
+          }
+        },
+        {
+          "block": "universegate:lightning_antenna",
+          "at": [
+            5,
+            1,
+            2
+          ],
+          "props": {
+            "part": "lower",
+            "charged": "true"
+          }
+        },
+        {
+          "block": "universegate:lightning_antenna",
+          "at": [
+            5,
+            2,
+            2
+          ],
+          "props": {
+            "part": "upper",
+            "charged": "true"
+          }
+        },
+        {
+          "block": "universegate:lightning_antenna",
+          "at": [
+            5,
+            3,
+            2
+          ],
+          "props": {
+            "part": "top",
+            "charged": "true"
+          }
+        }
+      ]
+    },
+    {
+      "duration": 80
+    }
+  ]
+}

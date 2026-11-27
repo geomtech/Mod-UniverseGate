@@ -33,6 +33,7 @@
 		"client.MainTargetStencilMixin",
 		"client.MinecraftSeamlessSwitchMixin",
 		"client.PauseScreenPortalViewMixin",
+		"client.TitleScreenGuideMixin",
 		"client.PortalChunkRegionTintMixin",
 		"client.RenderTargetStencilMixin",
 		"client.RenderTypePortalTargetMixin",

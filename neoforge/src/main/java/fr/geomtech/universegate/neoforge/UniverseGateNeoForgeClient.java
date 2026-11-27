@@ -46,7 +46,10 @@ import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.inventory.AbstractContainerMenu;
 import net.neoforged.api.distmarker.Dist;
 import net.neoforged.bus.api.IEventBus;
+import net.neoforged.fml.ModContainer;
 import net.neoforged.fml.common.Mod;
+import net.neoforged.neoforge.client.gui.IConfigScreenFactory;
+import fr.geomtech.universegate.guide.GuideScreen;
 import net.neoforged.fml.event.lifecycle.FMLClientSetupEvent;
 import net.neoforged.neoforge.client.event.ClientTickEvent;
 import net.neoforged.neoforge.client.event.EntityRenderersEvent;
@@ -68,8 +71,16 @@ public final class UniverseGateNeoForgeClient {
     private static final ResourceLocation DARK_MATTER_FLOWING = ResourceLocation.fromNamespaceAndPath(UniverseGate.MOD_ID, "block/dark_matter_flow");
     private static final ResourceLocation DNA_EXTRACTION_LAYER = ResourceLocation.fromNamespaceAndPath(UniverseGate.MOD_ID, "dna_extraction");
 
-    public UniverseGateNeoForgeClient(IEventBus modBus) {
+    public UniverseGateNeoForgeClient(IEventBus modBus, ModContainer container) {
         UniverseGateClientNetwork.registerClient();
+        // "Config" in the mods list opens the guide, which holds the client settings.
+        container.registerExtensionPoint(IConfigScreenFactory.class, (mod, parent) -> new GuideScreen(parent));
+        //? if >=1.21.11 {
+        /*// 3D guide scenes are drawn into their own texture ("picture in picture") since 1.21.6.
+        modBus.addListener(net.neoforged.neoforge.client.event.RegisterPictureInPictureRenderersEvent.class, event ->
+                event.register(fr.geomtech.universegate.guide.GuideScenePip.State.class, fr.geomtech.universegate.guide.GuideScenePip.Renderer::new));
+        fr.geomtech.universegate.guide.GuideScenePip.SUBMIT = net.minecraft.client.gui.GuiGraphics::submitPictureInPictureRenderState;
+        *///?}
         //? if 1.21.1 {
         if (fr.geomtech.universegate.neoforge.create.CreateCompatMixinPlugin.isSupported()) {
             fr.geomtech.universegate.neoforge.create.CarriageTeleportClient.register();

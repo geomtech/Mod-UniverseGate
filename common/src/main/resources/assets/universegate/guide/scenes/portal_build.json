@@ -1,0 +1,195 @@
+{
+  "world": true,
+  "steps": [
+    {
+      "place": [
+        {
+          "block": "universegate:portal_core",
+          "at": [
+            0,
+            0,
+            0
+          ]
+        }
+      ]
+    },
+    {
+      "ring": {
+        "core": [
+          0,
+          0,
+          0
+        ],
+        "right": "east",
+        "segments": [
+          1,
+          2
+        ]
+      }
+    },
+    {
+      "ring": {
+        "core": [
+          0,
+          0,
+          0
+        ],
+        "right": "east",
+        "segments": [
+          3,
+          4
+        ]
+      }
+    },
+    {
+      "ring": {
+        "core": [
+          0,
+          0,
+          0
+        ],
+        "right": "east",
+        "segments": [
+          5,
+          6
+        ]
+      },
+      "duration": 40
+    },
+    {
+      "form": {
+        "core": [
+          0,
+          0,
+          0
+        ],
+        "right": "east"
+      },
+      "duration": 50
+    },
+    {
+      "place": [
+        {
+          "block": "universegate:energy_conduit",
+          "from": [
+            0,
+            0,
+            -1
+          ],
+          "to": [
+            0,
+            0,
+            -2
+          ]
+        },
+        {
+          "block": "universegate:energy_conduit",
+          "from": [
+            1,
+            0,
+            -2
+          ],
+          "to": [
+            2,
+            0,
+            -2
+          ]
+        },
+        {
+          "block": "universegate:energy_condenser",
+          "at": [
+            3,
+            0,
+            -2
+          ]
+        },
+        {
+          "block": "universegate:energy_conduit",
+          "at": [
+            4,
+            0,
+            -2
+          ]
+        },
+        {
+          "block": "universegate:solar_panel",
+          "at": [
+            5,
+            0,
+            -2
+          ],
+          "props": {
+            "facing": "east"
+          }
+        },
+        {
+          "block": "universegate:solar_panel",
+          "at": [
+            4,
+            0,
+            -3
+          ],
+          "props": {
+            "facing": "north"
+          }
+        }
+      ]
+    },
+    {
+      "place": [
+        {
+          "block": "universegate:portal_keyboard",
+          "at": [
+            -3,
+            0,
+            2
+          ],
+          "props": {
+            "facing": "south"
+          }
+        },
+        {
+          "block": "universegate:crocodile_clip",
+          "at": [
+            -3,
+            0,
+            1
+          ],
+          "props": {
+            "facing": "south"
+          }
+        },
+        {
+          "block": "universegate:electric_wire",
+          "from": [
+            -2,
+            0,
+            1
+          ],
+          "to": [
+            -1,
+            0,
+            1
+          ],
+          "props": {
+            "facing": "down"
+          }
+        },
+        {
+          "block": "universegate:crocodile_clip",
+          "at": [
+            0,
+            0,
+            1
+          ],
+          "props": {
+            "facing": "north"
+          }
+        }
+      ]
+    },
+    {
+      "duration": 80
+    }
+  ]
+}

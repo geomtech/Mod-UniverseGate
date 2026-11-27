@@ -1,0 +1,110 @@
+{
+  "world": true,
+  "steps": [
+    {
+      "place": [
+        {
+          "block": "universegate:meteorological_condenser",
+          "from": [
+            1,
+            0,
+            0
+          ],
+          "to": [
+            1,
+            1,
+            0
+          ]
+        }
+      ]
+    },
+    {
+      "place": [
+        {
+          "block": "universegate:meteorological_controller",
+          "at": [
+            1,
+            1,
+            1
+          ],
+          "props": {
+            "facing": "south"
+          }
+        }
+      ]
+    },
+    {
+      "place": [
+        {
+          "block": "universegate:meteorological_catalyst",
+          "at": [
+            1,
+            2,
+            0
+          ]
+        }
+      ]
+    },
+    {
+      "duration": 50,
+      "set": [
+        {
+          "block": "universegate:meteorological_catalyst",
+          "at": [
+            1,
+            2,
+            0
+          ],
+          "props": {
+            "has_crystal": "true"
+          }
+        }
+      ]
+    },
+    {
+      "place": [
+        {
+          "block": "universegate:energy_conduit",
+          "from": [
+            2,
+            0,
+            0
+          ],
+          "to": [
+            3,
+            0,
+            0
+          ]
+        },
+        {
+          "block": "universegate:energy_condenser",
+          "at": [
+            4,
+            0,
+            0
+          ]
+        }
+      ]
+    },
+    {
+      "place": [
+        {
+          "block": "universegate:energy_conduit",
+          "at": [
+            4,
+            0,
+            1
+          ]
+        },
+        {
+          "block": "universegate:parabola_block",
+          "at": [
+            4,
+            0,
+            2
+          ]
+        }
+      ]
+    }
+  ]
+}

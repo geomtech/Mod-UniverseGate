@@ -57,6 +57,12 @@ import net.minecraft.world.inventory.AbstractContainerMenu;
 public class UniverseGateFabricClient implements ClientModInitializer {
 	@Override
 	public void onInitializeClient() {
+		//? if >=1.21.11 {
+		/*// 3D guide scenes are drawn into their own texture ("picture in picture") since 1.21.6.
+		net.fabricmc.fabric.api.client.rendering.v1.SpecialGuiElementRegistry.register(
+				context -> new fr.geomtech.universegate.guide.GuideScenePip.Renderer(context.vertexConsumers()));
+		fr.geomtech.universegate.guide.GuideScenePip.SUBMIT = (graphics, state) -> graphics.guiRenderState.submitPicturesInPictureState(state);
+		*///?}
 		//? if <1.21.11 {
 		CoreShaderRegistrationCallback.EVENT.register(context -> context.register(
 				PortalDistortionRenderer.SHADER_ID, DefaultVertexFormat.POSITION_TEX, PortalDistortionRenderer::setShader));

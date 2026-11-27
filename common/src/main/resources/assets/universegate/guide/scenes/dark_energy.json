@@ -1,0 +1,13 @@
+{
+  "steps": [
+    {"place": [{"item": "universegate:rift_refiner", "at": [0, 0, 0]}]},
+    {"place": [{"item": "universegate:fluid_pipe", "from": [1, 0, 0], "to": [2, 0, 0]}]},
+    {"place": [{"item": "universegate:dark_energy_generator", "at": [3, 0, 0]}]},
+    {"place": [{"item": "universegate:dark_energy_conduit", "from": [4, 0, 0], "to": [5, 0, 0]}]},
+    {"place": [{"item": "universegate:zpc_interface_controller", "at": [6, 0, 0]}]},
+    {"place": [
+      {"item": "universegate:energy_conduit", "from": [6, 0, 1], "to": [6, 0, 2]},
+      {"item": "universegate:energy_condenser", "at": [6, 0, 3]}
+    ]}
+  ]
+}
