@@ -3,7 +3,6 @@ package fr.geomtech.universegate;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.core.particles.ParticleOptions;
-import net.minecraft.core.particles.ParticleTypes;
 import net.minecraft.util.Mth;
 import net.minecraft.util.RandomSource;
 import net.minecraft.world.level.Level;
@@ -68,7 +67,7 @@ public final class PortalOpeningParticles {
                 emit(level, random, p, axis, ModParticles.SPARK, whiteCount, 0.002D);
             }
             if (blackCount > 0) {
-                emit(level, random, p, axis, ParticleTypes.SQUID_INK, blackCount, 0.01D);
+                emit(level, random, p, axis, ModParticles.PORTAL_INK, blackCount, 0.01D);
             }
         }
     }

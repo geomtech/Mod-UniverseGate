@@ -32,10 +32,9 @@ final class PortalMembraneLayer implements PortalGateLayer {
         if (!ctx.active()) return;
 
         boolean unstable = ctx.unstable();
-        boolean seamlessRendered = fr.geomtech.universegate.seamless.client.PortalStencilRenderer.replacesMembrane(ctx.corePos());
-        // En mode seamless stable, la vue en temps réel remplace entièrement la membrane opaque.
-        // En mode instable, on ne dessine que les éclats blancs/gris lumineux par-dessus la vue live.
-        if (seamlessRendered && !unstable) return;
+        boolean composited = fr.geomtech.universegate.seamless.client.PortalStencilRenderer.replacesMembrane(ctx.corePos());
+        // The compositor draws its own veil. Keep the unstable membrane flashes.
+        if (composited && !unstable) return;
 
         long tick = ctx.tick();
         float time = ctx.time() * (unstable ? 2.4F : 1.0F);
@@ -53,7 +52,7 @@ final class PortalMembraneLayer implements PortalGateLayer {
                 float dx = px + 0.5F - RADIUS;
                 if (dx * dx + dy * dy > RADIUS * RADIUS) continue;
                 int[] color = pixelColor(px, py, time, tick, phase, unstable);
-                if (seamlessRendered && color != WHITE && color != MID) continue;
+                if (composited && color != WHITE && color != MID) continue;
                 int alpha = color == WHITE || color == MID ? 255 : rowAlpha;
                 float h0 = (originH + px) / 16.0F, h1 = (originH + px + 1) / 16.0F;
                 float v0 = (originV + py) / 16.0F, v1 = (originV + py + 1) / 16.0F;

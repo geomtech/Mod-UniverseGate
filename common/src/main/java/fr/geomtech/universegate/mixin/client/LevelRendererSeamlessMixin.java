@@ -18,9 +18,16 @@ import com.mojang.blaze3d.resource.GraphicsResourceAllocator;
 import org.joml.Vector4f;
 *///?} else {
 import net.minecraft.client.renderer.GameRenderer;
+import com.mojang.blaze3d.systems.RenderSystem;
 import net.minecraft.client.renderer.LightTexture;
 import net.minecraft.client.multiplayer.ClientLevel;
 import net.minecraft.world.level.block.entity.BlockEntity;
+import net.minecraft.world.level.block.state.BlockState;
+import net.minecraft.world.entity.Entity;
+import net.minecraft.core.BlockPos;
+import com.mojang.blaze3d.vertex.PoseStack;
+import com.mojang.blaze3d.vertex.VertexConsumer;
+import fr.geomtech.universegate.ModBlocks;
 import java.util.Collection;
 //?}
 
@@ -41,6 +48,13 @@ public abstract class LevelRendererSeamlessMixin {
     }
 
     //? if <1.21.11 {
+    @Inject(method = "renderHitOutline", at = @At("HEAD"), cancellable = true)
+    private void universegate$hidePortalFieldOutline(PoseStack pose, VertexConsumer vertices, Entity cameraEntity,
+                                                     double x, double y, double z, BlockPos pos, BlockState state,
+                                                     CallbackInfo ci) {
+        if (state.is(ModBlocks.PORTAL_FIELD)) ci.cancel();
+    }
+
     @Inject(method = "setSectionDirty(IIIZ)V", at = @At("HEAD"))
     private void universegate$dirtyPortalCompositeSection(int x, int y, int z, boolean immediate, CallbackInfo ci) {
         ClientLevel level = ((LevelRendererAccessor) this).universegate$getLevel();
@@ -51,6 +65,11 @@ public abstract class LevelRendererSeamlessMixin {
     private void universegate$isolateRemoteGlobalBlockEntities(Collection<BlockEntity> toRemove,
                                                                Collection<BlockEntity> toAdd,
                                                                CallbackInfo ci) {
+        // Dedicated portal sections also compile when the destination is in the active ClientLevel.
+        if (RenderSystem.isOnRenderThread() && PortalStencilRenderer.isRenderingPortalPass()) {
+            ci.cancel();
+            return;
+        }
         for (BlockEntity be : toAdd) {
             if (ClientRemoteWorldManager.isRemoteLevel(be.getLevel())) {
                 ci.cancel();

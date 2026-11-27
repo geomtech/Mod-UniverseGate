@@ -97,8 +97,18 @@ public final class PortalGateGeometry {
     }
 
     public static boolean ringPixel(int h, int v) {
-        double dx = h + 0.5D - CENTER_H;
-        double dy = v + 0.5D - CENTER_V;
+        return ringPoint(h + 0.5D, v + 0.5D);
+    }
+
+    /** Segment containing the point ({@code h}, {@code v}), in model pixels. */
+    public static int segmentAt(double h, double v) {
+        return segmentAtAngle(Math.toDegrees(Math.atan2(v - CENTER_V, h - CENTER_H)));
+    }
+
+    /** Whether the point ({@code h}, {@code v}), in model pixels, lies inside the ring. */
+    public static boolean ringPoint(double h, double v) {
+        double dx = h - CENTER_H;
+        double dy = v - CENTER_V;
         double distanceSquared = dx * dx + dy * dy;
         return distanceSquared >= INNER_RADIUS * INNER_RADIUS
                 && distanceSquared < OUTER_RADIUS * OUTER_RADIUS;

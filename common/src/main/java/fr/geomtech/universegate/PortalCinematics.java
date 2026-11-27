@@ -312,7 +312,7 @@ public final class PortalCinematics {
                     (random.nextDouble() - 0.5D) * 0.2D, random.nextDouble() * 0.15D, (random.nextDouble() - 0.5D) * 0.2D);
         }
         for (int i = 0; i < 8; i++) {
-            level.addParticle(ParticleTypes.SQUID_INK, cx, cy, cz,
+            level.addParticle(ModParticles.PORTAL_INK, cx, cy, cz,
                     (random.nextDouble() - 0.5D) * 0.12D, (random.nextDouble() - 0.5D) * 0.12D,
                     (random.nextDouble() - 0.5D) * 0.12D);
         }

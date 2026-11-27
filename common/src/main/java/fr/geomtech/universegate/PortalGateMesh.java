@@ -64,8 +64,14 @@ final class PortalGateMesh {
     /** Two reliefs mounted on the opposite skins. Only their tops and exposed rims are visible. */
     static PortalGateMesh buildFaceRelief(int width, int height, int[] color, int[] tag, int originH, int originV,
                                           float skinZ0, float skinZ1, float relief, float pivotH, float pivotV) {
+        return buildFaceRelief(width, height, color, tag, originH, originV, skinZ0, skinZ1, relief, pivotH, pivotV, 1);
+    }
+
+    /** {@code sub} : sous-pixels par pixel du modèle (2 = motif deux fois plus fin). */
+    static PortalGateMesh buildFaceRelief(int width, int height, int[] color, int[] tag, int originH, int originV,
+                                          float skinZ0, float skinZ1, float relief, float pivotH, float pivotV, int sub) {
         return build(width, height, color, tag, originH, originV, skinZ0 - relief, skinZ1 + relief,
-                pivotH, pivotV, null, null, relief);
+                pivotH, pivotV, null, null, relief, sub);
     }
 
     /** Couleur d'une tranche, découpée en bandes de 1 px dans l'épaisseur. */
@@ -76,7 +82,8 @@ final class PortalGateMesh {
 
     /** Indicates that an empty neighbor belongs to the intact shape and exposes a cut end. */
     interface CutEnd {
-        boolean contains(int h, int v);
+        /** {@code h}, {@code v} : centre de la cellule voisine, en pixels du modèle. */
+        boolean contains(float h, float v);
     }
 
     private record CutQuad(float h0, float v0, float h1, float v1, float z0, float z1, int kind, int color, int tag) {}
@@ -101,12 +108,19 @@ final class PortalGateMesh {
     static PortalGateMesh build(int width, int height, int[] color, int[] tag,
                                 int originH, int originV, float z0, float z1, float pivotH, float pivotV,
                                 EdgePaint edgePaint, CutEnd cutEnd) {
-        return build(width, height, color, tag, originH, originV, z0, z1, pivotH, pivotV, edgePaint, cutEnd, z1 - z0);
+        return build(width, height, color, tag, originH, originV, z0, z1, pivotH, pivotV, edgePaint, cutEnd, z1 - z0, 1);
+    }
+
+    static PortalGateMesh build(int width, int height, int[] color, int[] tag,
+                                int originH, int originV, float z0, float z1, float pivotH, float pivotV,
+                                EdgePaint edgePaint, CutEnd cutEnd, int sub) {
+        return build(width, height, color, tag, originH, originV, z0, z1, pivotH, pivotV, edgePaint, cutEnd, z1 - z0, sub);
     }
 
     private static PortalGateMesh build(int width, int height, int[] color, int[] tag,
                                         int originH, int originV, float z0, float z1, float pivotH, float pivotV,
-                                        EdgePaint edgePaint, CutEnd cutEnd, float sideDepth) {
+                                        EdgePaint edgePaint, CutEnd cutEnd, float sideDepth, int sub) {
+        float px = 1.0F / sub;
         float[] q = new float[64];
         int[] c = new int[16];
         int[] t = new int[16];
@@ -123,7 +137,7 @@ final class PortalGateMesh {
                 if (tag[i] == 0) {
                     while (x + run < width && color[i + run] == color[i] && tag[i + run] == 0) run++;
                 }
-                float h0 = originH + x, h1 = h0 + run, v0 = originV + y, v1 = v0 + 1;
+                float h0 = originH + x * px, h1 = h0 + run * px, v0 = originV + y * px, v1 = v0 + px;
                 if (n * 7 + 7 > q.length) { q = Arrays.copyOf(q, q.length * 2); c = Arrays.copyOf(c, c.length * 2); t = Arrays.copyOf(t, t.length * 2); a = Arrays.copyOf(a, a.length * 2); }
                 put(q, n, h0, v0, h1, v1, z0, z1, 0);
                 c[n] = color[i]; t[n] = tag[i]; a[n] = angleOf(h0, h1, v0, v1, pivotH, pivotV); n++;
@@ -141,24 +155,24 @@ final class PortalGateMesh {
                     int nx = x + d[0], ny = y + d[1];
                     boolean open = nx < 0 || ny < 0 || nx >= width || ny >= height || color[ny * width + nx] == EMPTY;
                     if (!open) continue;
-                    float h = originH + x, v = originV + y;
+                    float h = originH + x * px, v = originV + y * px;
                     float eh0, ev0, eh1, ev1;
                     int kind;
                     if (d[0] != 0) {
-                        float edge = d[0] < 0 ? h : h + 1;
-                        eh0 = edge; ev0 = v; eh1 = edge; ev1 = v + 1; kind = 1;
+                        float edge = d[0] < 0 ? h : h + px;
+                        eh0 = edge; ev0 = v; eh1 = edge; ev1 = v + px; kind = 1;
                     } else {
-                        float edge = d[1] < 0 ? v : v + 1;
-                        eh0 = h; ev0 = edge; eh1 = h + 1; ev1 = edge; kind = 2;
+                        float edge = d[1] < 0 ? v : v + px;
+                        eh0 = h; ev0 = edge; eh1 = h + px; ev1 = edge; kind = 2;
                     }
-                    float angle = angleOf(h, h + 1, v, v + 1, pivotH, pivotV);
-                    if (cutEnd != null && cutEnd.contains(originH + nx, originV + ny)) {
-                        float radius = (float) Math.hypot(h + 0.5F - pivotH, v + 0.5F - pivotV);
+                    float angle = angleOf(h, h + px, v, v + px, pivotH, pivotV);
+                    if (cutEnd != null && cutEnd.contains(originH + (nx + 0.5F) * px, originV + (ny + 0.5F) * px)) {
+                        float radius = (float) Math.hypot(h + 0.5F * px - pivotH, v + 0.5F * px - pivotV);
                         int alongX = Math.abs(d[1]), alongY = Math.abs(d[0]);
                         float before = adjacentCutRadius(x - alongX, y - alongY, d, width, height, color,
-                                originH, originV, pivotH, pivotV, cutEnd);
+                                originH, originV, pivotH, pivotV, cutEnd, px);
                         float after = adjacentCutRadius(x + alongX, y + alongY, d, width, height, color,
-                                originH, originV, pivotH, pivotV, cutEnd);
+                                originH, originV, pivotH, pivotV, cutEnd, px);
                         cutEnd(cutQuads, eh0, ev0, eh1, ev1, z0, z1, d[0], d[1], kind,
                                 radius, before, after, color[i], tag[i]);
                         continue;
@@ -179,7 +193,7 @@ final class PortalGateMesh {
                         continue;
                     }
                     // Tranche détaillée : bord extérieur si elle est plus loin du pivot que le pixel.
-                    float pcH = h + 0.5F - pivotH, pcV = v + 0.5F - pivotV;
+                    float pcH = h + 0.5F * px - pivotH, pcV = v + 0.5F * px - pivotV;
                     float ecH = (eh0 + eh1) * 0.5F - pivotH, ecV = (ev0 + ev1) * 0.5F - pivotV;
                     boolean outer = ecH * ecH + ecV * ecV > pcH * pcH + pcV * pcV;
                     float radius = (float) Math.sqrt(ecH * ecH + ecV * ecV);
@@ -215,18 +229,84 @@ final class PortalGateMesh {
                 t[n++] = face.tag();
             }
         }
+        n = mergeSides(q, c, t, a, n);
         return new PortalGateMesh(q, c, t, a, n, pivotH, pivotV);
     }
 
+    /**
+     * Fusionne les tranches fixes (non étiquetées) alignées et contiguës de même couleur : les côtés sont émis
+     * sous-pixel par sous-pixel, ce qui multiplierait sinon le nombre de faces.
+     */
+    private static int mergeSides(float[] q, int[] c, int[] t, float[] a, int n) {
+        List<Integer> sides = new ArrayList<>();
+        for (int i = 0; i < n; i++) {
+            int kind = (int) q[i * 7 + 6];
+            if ((kind == 1 || kind == 2) && t[i] == 0) sides.add(i);
+        }
+        java.util.Comparator<Integer> key = java.util.Comparator
+                .<Integer>comparingInt(i -> (int) q[i * 7 + 6])
+                .thenComparingDouble(i -> fixedOf(q, i))
+                .thenComparingDouble(i -> q[i * 7 + 4])
+                .thenComparingDouble(i -> q[i * 7 + 5])
+                .thenComparingInt(i -> c[i])
+                .thenComparingDouble(i -> startOf(q, i));
+        sides.sort(key);
+        boolean[] removed = new boolean[n];
+        int run = -1;
+        for (int i : sides) {
+            if (run >= 0 && q[run * 7 + 6] == q[i * 7 + 6] && fixedOf(q, run) == fixedOf(q, i)
+                    && q[run * 7 + 4] == q[i * 7 + 4] && q[run * 7 + 5] == q[i * 7 + 5] && c[run] == c[i]
+                    && Math.abs(endOf(q, run) - startOf(q, i)) < 1.0E-4F) {
+                setEnd(q, run, endOf(q, i));
+                removed[i] = true;
+                continue;
+            }
+            run = i;
+        }
+        int out = 0;
+        for (int i = 0; i < n; i++) {
+            if (removed[i]) continue;
+            if (out != i) {
+                System.arraycopy(q, i * 7, q, out * 7, 7);
+                c[out] = c[i];
+                t[out] = t[i];
+                a[out] = a[i];
+            }
+            out++;
+        }
+        return out;
+    }
+
+    private static float fixedOf(float[] q, int i) {
+        return q[i * 7 + 6] == 1 ? q[i * 7] : q[i * 7 + 1];
+    }
+
+    private static float startOf(float[] q, int i) {
+        return q[i * 7 + 6] == 1 ? Math.min(q[i * 7 + 1], q[i * 7 + 3]) : Math.min(q[i * 7], q[i * 7 + 2]);
+    }
+
+    private static float endOf(float[] q, int i) {
+        return q[i * 7 + 6] == 1 ? Math.max(q[i * 7 + 1], q[i * 7 + 3]) : Math.max(q[i * 7], q[i * 7 + 2]);
+    }
+
+    private static void setEnd(float[] q, int i, float end) {
+        int o = i * 7;
+        if (q[o + 6] == 1) {
+            if (q[o + 3] >= q[o + 1]) q[o + 3] = end; else q[o + 1] = end;
+        } else {
+            if (q[o + 2] >= q[o]) q[o + 2] = end; else q[o] = end;
+        }
+    }
+
     private static float adjacentCutRadius(int x, int y, int[] direction, int width, int height, int[] color,
-                                           int originH, int originV, float pivotH, float pivotV, CutEnd cut) {
+                                           int originH, int originV, float pivotH, float pivotV, CutEnd cut, float px) {
         int nx = x + direction[0], ny = y + direction[1];
         if (x < 0 || y < 0 || x >= width || y >= height || color[y * width + x] == EMPTY
-                || !cut.contains(originH + nx, originV + ny)
+                || !cut.contains(originH + (nx + 0.5F) * px, originV + (ny + 0.5F) * px)
                 || (nx >= 0 && ny >= 0 && nx < width && ny < height && color[ny * width + nx] != EMPTY)) {
             return 0.0F;
         }
-        return (float) Math.hypot(originH + x + 0.5F - pivotH, originV + y + 0.5F - pivotV);
+        return (float) Math.hypot(originH + (x + 0.5F) * px - pivotH, originV + (y + 0.5F) * px - pivotV);
     }
 
     /** The outer laminations fold into the cut. The rebate and central pocket sit behind both skins. */

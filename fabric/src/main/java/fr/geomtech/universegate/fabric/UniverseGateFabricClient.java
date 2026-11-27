@@ -31,12 +31,16 @@ import net.fabricmc.api.ClientModInitializer;
 import net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientTickEvents;
 import net.fabricmc.fabric.api.client.particle.v1.ParticleFactoryRegistry;
 import fr.geomtech.universegate.ModParticles;
+import fr.geomtech.universegate.PortalInkParticle;
 import fr.geomtech.universegate.UniverseGateSparkParticle;
 //? if >=1.21.11 {
 /*import net.fabricmc.fabric.api.client.rendering.v1.BlockRenderLayerMap;
 import net.minecraft.client.renderer.chunk.ChunkSectionLayer;
 *///?} else {
 import net.fabricmc.fabric.api.blockrenderlayer.v1.BlockRenderLayerMap;
+import net.fabricmc.fabric.api.client.rendering.v1.CoreShaderRegistrationCallback;
+import com.mojang.blaze3d.vertex.DefaultVertexFormat;
+import fr.geomtech.universegate.seamless.client.PortalDistortionRenderer;
 //?}
 import net.fabricmc.fabric.api.client.item.v1.ItemTooltipCallback;
 import net.fabricmc.fabric.api.client.render.fluid.v1.FluidRenderHandlerRegistry;
@@ -53,6 +57,10 @@ import net.minecraft.world.inventory.AbstractContainerMenu;
 public class UniverseGateFabricClient implements ClientModInitializer {
 	@Override
 	public void onInitializeClient() {
+		//? if <1.21.11 {
+		CoreShaderRegistrationCallback.EVENT.register(context -> context.register(
+				PortalDistortionRenderer.SHADER_ID, DefaultVertexFormat.POSITION_TEX, PortalDistortionRenderer::setShader));
+		//?}
 		ResourceLocation darkMatterStill = ResourceLocation.fromNamespaceAndPath(UniverseGate.MOD_ID, "block/dark_matter_still");
 		ResourceLocation darkMatterFlowing = ResourceLocation.fromNamespaceAndPath(UniverseGate.MOD_ID, "block/dark_matter_flow");
 		FluidRenderHandlerRegistry.INSTANCE.register(
@@ -66,6 +74,7 @@ public class UniverseGateFabricClient implements ClientModInitializer {
 		BlockRenderLayerMap.INSTANCE.putFluids(RenderType.translucent(), ModFluids.STILL_DARK_MATTER, ModFluids.FLOWING_DARK_MATTER);
 		//?}
 		ParticleFactoryRegistry.getInstance().register(ModParticles.SPARK, UniverseGateSparkParticle.Provider::new);
+		ParticleFactoryRegistry.getInstance().register(ModParticles.PORTAL_INK, PortalInkParticle.Provider::new);
 
 		MenuScreens.<AbstractContainerMenu, PortalKeyboardScreen>register(ModMenuTypes.PORTAL_KEYBOARD, PortalKeyboardScreen::new);
 		MenuScreens.<AbstractContainerMenu, PortalKeyboardScreen>register(ModMenuTypes.PORTAL_NATURAL_KEYBOARD, PortalKeyboardScreen::new);

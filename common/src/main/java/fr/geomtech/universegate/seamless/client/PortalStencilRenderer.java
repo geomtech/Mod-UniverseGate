@@ -7,7 +7,10 @@ import net.minecraft.client.renderer.LevelRenderer;
 import net.minecraft.core.BlockPos;
 import org.joml.Matrix4f;
 //? if <1.21.11 {
+import com.mojang.blaze3d.pipeline.TextureTarget;
+import com.mojang.blaze3d.platform.GlStateManager;
 import com.mojang.blaze3d.platform.Lighting;
+import com.mojang.blaze3d.shaders.FogShape;
 import com.mojang.blaze3d.systems.RenderSystem;
 import com.mojang.blaze3d.vertex.BufferBuilder;
 import com.mojang.blaze3d.vertex.BufferUploader;
@@ -25,21 +28,25 @@ import fr.geomtech.universegate.UniverseGate;
 import fr.geomtech.universegate.mixin.client.CameraAccessor;
 import fr.geomtech.universegate.mixin.client.LevelRendererAccessor;
 import fr.geomtech.universegate.mixin.client.LightTextureAccessor;
+import fr.geomtech.universegate.mixin.client.SectionRenderDispatcherAccessor;
 import fr.geomtech.universegate.seamless.math.ObliqueFrustumMath;
 import fr.geomtech.universegate.seamless.math.PortalTransform;
 import fr.geomtech.universegate.seamless.net.PortalRemoteEndpointPayload;
 import it.unimi.dsi.fastutil.objects.ObjectArrayList;
-import net.minecraft.client.renderer.FogRenderer;
 import net.minecraft.client.renderer.GameRenderer;
 import net.minecraft.client.renderer.MultiBufferSource;
 import net.minecraft.client.renderer.RenderType;
+import net.minecraft.client.renderer.ShaderInstance;
 import net.minecraft.client.renderer.ViewArea;
 import net.minecraft.client.renderer.blockentity.BlockEntityRenderDispatcher;
+import net.minecraft.client.renderer.block.ModelBlockRenderer;
 import net.minecraft.client.renderer.chunk.RenderRegionCache;
 import net.minecraft.client.renderer.chunk.SectionRenderDispatcher;
 import net.minecraft.client.renderer.culling.Frustum;
 import net.minecraft.core.Direction;
+import net.minecraft.util.Mth;
 import net.minecraft.world.entity.Entity;
+import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.chunk.LevelChunk;
 import net.minecraft.world.level.chunk.status.ChunkStatus;
@@ -48,6 +55,8 @@ import net.minecraft.world.phys.Vec3;
 import org.joml.Matrix4fStack;
 import org.joml.Vector4f;
 import org.lwjgl.opengl.GL11;
+import org.lwjgl.opengl.GL30;
+import org.lwjgl.system.MemoryStack;
 
 import java.util.ArrayList;
 import java.util.Comparator;
@@ -72,15 +81,21 @@ public final class PortalStencilRenderer {
     public static final int MAX_PORTALS_PER_FRAME = 4;
     public static final int MAX_RECURSION_DEPTH = 2;
     public static final double MAX_SEAMLESS_DISTANCE = 48.0D;
-    private static final int APERTURE_SEGMENTS = 32;
-    private static final int MAX_SYNC_SECTION_BUILDS_PER_FRAME = 16;
+    private static final int APERTURE_SEGMENTS = 64;
+    private static final int MAX_SYNC_SECTION_BUILDS_PER_FRAME = 4;
 
     private static final Set<BlockPos> RENDERED_SEAMLESSLY_THIS_FRAME = new HashSet<>();
     //? if <1.21.11 {
+    private static final double VEIL_FADE_START = 24.0D;
+    private static final double VEIL_OPAQUE_DISTANCE = 34.0D;
+    private static final double TERRAIN_RADIUS = 56.0D;
+    private static final double DETAIL_RADIUS_SQR = 20.0D * 20.0D;
+    private static final Set<BlockPos> RENDERED_SURFACES_THIS_FRAME = new HashSet<>();
     private static final Map<BlockPos, CachedFrontNormal> FRONT_NORMAL_CACHE = new HashMap<>();
     private static net.minecraft.resources.ResourceKey<net.minecraft.world.level.Level> frontNormalCacheDim = null;
     private static RemoteRenderWorldState localCompositeWorld;
     private static List<PortalCandidate> pendingComposite = List.of();
+    private static final Map<PortalRemoteEndpointPayload, Long> VIEW_RETRY_AT = new HashMap<>();
     //?}
     private static int currentRecursionDepth = 0;
     private static String lastDiagnosticStatus = "";
@@ -91,6 +106,7 @@ public final class PortalStencilRenderer {
         if (currentRecursionDepth == 0) {
             RENDERED_SEAMLESSLY_THIS_FRAME.clear();
             //? if <1.21.11 {
+            RENDERED_SURFACES_THIS_FRAME.clear();
             pendingComposite = List.of();
             //?}
         }
@@ -104,18 +120,16 @@ public final class PortalStencilRenderer {
         return currentRecursionDepth;
     }
 
-    /**
-     * Queried by {@code PortalMembraneLayer} to decide whether to skip drawing the opaque black
-     * membrane disc (or fall back automatically when seamless rendering was skipped).
-     */
+    /** Whether this frame includes a live view of the destination through the given portal. */
     public static boolean wasRenderedSeamlesslyThisFrame(BlockPos corePos) {
         return corePos != null && RENDERED_SEAMLESSLY_THIS_FRAME.contains(corePos);
     }
 
+    /** Whether the compositor owns the vortex surface, including opaque surfaces. */
     public static boolean replacesMembrane(BlockPos corePos) {
-        if (isRenderingPortalPass() || !PortalViewOptions.enabled()) return false;
-        if (wasRenderedSeamlesslyThisFrame(corePos)) return true;
+        if (isRenderingPortalPass()) return false;
         //? if <1.21.11 {
+        if (RENDERED_SURFACES_THIS_FRAME.contains(corePos)) return true;
         for (PortalCandidate candidate : pendingComposite) {
             if (candidate.corePos().equals(corePos)) return true;
         }
@@ -126,11 +140,13 @@ public final class PortalStencilRenderer {
     public static void onClientDisconnect() {
         RENDERED_SEAMLESSLY_THIS_FRAME.clear();
         //? if <1.21.11 {
+        RENDERED_SURFACES_THIS_FRAME.clear();
         FRONT_NORMAL_CACHE.clear();
         frontNormalCacheDim = null;
         if (localCompositeWorld != null) localCompositeWorld.dispose();
         localCompositeWorld = null;
         pendingComposite = List.of();
+        VIEW_RETRY_AT.clear();
         //?}
         currentRecursionDepth = 0;
         lastDiagnosticStatus = "";
@@ -138,8 +154,7 @@ public final class PortalStencilRenderer {
     }
 
     /**
-     * Renders visible seamless portals in the current world using hardware stencil masking and
-     * Lengyel oblique near-plane clipping.
+     * Renders the visible vortex surfaces and, when enabled, the live view through them.
      */
     public static void renderActivePortals(LevelRenderer levelRenderer,
                                            Camera mainCamera,
@@ -147,10 +162,11 @@ public final class PortalStencilRenderer {
                                            Matrix4f frustumMatrix,
                                            Matrix4f projectionMatrix) {
         //? if <1.21.11 {
-        if (!PortalViewOptions.enabled() || SodiumIrisCompat.isIrisShadowPass()) return;
+        if (SodiumIrisCompat.isIrisShadowPass()) return;
         Minecraft mc = Minecraft.getInstance();
         if (mc.level == null || mc.player == null || ClientRemoteWorldManager.getInstance().getActiveEndpoints().isEmpty()) return;
-        var candidates = collectCandidates(mc.level, mainCamera.getPosition(), new Vec3(mainCamera.getLookVector()));
+        var candidates = collectCandidates(mc.level, mainCamera.getPosition(), new Vec3(mainCamera.getLookVector()),
+                new Matrix4f(projectionMatrix).mul(frustumMatrix));
         if (usesLateComposite()) {
             var target = mc.getMainRenderTarget();
             if (candidates.isEmpty() || !PortalRenderTargetPool.hasStencilBuffer(target.frameBufferId, target.width, target.height)) return;
@@ -158,7 +174,7 @@ public final class PortalStencilRenderer {
             // from actual foreground geometry rather than from the fallback membrane.
             pendingComposite = candidates.subList(0, Math.min(candidates.size(), MAX_PORTALS_PER_FRAME));
         } else {
-            renderPortals(levelRenderer, mainCamera, partialTick, frustumMatrix, projectionMatrix, false, candidates);
+            renderPortals(levelRenderer, mainCamera, partialTick, frustumMatrix, projectionMatrix, candidates);
         }
         //?}
     }
@@ -170,15 +186,15 @@ public final class PortalStencilRenderer {
 
     public static void compositeAfterWorld(LevelRenderer renderer, Camera camera, float partialTick,
                                            Matrix4f view, Matrix4f projection) {
-        if (!PortalViewOptions.enabled() || pendingComposite.isEmpty() || SodiumIrisCompat.isIrisShadowPass()) return;
+        if (pendingComposite.isEmpty() || SodiumIrisCompat.isIrisShadowPass()) return;
         List<PortalCandidate> candidates = pendingComposite;
         pendingComposite = List.of();
         Minecraft.getInstance().getMainRenderTarget().bindWrite(false);
-        renderPortals(renderer, camera, partialTick, view, projection, true, candidates);
+        renderPortals(renderer, camera, partialTick, view, projection, candidates);
     }
 
     private static void renderPortals(LevelRenderer levelRenderer, Camera mainCamera, float partialTick,
-                                      Matrix4f frustumMatrix, Matrix4f projectionMatrix, boolean composite,
+                                      Matrix4f frustumMatrix, Matrix4f projectionMatrix,
                                       List<PortalCandidate> candidates) {
         if (currentRecursionDepth >= MAX_RECURSION_DEPTH) {
             return;
@@ -207,7 +223,7 @@ public final class PortalStencilRenderer {
             return;
         }
 
-        logStatusOnce("rendering " + candidates.size() + " seamless portal(s), stencilOk=" + stencilOk);
+        logStatusOnce("compositing " + candidates.size() + " portal surface(s), stencilOk=" + stencilOk);
 
         if (currentRecursionDepth == 0) {
             GL11.glEnable(GL11.GL_STENCIL_TEST);
@@ -216,20 +232,50 @@ public final class PortalStencilRenderer {
             GL11.glClear(GL11.GL_STENCIL_BUFFER_BIT);
         }
 
-        int renderedCount = 0;
-        for (PortalCandidate candidate : candidates) {
-            if (renderedCount >= MAX_PORTALS_PER_FRAME) {
-                break;
+        WorldRenderState saved = WorldRenderState.capture();
+        try {
+            boolean liveViewRendered = false;
+            for (int i = 0; i < Math.min(candidates.size(), MAX_PORTALS_PER_FRAME); i++) {
+                PortalCandidate candidate = candidates.get(i);
+                if (renderSinglePortal(mc, levelRenderer, mainCamera, partialTick, frustumMatrix, projectionMatrix,
+                        candidate, !liveViewRendered)) {
+                    RENDERED_SEAMLESSLY_THIS_FRAME.add(candidate.corePos());
+                    liveViewRendered = true;
+                }
             }
-            if (renderSinglePortal(mc, levelRenderer, mainCamera, partialTick, frustumMatrix, projectionMatrix, candidate, composite)) {
-                RENDERED_SEAMLESSLY_THIS_FRAME.add(candidate.corePos());
-                renderedCount++;
+        } finally {
+            if (currentRecursionDepth == 0) {
+                GL11.glStencilMask(0x00);
+                GL11.glDisable(GL11.GL_STENCIL_TEST);
             }
+            saved.restore();
+        }
+    }
+
+    private record WorldRenderState(float fogStart, float fogEnd, FogShape fogShape, float[] fogColor,
+                                    float[] shaderColor, ShaderInstance shader, Matrix4f projection,
+                                    VertexSorting vertexSorting, int[] textures) {
+        static WorldRenderState capture() {
+            int[] textures = new int[12];
+            for (int i = 0; i < textures.length; i++) textures[i] = RenderSystem.getShaderTexture(i);
+            return new WorldRenderState(RenderSystem.getShaderFogStart(), RenderSystem.getShaderFogEnd(),
+                    RenderSystem.getShaderFogShape(), RenderSystem.getShaderFogColor().clone(),
+                    RenderSystem.getShaderColor().clone(), RenderSystem.getShader(),
+                    new Matrix4f(RenderSystem.getProjectionMatrix()), RenderSystem.getVertexSorting(), textures);
         }
 
-        if (currentRecursionDepth == 0) {
-            GL11.glStencilMask(0x00);
-            GL11.glDisable(GL11.GL_STENCIL_TEST);
+        void restore() {
+            RenderSystem.setShaderFogStart(fogStart);
+            RenderSystem.setShaderFogEnd(fogEnd);
+            RenderSystem.setShaderFogShape(fogShape);
+            RenderSystem.setShaderFogColor(fogColor[0], fogColor[1], fogColor[2], fogColor[3]);
+            RenderSystem.setShaderColor(shaderColor[0], shaderColor[1], shaderColor[2], shaderColor[3]);
+            RenderSystem.setShader(() -> shader);
+            RenderSystem.setProjectionMatrix(projection, vertexSorting);
+            for (int i = 0; i < textures.length; i++) RenderSystem.setShaderTexture(i, textures[i]);
+            RenderSystem.colorMask(true, true, true, true);
+            RenderSystem.depthMask(true);
+            RenderSystem.depthFunc(GL11.GL_LEQUAL);
         }
     }
     //?}
@@ -242,9 +288,13 @@ public final class PortalStencilRenderer {
     }
 
     //? if <1.21.11 {
-    private static List<PortalCandidate> collectCandidates(ClientLevel activeLevel, Vec3 camPos, Vec3 camLook) {
+    private static List<PortalCandidate> collectCandidates(ClientLevel activeLevel, Vec3 camPos, Vec3 camLook,
+                                                           Matrix4f viewProjection) {
         ClientRemoteWorldManager manager = ClientRemoteWorldManager.getInstance();
+        boolean liveViewEnabled = PortalViewOptions.enabled();
         List<PortalCandidate> result = new ArrayList<>();
+        long now = System.nanoTime();
+        VIEW_RETRY_AT.values().removeIf(deadline -> deadline - now <= 0);
 
         for (PortalRemoteEndpointPayload endpoint : manager.getActiveEndpoints()) {
             // During opening blackout, stay on classic PortalMembraneLayer / PortalOpeningParticles
@@ -263,34 +313,13 @@ public final class PortalStencilRenderer {
                 continue;
             }
 
-            ClientLevel targetLevel;
-            ClientRemoteWorldManager.RemoteWorldEntry remoteEntry = null;
-            int targetChunkX = endpoint.targetCorePos().getX() >> 4;
-            int targetChunkZ = endpoint.targetCorePos().getZ() >> 4;
-
-            if (endpoint.targetDim().equals(activeLevel.dimension())
-                    && activeLevel.getChunkSource().hasChunk(targetChunkX, targetChunkZ)) {
-                targetLevel = activeLevel;
-            } else {
-                remoteEntry = manager.getRemoteWorldEntry(endpoint.targetDim());
-                if (remoteEntry == null || !manager.hasLoadedChunk(endpoint.targetDim(), endpoint.targetCorePos())) {
-                    continue;
-                }
-                targetLevel = remoteEntry.level;
-            }
-
-            // Only render the live destination world on the FRONT face of the portal (the side
-            // with the portal controller / keyboard). From the back face, PortalMembraneLayer
-            // renders the classic pixel-art membrane instead.
+            // The vortex is visible from both sides. Only the controller side can show the destination.
             Direction frontNormal = resolveSourceFrontNormal(activeLevel, corePos, sourceRight);
             Vec3 portalCenter = PortalTransform.portalCenter(corePos);
             double signedFrontDist = (camPos.x - portalCenter.x) * frontNormal.getStepX()
                     + (camPos.z - portalCenter.z) * frontNormal.getStepZ();
-            if (signedFrontDist <= 0.0D) {
-                continue;
-            }
-
-            Direction sourceNormal = frontNormal.getOpposite();
+            boolean frontSide = signedFrontDist >= 0.0D;
+            Direction sourceNormal = frontSide ? frontNormal.getOpposite() : frontNormal;
             PortalTransform transform = new PortalTransform(
                     corePos,
                     sourceNormal,
@@ -300,13 +329,34 @@ public final class PortalStencilRenderer {
             if (!transform.isAperturePotentiallyVisible(camPos, camLook, MAX_SEAMLESS_DISTANCE)) {
                 continue;
             }
+            PortalDistortionRenderer.Bounds bounds = PortalDistortionRenderer.project(transform, camPos, viewProjection);
+            if (bounds == null) continue;
+            double intoPortal = camLook.x * sourceNormal.getStepX() + camLook.z * sourceNormal.getStepZ();
+            boolean centered = intoPortal > 0.001D && transform.isWithinSourceAperture(
+                    camPos.add(camLook.scale(Math.abs(signedFrontDist) / intoPortal)), 0.0D);
 
             double distSqr = portalCenter.distanceToSqr(camPos);
+            ClientLevel targetLevel = null;
+            ClientRemoteWorldManager.RemoteWorldEntry remoteEntry = null;
+            if (liveViewEnabled && frontSide && distSqr < VEIL_OPAQUE_DISTANCE * VEIL_OPAQUE_DISTANCE
+                    && !VIEW_RETRY_AT.containsKey(endpoint)) {
+                int targetChunkX = endpoint.targetCorePos().getX() >> 4;
+                int targetChunkZ = endpoint.targetCorePos().getZ() >> 4;
+                if (endpoint.targetDim().equals(activeLevel.dimension())
+                        && activeLevel.getChunkSource().hasChunk(targetChunkX, targetChunkZ)) {
+                    targetLevel = activeLevel;
+                } else {
+                    remoteEntry = manager.getRemoteWorldEntry(endpoint.targetDim());
+                    if (remoteEntry != null && manager.hasLoadedChunk(endpoint.targetDim(), endpoint.targetCorePos())) {
+                        targetLevel = remoteEntry.level;
+                    }
+                }
+            }
             result.add(new PortalCandidate(corePos, endpoint, transform, targetLevel, remoteEntry, distSqr,
-                    PortalBuriedFloor.isBuried(activeLevel, corePos, sourceRight)));
+                    PortalBuriedFloor.isBuried(activeLevel, corePos, sourceRight), bounds, centered, frontSide));
         }
 
-        result.sort(Comparator.comparingDouble(PortalCandidate::distSqr));
+        result.sort(Comparator.comparing(PortalCandidate::centered).reversed().thenComparingDouble(PortalCandidate::distSqr));
         return result;
     }
 
@@ -317,24 +367,12 @@ public final class PortalStencilRenderer {
                                               Matrix4f mainFrustumMatrix,
                                               Matrix4f mainProjectionMatrix,
                                               PortalCandidate candidate,
-                                              boolean composite) {
+                                              boolean allowLiveView) {
         int parentStencil = currentRecursionDepth;
         int childStencil = parentStencil + 1;
 
         PortalTransform transform = candidate.transform();
         Vec3 mainCamPos = mainCamera.getPosition();
-        Vec3 remoteCamPos = transform.transformPoint(mainCamPos);
-        float remoteYaw = transform.transformYaw(mainCamera.getYRot());
-        float remotePitch = mainCamera.getXRot();
-
-        // Build rotated view matrix for destination world
-        Matrix4f invRot = transform.inverse().rotationMatrix();
-        Matrix4f remoteFrustumMatrix = new Matrix4f(mainFrustumMatrix).mul(invRot);
-
-        // Compute oblique near clipping plane in destination camera space so geometry behind destination portal is clipped
-        Vector4f clipPlaneWorldRel = transform.targetClipPlaneCameraRelative(remoteCamPos, -0.05F);
-        Vector4f clipPlaneCamSpace = ObliqueFrustumMath.worldPlaneToCameraSpace(remoteFrustumMatrix, clipPlaneWorldRel);
-        Matrix4f obliqueProjection = ObliqueFrustumMath.applyObliqueClipPlane(mainProjectionMatrix, clipPlaneCamSpace);
 
         // 1) Stencil increment on the circular aperture disc (respects existing depth buffer so blocks in front occlude!)
         RenderSystem.enableDepthTest();
@@ -348,48 +386,47 @@ public final class PortalStencilRenderer {
 
         drawApertureDisc(transform, candidate.buried(), mainCamPos, mainFrustumMatrix, mainProjectionMatrix);
 
-        // 2) Clear depth to 1.0 AND fill destination sky/fog background color ONLY inside childStencil
-        Vec3 skyColor = resolveDestinationBackgroundColor(candidate.targetLevel(), remoteCamPos, partialTick);
-        int skyR = (int) Math.max(0, Math.min(255, Math.round(skyColor.x * 255.0D)));
-        int skyG = (int) Math.max(0, Math.min(255, Math.round(skyColor.y * 255.0D)));
-        int skyB = (int) Math.max(0, Math.min(255, Math.round(skyColor.z * 255.0D)));
-
-        RenderSystem.enableDepthTest();
-        RenderSystem.depthFunc(GL11.GL_ALWAYS);
-        RenderSystem.depthMask(true);
-        RenderSystem.colorMask(true, true, true, true);
         GL11.glStencilMask(0x00);
         GL11.glStencilFunc(GL11.GL_EQUAL, childStencil, 0xFF);
         GL11.glStencilOp(GL11.GL_KEEP, GL11.GL_KEEP, GL11.GL_KEEP);
-        drawFarPlaneQuad(skyR, skyG, skyB);
-
-        // 3) Render destination world sky, terrain, BlockEntities & entities inside childStencil
-        RenderSystem.enableDepthTest();
-        RenderSystem.depthFunc(GL11.GL_LEQUAL);
-        RenderSystem.depthMask(true);
-
-        currentRecursionDepth = childStencil;
-        boolean rendered = false;
-        try {
-            rendered = renderRemoteWorldView(
-                    mc,
-                    levelRenderer,
-                    mainCamera,
-                    candidate,
-                    remoteCamPos,
-                    remoteYaw,
-                    remotePitch,
-                    partialTick,
-                    remoteFrustumMatrix,
-                    mainProjectionMatrix,
-                    obliqueProjection,
-                    composite
-            );
-        } catch (Throwable t) {
-            UniverseGate.LOGGER.warn("[SeamlessPortal] Render pass failed at {}", candidate.corePos(), t);
-        } finally {
-            currentRecursionDepth = parentStencil;
+        RenderSystem.colorMask(true, true, true, true);
+        PortalScene scene = null;
+        if (allowLiveView && candidate.targetLevel() != null) {
+            currentRecursionDepth = childStencil;
+            try {
+                scene = renderDestination(mc, levelRenderer, mainCamera, partialTick, mainFrustumMatrix,
+                        mainProjectionMatrix, candidate);
+            } catch (RuntimeException t) {
+                VIEW_RETRY_AT.put(candidate.endpoint(), System.nanoTime() + 5_000_000_000L);
+                UniverseGate.LOGGER.warn("[SeamlessPortal] Render pass failed at {}", candidate.corePos(), t);
+            } finally {
+                currentRecursionDepth = parentStencil;
+            }
         }
+
+        // The stencil already excludes all local geometry in front of the portal.
+        GL11.glEnable(GL11.GL_STENCIL_TEST);
+        GL11.glStencilMask(0x00);
+        GL11.glStencilFunc(GL11.GL_EQUAL, childStencil, 0xFF);
+        GL11.glStencilOp(GL11.GL_KEEP, GL11.GL_KEEP, GL11.GL_KEEP);
+        RenderSystem.colorMask(true, true, true, true);
+        RenderSystem.depthFunc(GL11.GL_ALWAYS);
+        RenderSystem.depthMask(false);
+        boolean rendered = scene != null;
+        float fade = (float) Mth.clamp((Math.sqrt(candidate.distSqr()) - VEIL_FADE_START)
+                / (VEIL_OPAQUE_DISTANCE - VEIL_FADE_START), 0.0D, 1.0D);
+        float approach = PortalVeilRenderer.approach(transform, mainCamPos);
+        float opacity = rendered ? Mth.lerp(fade * fade * (3.0F - 2.0F * fade), 0.16F + 0.13F * approach, 1.0F) : 1.0F;
+        double time = mc.level.getGameTime() + (double) partialTick;
+        if (rendered) {
+            Matrix4f apertureView = PortalVeilRenderer.apertureView(transform, transform.sourceCenter().subtract(mainCamPos),
+                    mainFrustumMatrix);
+            PortalDistortionRenderer.draw(scene.target(), candidate.bounds(), scene.screenRect(), scene.width(),
+                    scene.height(), apertureView, mainProjectionMatrix, time, approach);
+        }
+        PortalVeilRenderer.draw(transform, mainCamPos, mainFrustumMatrix, mainProjectionMatrix, time, opacity, approach,
+                !candidate.frontSide());
+        RENDERED_SURFACES_THIS_FRAME.add(candidate.corePos());
 
         // 4) Restore exact portal-plane depth (MUST keep GL_DEPTH_TEST enabled so OpenGL writes z_portal!)
         //    and decrement stencil back to parentStencil so current-world BlockEntities/Particles/Translucent
@@ -416,6 +453,55 @@ public final class PortalStencilRenderer {
         return rendered;
     }
 
+    private record PortalScene(TextureTarget target, int width, int height, Vector4f screenRect) {}
+
+    private static PortalScene renderDestination(Minecraft mc, LevelRenderer levelRenderer, Camera mainCamera,
+                                             float partialTick, Matrix4f mainView, Matrix4f mainProjection,
+                                             PortalCandidate candidate) {
+        PortalTransform transform = candidate.transform();
+        Vec3 remoteCamPos = transform.transformPoint(mainCamera.getPosition());
+        Matrix4f remoteView = new Matrix4f(mainView).mul(transform.inverse().rotationMatrix());
+        Vector4f worldPlane = transform.targetClipPlaneCameraRelative(remoteCamPos, -0.05F);
+        Vector4f cameraPlane = ObliqueFrustumMath.worldPlaneToCameraSpace(remoteView, worldPlane);
+        Matrix4f oblique = ObliqueFrustumMath.applyObliqueClipPlane(mainProjection, cameraPlane);
+        Matrix4f projection = candidate.bounds().crop(oblique);
+
+        int drawFramebuffer = GL11.glGetInteger(GL30.GL_DRAW_FRAMEBUFFER_BINDING);
+        int readFramebuffer = GL11.glGetInteger(GL30.GL_READ_FRAMEBUFFER_BINDING);
+        try (var stack = MemoryStack.stackPush()) {
+            var viewport = stack.mallocInt(4);
+            GL11.glGetIntegerv(GL11.GL_VIEWPORT, viewport);
+            try {
+                TextureTarget target = PortalRenderTargetPool.destination(viewport.get(2), viewport.get(3));
+                int width = Math.max(1, Mth.ceil(target.width * candidate.bounds().width() * 0.5F));
+                int height = Math.max(1, Mth.ceil(target.height * candidate.bounds().height() * 0.5F));
+                PortalRenderTargetPool.beginDestination(target, width, height);
+                GL11.glDisable(GL11.GL_STENCIL_TEST);
+
+                RenderSystem.enableDepthTest();
+                RenderSystem.depthFunc(GL11.GL_ALWAYS);
+                RenderSystem.depthMask(true);
+                drawVoidBackground();
+                RenderSystem.depthFunc(GL11.GL_LEQUAL);
+                boolean rendered = renderRemoteWorldView(mc, levelRenderer, mainCamera, candidate, remoteCamPos,
+                        transform.transformYaw(mainCamera.getYRot()), mainCamera.getXRot(), partialTick,
+                        remoteView, projection);
+                var bounds = candidate.bounds();
+                float halfWidth = viewport.get(2) * 0.5F;
+                float halfHeight = viewport.get(3) * 0.5F;
+                Vector4f screenRect = new Vector4f(viewport.get(0) + (bounds.minX() + 1.0F) * halfWidth,
+                        viewport.get(1) + (bounds.minY() + 1.0F) * halfHeight,
+                        bounds.width() * halfWidth, bounds.height() * halfHeight);
+                return rendered ? new PortalScene(target, width, height, screenRect) : null;
+            } finally {
+                PortalRenderTargetPool.endDestination();
+                GlStateManager._glBindFramebuffer(GL30.GL_DRAW_FRAMEBUFFER, drawFramebuffer);
+                GlStateManager._glBindFramebuffer(GL30.GL_READ_FRAMEBUFFER, readFramebuffer);
+                RenderSystem.viewport(viewport.get(0), viewport.get(1), viewport.get(2), viewport.get(3));
+            }
+        }
+    }
+
     private static boolean renderRemoteWorldView(Minecraft mc,
                                               LevelRenderer levelRenderer,
                                               Camera mainCamera,
@@ -425,16 +511,19 @@ public final class PortalStencilRenderer {
                                               float remotePitch,
                                               float partialTick,
                                               Matrix4f remoteFrustumMatrix,
-                                              Matrix4f mainProjectionMatrix,
-                                              Matrix4f obliqueProjection,
-                                              boolean composite) {
+                                              Matrix4f obliqueProjection) {
         LevelRendererAccessor lr = (LevelRendererAccessor) levelRenderer;
         ClientLevel savedMcLevel = mc.level;
         ClientLevel savedLrLevel = lr.universegate$getLevel();
-        ViewArea savedViewArea = lr.universegate$getViewArea();
-        SectionRenderDispatcher savedDispatcher = lr.universegate$getSectionRenderDispatcher();
-        Frustum savedFrustum = lr.universegate$getCullingFrustum();
-        ObjectArrayList<SectionRenderDispatcher.RenderSection> savedVisible = new ObjectArrayList<>(lr.universegate$getVisibleSections());
+
+        RemoteRenderWorldState renderState = candidate.remoteEntry() != null
+                ? candidate.remoteEntry().getOrCreateRenderState(mc) : localCompositeWorld(mc, candidate.targetLevel());
+        if (renderState == null) return false;
+        ViewArea targetViewArea = renderState.getViewArea();
+        SectionRenderDispatcher targetDispatcher = renderState.getSectionRenderDispatcher();
+        if (targetViewArea == null || targetDispatcher == null) return false;
+        BlockPos targetCore = candidate.endpoint().targetCorePos();
+        renderState.repositionCamera(targetCore.getX() + 0.5D, targetCore.getY() + 3.0D, targetCore.getZ() + 0.5D);
 
         Camera virtualCamera = new Camera();
         CameraAccessor camAcc = (CameraAccessor) virtualCamera;
@@ -447,64 +536,37 @@ public final class PortalStencilRenderer {
         remoteFrustum.prepare(remoteCamPos.x, remoteCamPos.y, remoteCamPos.z);
 
         Matrix4f savedProj = new Matrix4f(RenderSystem.getProjectionMatrix());
-        float renderDistBlocks = mc.options.getEffectiveRenderDistance() * 16.0F;
-        float darkenAmount = mc.gameRenderer.getDarkenWorldAmount(partialTick);
+        float apertureDistance = (float) Math.sqrt(candidate.distSqr());
         BlockEntityRenderDispatcher beDispatcher = mc.getBlockEntityRenderDispatcher();
 
         try {
-            ViewArea targetViewArea = savedViewArea;
-            SectionRenderDispatcher targetDispatcher = savedDispatcher;
-
-            // Swap mc.level temporarily so RiftSkyMixin, FogRenderer, LightTexture, and BlockEntityRenderers see destination dimension
+            // Block entity renderers and the light texture must see the destination world.
             mc.level = candidate.targetLevel();
+            lr.universegate$setLevel(candidate.targetLevel());
             if (candidate.targetLevel() != savedMcLevel) {
                 var lightTex = mc.gameRenderer.lightTexture();
                 ((LightTextureAccessor) lightTex).universegate$setUpdateLightTexture(true);
                 lightTex.updateLightTexture(partialTick);
             }
 
-            // Bind remote world's dedicated ViewArea/SectionRenderDispatcher when cross-dimension / far remote
-            if (candidate.remoteEntry() != null || composite) {
-                RemoteRenderWorldState renderState = candidate.remoteEntry() != null
-                        ? candidate.remoteEntry().getOrCreateRenderState(mc) : localCompositeWorld(mc, candidate.targetLevel());
-                if (renderState == null) return false;
-                if (renderState.getViewArea() == null || renderState.getSectionRenderDispatcher() == null) {
-                    return false;
-                }
-                BlockPos targetCore = candidate.endpoint().targetCorePos();
-                renderState.repositionCamera(targetCore.getX() + 0.5D, targetCore.getY() + 3.0D, targetCore.getZ() + 0.5D);
-                targetViewArea = renderState.getViewArea();
-                targetDispatcher = renderState.getSectionRenderDispatcher();
-                lr.universegate$setLevel(candidate.targetLevel());
-                lr.universegate$setViewArea(targetViewArea);
-                lr.universegate$setSectionRenderDispatcher(targetDispatcher);
-            }
-
-            if (targetViewArea == null || targetDispatcher == null) {
-                return false;
-            }
-
-            // Populate visibleSections directly from targetViewArea (never mutating active SectionOcclusionGraph!)
-            ObjectArrayList<SectionRenderDispatcher.RenderSection> visible = lr.universegate$getVisibleSections();
-            visible.clear();
-            double maxDistSqr = (MAX_SEAMLESS_DISTANCE + 32.0D) * (MAX_SEAMLESS_DISTANCE + 32.0D);
+            ObjectArrayList<SectionRenderDispatcher.RenderSection> visible = new ObjectArrayList<>();
             PortalTransform transform = candidate.transform();
             for (SectionRenderDispatcher.RenderSection section : targetViewArea.sections) {
                 if (section == null) {
                     continue;
                 }
                 BlockPos origin = section.getOrigin();
-                if (!candidate.targetLevel().getChunkSource().hasChunk(origin.getX() >> 4, origin.getZ() >> 4)) {
-                    continue;
-                }
                 Vec3 secCenter = new Vec3(origin.getX() + 8.0D, origin.getY() + 8.0D, origin.getZ() + 8.0D);
-                if (secCenter.distanceToSqr(remoteCamPos) > maxDistSqr) {
+                if (secCenter.distanceToSqr(transform.targetCenter()) > TERRAIN_RADIUS * TERRAIN_RADIUS) {
                     continue;
                 }
                 if (transform.signedDistanceToTargetPlane(secCenter) < -16.0D) {
                     continue;
                 }
                 if (!remoteFrustum.isVisible(section.getBoundingBox())) {
+                    continue;
+                }
+                if (!candidate.targetLevel().getChunkSource().hasChunk(origin.getX() >> 4, origin.getZ() >> 4)) {
                     continue;
                 }
                 visible.add(section);
@@ -524,59 +586,31 @@ public final class PortalStencilRenderer {
             for (SectionRenderDispatcher.RenderSection section : visible) {
                 boolean needsBuild = section.isDirty()
                         || section.getCompiled() == SectionRenderDispatcher.CompiledSection.UNCOMPILED;
+                if (syncCompiled == MAX_SYNC_SECTION_BUILDS_PER_FRAME) break;
                 if (needsBuild && section.hasAllNeighbors()) {
-                    if (syncCompiled < MAX_SYNC_SECTION_BUILDS_PER_FRAME) {
+                    try {
                         targetDispatcher.rebuildSectionSync(section, regionCache);
-                        syncCompiled++;
-                    } else {
-                        section.rebuildSectionAsync(targetDispatcher, regionCache);
+                    } catch (RuntimeException failure) {
+                        // Vanilla's async rebuild would report this as a fatal crash on a later frame.
+                        ModelBlockRenderer.clearCache();
+                        ((SectionRenderDispatcherAccessor) targetDispatcher).universegate$getFixedBuffers().discardAll();
+                        throw failure;
                     }
+                    syncCompiled++;
                 }
             }
             targetDispatcher.uploadAllPendingUploads();
 
-            // Setup destination dimension fog & sky using MAIN (non-oblique!) projection so sky dome is never clipped.
-            // Use destination background color + setupNoFog so NeoForge's onFogRender (which reads mc.player.level())
-            // never applies Nether/source fog over the destination sky dome.
-            Vec3 destBg = resolveDestinationBackgroundColor(candidate.targetLevel(), remoteCamPos, partialTick);
-            float bgR = (float) destBg.x;
-            float bgG = (float) destBg.y;
-            float bgB = (float) destBg.z;
-            RenderSystem.setShaderFogColor(bgR, bgG, bgB, 1.0F);
-            FogRenderer.setupNoFog();
-            RenderSystem.setProjectionMatrix(mainProjectionMatrix, VertexSorting.DISTANCE_TO_ORIGIN);
-            RenderSystem.depthMask(false);
-            try {
-                // Only invoke vanilla renderSky when player eye Y is above the destination horizon;
-                // otherwise LevelRenderer.renderSky draws darkBuffer (black void) over the upper sky.
-                double horizonY = candidate.targetLevel().getLevelData().getHorizonHeight(candidate.targetLevel());
-                boolean safeForSkyDome = mc.player == null || mc.player.getEyePosition(partialTick).y >= horizonY;
-                if (safeForSkyDome) {
-                    levelRenderer.renderSky(remoteFrustumMatrix, mainProjectionMatrix, partialTick, virtualCamera, false, FogRenderer::setupNoFog);
-                }
-            } catch (Throwable ignored) {
-            }
-
-            // Switch to oblique projection & clean destination terrain fog for destination world geometry
-            RenderSystem.enableDepthTest();
-            RenderSystem.depthFunc(GL11.GL_LEQUAL);
-            RenderSystem.depthMask(true);
-            RenderSystem.setShaderFogColor(bgR, bgG, bgB, 1.0F);
-            if (!candidate.targetLevel().dimensionType().hasSkyLight()) {
-                float netherFogEnd = Math.min(renderDistBlocks * 0.5F, 72.0F);
-                RenderSystem.setShaderFogStart(netherFogEnd * 0.05F);
-                RenderSystem.setShaderFogEnd(netherFogEnd);
-            } else {
-                RenderSystem.setShaderFogStart(renderDistBlocks * 0.70F);
-                RenderSystem.setShaderFogEnd(renderDistBlocks);
-            }
-            lr.universegate$setCullingFrustum(remoteFrustum);
+            RenderSystem.setShaderFogColor(0.0F, 0.0F, 0.0F, 1.0F);
+            RenderSystem.setShaderFogShape(FogShape.SPHERE);
+            RenderSystem.setShaderFogStart(apertureDistance + 22.0F);
+            RenderSystem.setShaderFogEnd(apertureDistance + 45.0F);
             RenderSystem.setProjectionMatrix(obliqueProjection, VertexSorting.DISTANCE_TO_ORIGIN);
 
             // Render solid, cutout-mipped, and cutout terrain layers
-            renderTerrain(lr, RenderType.solid(), remoteCamPos, remoteFrustumMatrix, obliqueProjection, composite);
-            renderTerrain(lr, RenderType.cutoutMipped(), remoteCamPos, remoteFrustumMatrix, obliqueProjection, composite);
-            renderTerrain(lr, RenderType.cutout(), remoteCamPos, remoteFrustumMatrix, obliqueProjection, composite);
+            renderTerrain(visible, RenderType.solid(), remoteCamPos, remoteFrustumMatrix, obliqueProjection);
+            renderTerrain(visible, RenderType.cutoutMipped(), remoteCamPos, remoteFrustumMatrix, obliqueProjection);
+            renderTerrain(visible, RenderType.cutout(), remoteCamPos, remoteFrustumMatrix, obliqueProjection);
 
             // Render destination BlockEntities & Entities using vanilla's exact ModelViewStack +
             // identity PoseStack convention so vertex normals remain in world space (preventing
@@ -593,7 +627,7 @@ public final class PortalStencilRenderer {
             RenderSystem.applyModelViewMatrix();
             try {
                 PoseStack poseStack = new PoseStack();
-                MultiBufferSource.BufferSource bufferSource = mc.renderBuffers().bufferSource();
+                MultiBufferSource.BufferSource bufferSource = PortalRenderTargetPool.modelBuffers();
 
                 beDispatcher.prepare(candidate.targetLevel(), virtualCamera, null);
                 mc.getEntityRenderDispatcher().prepare(candidate.targetLevel(), virtualCamera, null);
@@ -603,7 +637,9 @@ public final class PortalStencilRenderer {
                     if (entity == mc.player && candidate.targetLevel() == savedMcLevel) {
                         continue;
                     }
-                    if (entity.distanceToSqr(remoteCamPos) > MAX_SEAMLESS_DISTANCE * MAX_SEAMLESS_DISTANCE) {
+                    // Players keep the whole preview range even when decorative entities are culled.
+                    double detailRadiusSqr = entity instanceof Player ? TERRAIN_RADIUS * TERRAIN_RADIUS : DETAIL_RADIUS_SQR;
+                    if (entity.distanceToSqr(transform.targetCenter()) > detailRadiusSqr) {
                         continue;
                     }
                     if (transform.signedDistanceToTargetPlane(entity.position()) < -0.5D) {
@@ -616,12 +652,13 @@ public final class PortalStencilRenderer {
                 }
                 bufferSource.endBatch();
             } finally {
+                PortalRenderTargetPool.discardModelBuffers();
                 mvStack.popMatrix();
                 RenderSystem.applyModelViewMatrix();
             }
 
             // Render translucent terrain layer
-            renderTerrain(lr, RenderType.translucent(), remoteCamPos, remoteFrustumMatrix, obliqueProjection, composite);
+            renderTerrain(visible, RenderType.translucent(), remoteCamPos, remoteFrustumMatrix, obliqueProjection);
             return true;
         } finally {
             mc.level = savedMcLevel;
@@ -639,16 +676,8 @@ public final class PortalStencilRenderer {
                 } else {
                     Lighting.setupLevel();
                 }
-                FogRenderer.setupColor(mainCamera, partialTick, savedMcLevel, mc.options.getEffectiveRenderDistance(), darkenAmount);
-                FogRenderer.levelFogColor();
-                FogRenderer.setupFog(mainCamera, FogRenderer.FogMode.FOG_TERRAIN, renderDistBlocks, false, partialTick);
             }
             lr.universegate$setLevel(savedLrLevel);
-            lr.universegate$setViewArea(savedViewArea);
-            lr.universegate$setSectionRenderDispatcher(savedDispatcher);
-            lr.universegate$setCullingFrustum(savedFrustum);
-            lr.universegate$getVisibleSections().clear();
-            lr.universegate$getVisibleSections().addAll(savedVisible);
         }
     }
 
@@ -658,7 +687,7 @@ public final class PortalStencilRenderer {
             localCompositeWorld = null;
         }
         if (localCompositeWorld == null) {
-            localCompositeWorld = new RemoteRenderWorldState(level, mc.options.getEffectiveRenderDistance());
+            localCompositeWorld = new RemoteRenderWorldState(level, Math.min(mc.options.getEffectiveRenderDistance(), 4));
         }
         return localCompositeWorld.ensureInitialized(mc) ? localCompositeWorld : null;
     }
@@ -669,20 +698,16 @@ public final class PortalStencilRenderer {
         }
     }
 
-    private static void renderTerrain(LevelRendererAccessor renderer, RenderType layer,
-                                      Vec3 camera, Matrix4f view, Matrix4f projection, boolean composite) {
-        if (!composite) {
-            renderer.universegate$renderSectionLayer(layer, camera.x, camera.y, camera.z, view, projection);
-            return;
-        }
-        // Sodium's LevelRenderer layer hook draws its main-world chunk list. Draw the destination buffers directly.
+    private static void renderTerrain(ObjectArrayList<SectionRenderDispatcher.RenderSection> sections, RenderType layer,
+                                      Vec3 camera, Matrix4f view, Matrix4f projection) {
+        // Draw the destination buffers without invoking the main-world renderer or a shader-pack pass.
         layer.setupRenderState();
+        PortalRenderTargetPool.bindActiveDestination();
         var shader = RenderSystem.getShader();
         try {
             shader.setDefaultUniforms(VertexFormat.Mode.QUADS, view, projection, Minecraft.getInstance().getWindow());
             shader.apply();
             var offset = shader.CHUNK_OFFSET;
-            var sections = renderer.universegate$getVisibleSections();
             boolean opaque = layer != RenderType.translucent();
             var sectionsInOrder = sections.listIterator(opaque ? 0 : sections.size());
             while (opaque ? sectionsInOrder.hasNext() : sectionsInOrder.hasPrevious()) {
@@ -702,6 +727,7 @@ public final class PortalStencilRenderer {
             shader.clear();
             VertexBuffer.unbind();
             layer.clearRenderState();
+            PortalRenderTargetPool.bindActiveDestination();
         }
     }
 
@@ -715,9 +741,8 @@ public final class PortalStencilRenderer {
         BlockPos targetCorePos = candidate.endpoint().targetCorePos();
         int centerChunkX = targetCorePos.getX() >> 4;
         int centerChunkZ = targetCorePos.getZ() >> 4;
-        int chunkRadius = 3;
+        int chunkRadius = 2;
         PortalTransform transform = candidate.transform();
-        double maxDistSqr = MAX_SEAMLESS_DISTANCE * MAX_SEAMLESS_DISTANCE;
 
         for (int dx = -chunkRadius; dx <= chunkRadius; dx++) {
             for (int dz = -chunkRadius; dz <= chunkRadius; dz++) {
@@ -740,7 +765,7 @@ public final class PortalStencilRenderer {
                         continue;
                     }
                     Vec3 beCenter = new Vec3(bePos.getX() + 0.5D, bePos.getY() + 0.5D, bePos.getZ() + 0.5D);
-                    if (beCenter.distanceToSqr(remoteCamPos) > maxDistSqr) {
+                    if (beCenter.distanceToSqr(transform.targetCenter()) > DETAIL_RADIUS_SQR) {
                         continue;
                     }
                     if (transform.signedDistanceToTargetPlane(beCenter) < -0.5D) {
@@ -759,21 +784,6 @@ public final class PortalStencilRenderer {
                 }
             }
         }
-    }
-
-    private static Vec3 resolveDestinationBackgroundColor(ClientLevel targetLevel, Vec3 remoteCamPos, float partialTick) {
-        if (targetLevel.dimension().equals(fr.geomtech.universegate.UniverseGateDimensions.RIFT)) {
-            double shimmer = (Math.sin((targetLevel.getDayTime() + partialTick) * 0.18D) + 1.0D) * 0.5D;
-            double b = 0.93D + shimmer * 0.07D;
-            return new Vec3(b, b, b);
-        }
-        Vec3 skyColor = targetLevel.getSkyColor(remoteCamPos, partialTick);
-        if (!targetLevel.dimensionType().hasSkyLight()
-                && skyColor.x < 0.02D && skyColor.y < 0.02D && skyColor.z < 0.02D) {
-            int biomeFog = targetLevel.getBiome(BlockPos.containing(remoteCamPos)).value().getFogColor();
-            return new Vec3(((biomeFog >> 16) & 0xFF) / 255.0D, ((biomeFog >> 8) & 0xFF) / 255.0D, (biomeFog & 0xFF) / 255.0D);
-        }
-        return skyColor;
     }
 
     private static void drawApertureDisc(PortalTransform transform, boolean buried,
@@ -832,7 +842,7 @@ public final class PortalStencilRenderer {
         }
     }
 
-    private static void drawFarPlaneQuad(int r, int g, int b) {
+    private static void drawVoidBackground() {
         Matrix4f savedProj = new Matrix4f(RenderSystem.getProjectionMatrix());
         Matrix4fStack mvStack = RenderSystem.getModelViewStack();
         mvStack.pushMatrix();
@@ -846,12 +856,12 @@ public final class PortalStencilRenderer {
 
         try {
             BufferBuilder builder = Tesselator.getInstance().begin(VertexFormat.Mode.TRIANGLES, DefaultVertexFormat.POSITION_COLOR);
-            builder.addVertex(-1.0F, -1.0F, 1.0F).setColor(r, g, b, 255);
-            builder.addVertex(1.0F, -1.0F, 1.0F).setColor(r, g, b, 255);
-            builder.addVertex(1.0F, 1.0F, 1.0F).setColor(r, g, b, 255);
-            builder.addVertex(-1.0F, -1.0F, 1.0F).setColor(r, g, b, 255);
-            builder.addVertex(1.0F, 1.0F, 1.0F).setColor(r, g, b, 255);
-            builder.addVertex(-1.0F, 1.0F, 1.0F).setColor(r, g, b, 255);
+            builder.addVertex(-1.0F, -1.0F, 1.0F).setColor(0xFF000000);
+            builder.addVertex(1.0F, -1.0F, 1.0F).setColor(0xFF000000);
+            builder.addVertex(1.0F, 1.0F, 1.0F).setColor(0xFF000000);
+            builder.addVertex(-1.0F, -1.0F, 1.0F).setColor(0xFF000000);
+            builder.addVertex(1.0F, 1.0F, 1.0F).setColor(0xFF000000);
+            builder.addVertex(-1.0F, 1.0F, 1.0F).setColor(0xFF000000);
             var mesh = builder.build();
             if (mesh != null) {
                 BufferUploader.drawWithShader(mesh);
@@ -889,7 +899,10 @@ public final class PortalStencilRenderer {
             ClientLevel targetLevel,
             ClientRemoteWorldManager.RemoteWorldEntry remoteEntry,
             double distSqr,
-            boolean buried
+            boolean buried,
+            PortalDistortionRenderer.Bounds bounds,
+            boolean centered,
+            boolean frontSide
     ) {}
     //?}
 }
