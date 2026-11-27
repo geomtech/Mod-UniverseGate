@@ -39,7 +39,7 @@ final class GuideBook {
     record Text(String text, boolean placeholder) implements Element {
     }
 
-    record Scene(String id, GuideScene scene, List<String> captions) implements Element {
+    record Scene(String id, SceneView scene, List<String> captions) implements Element {
     }
 
     record Recipes(List<GuideRecipes.Recipe> recipes) implements Element {
@@ -65,7 +65,7 @@ final class GuideBook {
         String language = Minecraft.getInstance().getLanguageManager().getSelected();
         JsonObject json = read("guide/" + language + ".json").orElseGet(() -> read("guide/en_us.json").orElse(null));
         List<Chapter> chapters = new ArrayList<>();
-        Map<String, GuideScene> scenes = new HashMap<>();
+        Map<String, SceneView> scenes = new HashMap<>();
         if (json != null && json.has("chapters")) {
             for (JsonElement element : json.getAsJsonArray("chapters")) {
                 try {
@@ -82,7 +82,7 @@ final class GuideBook {
         return new GuideBook(List.copyOf(chapters));
     }
 
-    private static Chapter chapter(JsonObject json, Map<String, GuideScene> scenes) {
+    private static Chapter chapter(JsonObject json, Map<String, SceneView> scenes) {
         List<Element> elements = new ArrayList<>();
         for (JsonElement entry : json.getAsJsonArray("elements")) {
             JsonObject e = entry.getAsJsonObject();
@@ -91,7 +91,7 @@ final class GuideBook {
             else if (e.has("placeholder")) elements.add(new Text(e.get("placeholder").getAsString(), true));
             else if (e.has("scene")) {
                 String id = e.get("scene").getAsString();
-                GuideScene scene = scenes.computeIfAbsent(id, GuideBook::scene);
+                SceneView scene = scenes.computeIfAbsent(id, GuideBook::scene);
                 if (scene != null) elements.add(new Scene(id, scene, strings(e.getAsJsonArray("captions"))));
             } else if (e.has("recipes")) {
                 List<GuideRecipes.Recipe> recipes = new ArrayList<>();
@@ -114,14 +114,19 @@ final class GuideBook {
                 GuideRender.stack(icon, 1), List.copyOf(elements));
     }
 
-    private static GuideScene scene(String id) {
+    private static SceneView scene(String id) {
         Optional<JsonObject> json = read("guide/scenes/" + id + ".json");
         if (json.isEmpty()) {
             UniverseGate.LOGGER.warn("Guide: scene {} not found", id);
             return null;
         }
         try {
-            return GuideScene.parse(json.get());
+            JsonObject data = json.get();
+            if (data.has("world") && data.get("world").getAsBoolean()) {
+                GuideScene3D scene = GuideScene3D.parse(data);
+                if (scene != null) return scene;
+            }
+            return GuideScene.parse(data);
         } catch (RuntimeException e) {
             UniverseGate.LOGGER.warn("Guide: could not read scene {}", id, e);
             return null;

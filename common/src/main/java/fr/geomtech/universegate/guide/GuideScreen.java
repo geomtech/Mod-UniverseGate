@@ -47,7 +47,7 @@ public class GuideScreen extends Screen {
     private static final float TYPE_MS = 420.0F;
     private static final int STARS = 110;
     private static final int PAD = 10;
-    private static final int SCENE_H = 150;
+    private static final int SCENE_H = 180;
     private static final int SLOT = 18;
     private static final int RECIPE_W = SLOT * 3 + 30 + SLOT + 8;
     private static final int RECIPE_H = SLOT * 3 + 8;
@@ -63,6 +63,10 @@ public class GuideScreen extends Screen {
     private final List<Hotspot> hotspots = new ArrayList<>();
     private ItemStack hoveredStack = ItemStack.EMPTY;
     private Component hoveredText;
+    /** Visible part of the page, for the 3D scenes. */
+    private int clipX0, clipY0, clipX1, clipY1;
+    private final List<SceneBox> sceneBoxes = new ArrayList<>();
+    private SceneState dragging;
     private long openedAt;
     private long chapterAt;
     private float indicatorY = -1;
@@ -73,8 +77,12 @@ public class GuideScreen extends Screen {
     private static final class SceneState {
         float time;
         boolean paused;
-        int rotation;
+        float yaw;
+        float yawTarget;
         long last = System.currentTimeMillis();
+    }
+
+    private record SceneBox(int x, int y, int w, int h, SceneState state) {
     }
 
     private record Hotspot(int x, int y, int w, int h, Runnable action) {
@@ -160,6 +168,7 @@ public class GuideScreen extends Screen {
     public void render(GuiGraphics g, int mouseX, int mouseY, float partialTick) {
         super.render(g, mouseX, mouseY, partialTick);
         hotspots.clear();
+        sceneBoxes.clear();
         hoveredStack = ItemStack.EMPTY;
         hoveredText = null;
         if (book == null) return;
@@ -253,6 +262,7 @@ public class GuideScreen extends Screen {
         float fadeIn = easeOut(progress(chapterAt, FADE_MS));
         contentAlpha = fadeIn;
         g.enableScissor(x + 1, viewTop, x + w - 1, viewBottom);
+        clipX0 = x + 1; clipY0 = viewTop; clipX1 = x + w - 1; clipY1 = viewBottom;
         int left = x + PAD + 4;
         int cursor = viewTop + PAD - (int) Math.round(scroll) + (int) ((1.0F - fadeIn) * 10);
         int start = cursor;
@@ -388,7 +398,7 @@ public class GuideScreen extends Screen {
 
     private int renderScene(GuiGraphics g, int index, GuideBook.Scene element, int x, int y, int w,
                             int mouseX, int mouseY, boolean mouseInView) {
-        GuideScene scene = element.scene();
+        SceneView scene = element.scene();
         SceneState state = scenes.computeIfAbsent(index, i -> new SceneState());
         long now = System.currentTimeMillis();
         if (!state.paused) state.time += (now - state.last) / 50.0F;
@@ -400,7 +410,10 @@ public class GuideScreen extends Screen {
         g.fill(x, y, x + boxW, y + SCENE_H, 0x66000000);
         border(g, x, y, boxW, SCENE_H, DIM);
         brackets(g, x, y, boxW, SCENE_H, WHITE, 8);
-        scene.render(g, x + 1, y + 1, boxW - 2, SCENE_H - 2, state.time, state.rotation);
+        // the turn button eases the scene round; dragging turns it directly
+        state.yaw += (state.yawTarget - state.yaw) * 0.2F;
+        scene.render(g, x + 1, y + 1, boxW - 2, SCENE_H - 2, state.time, state.yaw, clipX0, clipY0, clipX1, clipY1);
+        if (mouseInView) sceneBoxes.add(new SceneBox(x, y, boxW, SCENE_H, state));
 
         int step = scene.stepAt(state.time);
         Component counter = Component.translatable("guide.universegate.scene.step", step + 1, scene.stepCount());
@@ -421,12 +434,12 @@ public class GuideScreen extends Screen {
             state.time = current + 1 < scene.stepCount() ? scene.startOf(current + 1) : 0;
         });
         bx = sceneButton(g, "↻", bx, cy, mouseX, mouseY, mouseInView, "guide.universegate.scene.rotate",
-                () -> state.rotation = (state.rotation + 1) & 3);
+                () -> state.yawTarget = Math.round((state.yawTarget + 90.0F) / 90.0F) * 90.0F);
 
         // progress bar of the current step
         int barX = bx + 4, barW = x + boxW - barX;
         int stepStart = scene.startOf(step);
-        int stepLength = scene.steps.get(step).duration();
+        int stepLength = scene.stepDuration(step);
         float progress = Mth.clamp((state.time - stepStart) / stepLength, 0.0F, 1.0F);
         g.fill(barX, cy + 6, barX + barW, cy + 7, DIM);
         g.fill(barX, cy + 6, barX + (int) (barW * progress), cy + 7, WHITE);
@@ -531,6 +544,12 @@ public class GuideScreen extends Screen {
 
     private boolean click(double mouseX, double mouseY, int button) {
         if (button != 0) return false;
+        for (SceneBox box : sceneBoxes) {
+            if (inside(mouseX, mouseY, box.x(), box.y(), box.w(), box.h())) {
+                dragging = box.state();
+                return true;
+            }
+        }
         for (Hotspot hotspot : List.copyOf(hotspots)) {
             if (hotspot.contains(mouseX, mouseY)) {
                 Minecraft.getInstance().getSoundManager().play(SimpleSoundInstance.forUI(SoundEvents.UI_BUTTON_CLICK, 1.0F));
@@ -550,6 +569,44 @@ public class GuideScreen extends Screen {
     @Override
     public boolean mouseClicked(double mouseX, double mouseY, int button) {
         return click(mouseX, mouseY, button) || super.mouseClicked(mouseX, mouseY, button);
+    }
+    //?}
+
+    private void drag(double dx) {
+        if (dragging == null) return;
+        dragging.yawTarget += (float) dx * 1.2F;
+        dragging.yaw = dragging.yawTarget;
+    }
+
+    //? if >=1.21.11 {
+    /*@Override
+    public boolean mouseDragged(MouseButtonEvent event, double dx, double dy) {
+        if (dragging != null) {
+            drag(dx);
+            return true;
+        }
+        return super.mouseDragged(event, dx, dy);
+    }
+
+    @Override
+    public boolean mouseReleased(MouseButtonEvent event) {
+        dragging = null;
+        return super.mouseReleased(event);
+    }
+    *///?} else {
+    @Override
+    public boolean mouseDragged(double mouseX, double mouseY, int button, double dx, double dy) {
+        if (dragging != null) {
+            drag(dx);
+            return true;
+        }
+        return super.mouseDragged(mouseX, mouseY, button, dx, dy);
+    }
+
+    @Override
+    public boolean mouseReleased(double mouseX, double mouseY, int button) {
+        dragging = null;
+        return super.mouseReleased(mouseX, mouseY, button);
     }
     //?}
 

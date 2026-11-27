@@ -1,12 +1,86 @@
 {
+  "world": true,
   "steps": [
-    {"place": [{"item": "universegate:solar_panel", "from": [0, 0, 0], "to": [1, 0, 1]}]},
-    {"place": [{"item": "universegate:energy_conduit", "from": [2, 0, 0], "to": [3, 0, 0]}]},
-    {"place": [{"item": "universegate:energy_condenser", "at": [4, 0, 0]}]},
-    {"place": [{"item": "universegate:energy_monitor", "at": [4, 0, 1]}]},
-    {"place": [
-      {"item": "universegate:energy_conduit", "at": [3, 0, -1]},
-      {"item": "universegate:combustion_generator", "at": [3, 0, -2]}
-    ]}
+    {
+      "place": [
+        {
+          "block": "universegate:solar_panel",
+          "from": [
+            0,
+            0,
+            0
+          ],
+          "to": [
+            1,
+            0,
+            1
+          ]
+        }
+      ]
+    },
+    {
+      "place": [
+        {
+          "block": "universegate:energy_conduit",
+          "from": [
+            2,
+            0,
+            0
+          ],
+          "to": [
+            3,
+            0,
+            0
+          ]
+        }
+      ]
+    },
+    {
+      "place": [
+        {
+          "block": "universegate:energy_condenser",
+          "at": [
+            4,
+            0,
+            0
+          ]
+        }
+      ]
+    },
+    {
+      "place": [
+        {
+          "block": "universegate:energy_monitor",
+          "at": [
+            4,
+            0,
+            1
+          ]
+        }
+      ]
+    },
+    {
+      "place": [
+        {
+          "block": "universegate:energy_conduit",
+          "at": [
+            3,
+            0,
+            -1
+          ]
+        },
+        {
+          "block": "universegate:combustion_generator",
+          "at": [
+            3,
+            0,
+            -2
+          ],
+          "props": {
+            "facing": "south"
+          }
+        }
+      ]
+    }
   ]
 }

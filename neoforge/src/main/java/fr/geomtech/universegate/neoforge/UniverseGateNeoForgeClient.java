@@ -75,6 +75,12 @@ public final class UniverseGateNeoForgeClient {
         UniverseGateClientNetwork.registerClient();
         // "Config" in the mods list opens the guide, which holds the client settings.
         container.registerExtensionPoint(IConfigScreenFactory.class, (mod, parent) -> new GuideScreen(parent));
+        //? if >=1.21.11 {
+        /*// 3D guide scenes are drawn into their own texture ("picture in picture") since 1.21.6.
+        modBus.addListener(net.neoforged.neoforge.client.event.RegisterPictureInPictureRenderersEvent.class, event ->
+                event.register(fr.geomtech.universegate.guide.GuideScenePip.State.class, fr.geomtech.universegate.guide.GuideScenePip.Renderer::new));
+        fr.geomtech.universegate.guide.GuideScenePip.SUBMIT = net.minecraft.client.gui.GuiGraphics::submitPictureInPictureRenderState;
+        *///?}
         //? if 1.21.1 {
         if (fr.geomtech.universegate.neoforge.create.CreateCompatMixinPlugin.isSupported()) {
             fr.geomtech.universegate.neoforge.create.CarriageTeleportClient.register();

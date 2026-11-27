@@ -1,9 +1,10 @@
 {
+  "world": true,
   "steps": [
     {
       "place": [
         {
-          "item": "universegate:meteorological_controller",
+          "block": "universegate:meteorological_controller",
           "at": [
             0,
             0,
@@ -15,7 +16,7 @@
     {
       "place": [
         {
-          "item": "universegate:meteorological_condenser",
+          "block": "universegate:meteorological_condenser",
           "from": [
             1,
             0,
@@ -32,7 +33,7 @@
     {
       "place": [
         {
-          "item": "universegate:meteorological_catalyst",
+          "block": "universegate:meteorological_catalyst",
           "at": [
             1,
             2,
@@ -42,21 +43,25 @@
       ]
     },
     {
-      "place": [
+      "duration": 50,
+      "set": [
         {
-          "item": "universegate:energy_crystal",
+          "block": "universegate:meteorological_catalyst",
           "at": [
             1,
-            3,
+            2,
             0
-          ]
+          ],
+          "props": {
+            "has_crystal": "true"
+          }
         }
       ]
     },
     {
       "place": [
         {
-          "item": "universegate:energy_conduit",
+          "block": "universegate:energy_conduit",
           "from": [
             2,
             0,
@@ -69,7 +74,7 @@
           ]
         },
         {
-          "item": "universegate:energy_condenser",
+          "block": "universegate:energy_condenser",
           "at": [
             4,
             0,
@@ -81,7 +86,7 @@
     {
       "place": [
         {
-          "item": "universegate:energy_conduit",
+          "block": "universegate:energy_conduit",
           "at": [
             4,
             0,
@@ -89,7 +94,7 @@
           ]
         },
         {
-          "item": "universegate:parabola_block",
+          "block": "universegate:parabola_block",
           "at": [
             4,
             0,

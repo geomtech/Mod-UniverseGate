@@ -24,7 +24,7 @@ import java.util.Map;
  * Coordinates are [x, y, z] with y up; the camera looks at the +x and +z faces.
  * Captions come from the chapter file, so they can be translated.
  */
-final class GuideScene {
+final class GuideScene implements SceneView {
     /** Pixels per block edge at scale 1 (block icons are 16 * 0.625 wide). */
     private static final float EDGE = 10.0F;
     private static final float ISO_X = EDGE * 0.70710677F;
@@ -110,19 +110,22 @@ final class GuideScene {
         return ((long) (x & 0x1FFFFF) << 42) | ((long) (y & 0x1FFFFF) << 21) | (z & 0x1FFFFF);
     }
 
-    int stepCount() {
+    @Override
+    public int stepCount() {
         return steps.size();
     }
 
     /** Total loop length in ticks, the last step being held a little longer. */
-    int length() {
+    @Override
+    public int length() {
         int total = END_HOLD;
         for (Step step : steps) total += step.duration;
         return total;
     }
 
     /** The step playing at {@code time} ticks into the loop. */
-    int stepAt(float time) {
+    @Override
+    public int stepAt(float time) {
         float t = time;
         for (int i = 0; i < steps.size(); i++) {
             if (t < steps.get(i).duration) return i;
@@ -132,10 +135,22 @@ final class GuideScene {
     }
 
     /** The loop time at which step {@code index} starts. */
-    int startOf(int index) {
+    @Override
+    public int startOf(int index) {
         int t = 0;
         for (int i = 0; i < Math.min(index, steps.size()); i++) t += steps.get(i).duration;
         return t;
+    }
+
+    @Override
+    public int stepDuration(int index) {
+        return steps.get(index).duration;
+    }
+
+    @Override
+    public void render(GuiGraphics g, int x, int y, int w, int h, float time, float yaw,
+                       int clipX0, int clipY0, int clipX1, int clipY1) {
+        render(g, x, y, w, h, time, Math.floorMod(Math.round(yaw / 90.0F), 4));
     }
 
     /**

@@ -133,12 +133,13 @@
         {
           "scene": "portal_build",
           "captions": [
-            "Place the Portal Core: it sits at the bottom centre.",
-            "Complete the base with Portal Frames.",
-            "Build both sides: 4 blocks high.",
-            "Close the top. With ring segments, a translucent preview shows where each arc goes.",
-            "Connect the portal to an energy network. Opening costs at least 1,200 FE (more with distance and across dimensions), then 120 FE/s.",
-            "Place a Portal Controller. Attach Crocodile Clips to the controller and the portal, then connect them with Electric Wire.",
+            "Place the Portal Core: it is the bottom centre of the ring.",
+            "Hold a Portal Ring Segment near the core: a translucent preview shows where it goes. Right-click to place it.",
+            "Keep building the ring, segment by segment.",
+            "The last segment closes the ring.",
+            "The complete ring assembles itself: the portal is ready.",
+            "Connect the core to an energy network with conduits. Opening costs at least 1,200 FE (more with distance and across dimensions), then 120 FE/s.",
+            "Place a Portal Controller. Clip a Crocodile Clip on the controller and one on the portal, then join them with Electric Wire.",
             "Dial another portal of the network: it opens."
           ]
         },

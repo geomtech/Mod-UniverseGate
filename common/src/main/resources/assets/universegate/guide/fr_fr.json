@@ -133,12 +133,13 @@
         {
           "scene": "portal_build",
           "captions": [
-            "Pose le cœur de portail : il sera au centre, en bas.",
-            "Complète la base avec des blocs de cadre.",
-            "Monte les deux côtés : 4 blocs de haut.",
-            "Ferme le haut. Avec les segments d'anneau, un aperçu translucide montre où poser chaque arc.",
-            "Relie le portail à un réseau d'énergie. Ouvrir coûte au moins 1 200 FE (plus selon la distance et la dimension), puis 120 FE/s.",
-            "Pose un contrôleur de portail. Accroche des pinces crocodile au contrôleur et au portail, puis relie-les avec du fil électrique.",
+            "Pose le cœur de portail : c'est le centre du bas de l'anneau.",
+            "Tiens un segment d'anneau près du cœur : un aperçu translucide montre où il va. Clic droit pour le poser.",
+            "Continue l'anneau, segment par segment.",
+            "Le dernier segment ferme l'anneau.",
+            "L'anneau complet s'assemble : le portail est prêt.",
+            "Relie le cœur à un réseau d'énergie avec des conduits. Ouvrir coûte au moins 1 200 FE (plus selon la distance et la dimension), puis 120 FE/s.",
+            "Pose un contrôleur de portail. Accroche une pince crocodile au contrôleur et une au portail, puis relie-les avec du fil électrique.",
             "Compose l'adresse d'un autre portail du réseau : il s'ouvre."
           ]
         },
