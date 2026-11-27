@@ -1,9 +1,7 @@
 package fr.geomtech.universegate.mixin.client;
 
-import fr.geomtech.universegate.guide.GuideScreen;
-import net.minecraft.client.Minecraft;
+import fr.geomtech.universegate.guide.GuideButtons;
 import net.minecraft.client.gui.components.Button;
-import net.minecraft.client.gui.components.Tooltip;
 import net.minecraft.client.gui.screens.PauseScreen;
 import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.network.chat.Component;
@@ -26,10 +24,8 @@ public abstract class PauseScreenPortalViewMixin extends Screen {
     private void universegate$addGuideButton(CallbackInfo ci) {
         int y = disconnectButton.getY();
         disconnectButton.setY(y + 24);
-        Button guide = Button.builder(Component.translatable("guide.universegate.open"),
-                button -> Minecraft.getInstance().setScreen(new GuideScreen(this)))
-                .bounds(disconnectButton.getX(), y, disconnectButton.getWidth(), 20).build();
-        guide.setTooltip(Tooltip.create(Component.translatable("guide.universegate.open.tooltip")));
+        Button guide = GuideButtons.create(this, disconnectButton.getX(), y, disconnectButton.getWidth(), false);
         addRenderableWidget(guide);
+        addRenderableOnly(GuideButtons.icon(guide));
     }
 }
