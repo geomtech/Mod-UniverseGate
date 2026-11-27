@@ -121,7 +121,7 @@
     },
     {
       "id": "portal",
-      "title": "Construire un portail",
+      "title": "Les portails",
       "icon": "universegate:portal_frame",
       "elements": [
         {
@@ -261,7 +261,7 @@
     },
     {
       "id": "dark",
-      "title": "Énergie sombre & ZPC",
+      "title": "Énergie sombre",
       "icon": "universegate:zpc",
       "elements": [
         {

@@ -121,7 +121,7 @@
     },
     {
       "id": "portal",
-      "title": "Building a portal",
+      "title": "Portals",
       "icon": "universegate:portal_frame",
       "elements": [
         {
@@ -261,7 +261,7 @@
     },
     {
       "id": "dark",
-      "title": "Dark energy & ZPC",
+      "title": "Dark energy",
       "icon": "universegate:zpc",
       "elements": [
         {

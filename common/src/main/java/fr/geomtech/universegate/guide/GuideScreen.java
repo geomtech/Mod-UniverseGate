@@ -32,13 +32,20 @@ public class GuideScreen extends Screen {
     private static final int LIGHT = 0xFFD8D8D8;
     private static final int GREY = 0xFF8C8C8C;
     private static final int DIM = 0xFF3A3A3A;
-    private static final int PANEL = 0xFF050505;
+    private static final int PANEL = 0xE6030303;
     private static final int BLACK = 0xFF000000;
 
-    private static final int MARGIN = 10;
-    private static final int HEADER = 22;
-    private static final int SIDEBAR = 124;
-    private static final int CHAPTER_H = 20;
+    private static final int MARGIN = 16;
+    private static final int HEADER = 24;
+    private static final int SIDEBAR = 150;
+    private static final int CHAPTER_H = 22;
+    private static final int MAX_TEXT = 380;
+    private static final int HERO_H = 52;
+    /** Opening reveal, chapter fade-in and title typing, in milliseconds. */
+    private static final float OPEN_MS = 450.0F;
+    private static final float FADE_MS = 320.0F;
+    private static final float TYPE_MS = 420.0F;
+    private static final int STARS = 110;
     private static final int PAD = 10;
     private static final int SCENE_H = 150;
     private static final int SLOT = 18;
@@ -56,6 +63,12 @@ public class GuideScreen extends Screen {
     private final List<Hotspot> hotspots = new ArrayList<>();
     private ItemStack hoveredStack = ItemStack.EMPTY;
     private Component hoveredText;
+    private long openedAt;
+    private long chapterAt;
+    private float indicatorY = -1;
+    /** 0..1 fade of the current chapter's content, applied to text colours. */
+    private float contentAlpha = 1.0F;
+    private final float[][] stars = new float[STARS][];
 
     private static final class SceneState {
         float time;
@@ -80,6 +93,14 @@ public class GuideScreen extends Screen {
         if (book == null) {
             book = GuideBook.load();
             chapter = Mth.clamp(lastChapter, 0, book.chapters.size() - 1);
+            openedAt = System.currentTimeMillis();
+            chapterAt = openedAt;
+            java.util.Random random = new java.util.Random(0x5EED);
+            for (int i = 0; i < STARS; i++) {
+                // x, y (0..1), drift speed (px/s), twinkle speed, phase, size
+                stars[i] = new float[] { random.nextFloat(), random.nextFloat(), 2.0F + random.nextFloat() * 10.0F,
+                        0.6F + random.nextFloat() * 2.0F, random.nextFloat() * 6.28F, random.nextFloat() < 0.18F ? 2 : 1 };
+            }
         }
     }
 
@@ -94,18 +115,45 @@ public class GuideScreen extends Screen {
     private int top() { return MARGIN; }
     private int right() { return width - MARGIN; }
     private int bottom() { return height - MARGIN; }
-    private int contentLeft() { return left() + SIDEBAR + 4; }
-    private int contentTop() { return top() + HEADER + 4; }
+    private int contentLeft() { return left() + SIDEBAR + 6; }
+    private int contentTop() { return top() + HEADER + 6; }
     private int contentRight() { return right(); }
     private int contentBottom() { return bottom(); }
-    private int textWidth() { return contentRight() - contentLeft() - PAD * 2 - 6; }
+    private int textWidth() { return Math.min(MAX_TEXT + 140, contentRight() - contentLeft() - PAD * 2 - 8); }
+
+    private static float progress(long since, float duration) {
+        return Mth.clamp((System.currentTimeMillis() - since) / duration, 0.0F, 1.0F);
+    }
+
+    private static float easeOut(float t) {
+        float u = 1.0F - t;
+        return 1.0F - u * u * u;
+    }
+
+    /** {@code color} with its alpha scaled by {@code alpha} (never fully 0: 1.21.1 treats alpha 0 as opaque). */
+    private static int fade(int color, float alpha) {
+        int a = Math.max(5, (int) (((color >>> 24) & 0xFF) * Mth.clamp(alpha, 0.0F, 1.0F)));
+        return (a << 24) | (color & 0xFFFFFF);
+    }
 
     // ---------------------------------------------------------------- rendering
 
     @Override
     public void renderBackground(GuiGraphics g, int mouseX, int mouseY, float partialTick) {
         boolean inWorld = Minecraft.getInstance().level != null;
-        g.fill(0, 0, width, height, inWorld ? 0xC8000000 : BLACK);
+        float open = easeOut(progress(openedAt, OPEN_MS));
+        g.fill(0, 0, width, height, inWorld ? fade(0xE0000000, 0.35F + 0.65F * open) : BLACK);
+        // drifting, twinkling white specks: the void between the worlds
+        float seconds = (System.currentTimeMillis() % 1_000_000L) / 1000.0F;
+        for (float[] star : stars) {
+            if (star == null) continue;
+            float x = (star[0] * width - seconds * star[2]) % width;
+            if (x < 0) x += width;
+            int y = (int) (star[1] * height);
+            float twinkle = 0.25F + 0.75F * Math.abs(Mth.sin(seconds * star[3] + star[4]));
+            int size = (int) star[5];
+            g.fill((int) x, y, (int) x + size, y + size, fade(0xFFFFFFFF, twinkle * open * (size == 2 ? 0.9F : 0.55F)));
+        }
     }
 
     @Override
@@ -116,38 +164,80 @@ public class GuideScreen extends Screen {
         hoveredText = null;
         if (book == null) return;
 
-        // Header
-        panel(g, left(), top(), right() - left(), HEADER);
-        g.drawString(font, title, left() + 8, top() + 7, WHITE, false);
-        Component close = Component.literal("×");
-        int closeX = right() - 18;
-        boolean closeHover = inside(mouseX, mouseY, closeX, top() + 3, 15, 15);
-        if (closeHover) g.fill(closeX, top() + 3, closeX + 15, top() + 18, WHITE);
-        g.drawString(font, close, closeX + 5, top() + 7, closeHover ? BLACK : WHITE, false);
-        hotspots.add(new Hotspot(closeX, top() + 3, 15, 15, this::onClose));
+        // Opening: the frame unfolds from a white line in the middle of the screen.
+        float open = easeOut(progress(openedAt, OPEN_MS));
+        int half = (int) ((bottom() - top()) / 2.0F * open) + 1;
+        int mid = (top() + bottom()) / 2;
+        g.enableScissor(0, mid - half, width, mid + half);
 
+        renderHeader(g, mouseX, mouseY);
         renderSidebar(g, mouseX, mouseY);
         renderContent(g, mouseX, mouseY);
+
+        g.disableScissor();
+        if (open < 1.0F) {
+            int line = fade(0xFFFFFFFF, 1.0F - open * 0.8F);
+            g.fill(left() - 4, mid - half, right() + 4, mid - half + 1, line);
+            g.fill(left() - 4, mid + half - 1, right() + 4, mid + half, line);
+        }
 
         if (!hoveredStack.isEmpty()) GuideRender.itemTooltip(g, font, hoveredStack, mouseX, mouseY);
         else if (hoveredText != null) GuideRender.textTooltip(g, font, hoveredText, mouseX, mouseY);
     }
 
+    private void renderHeader(GuiGraphics g, int mouseX, int mouseY) {
+        int x = left(), y = top(), w = right() - left();
+        panel(g, x, y, w, HEADER);
+        // spaced capitals, then the current chapter as a breadcrumb
+        int tx = spaced(g, "UNIVERSEGATE", x + 10, y + 8, WHITE);
+        g.fill(tx + 6, y + 8, tx + 7, y + 16, GREY);
+        String crumb = title.getString() + "  ·  " + book.chapters.get(chapter).title();
+        g.drawString(font, crumb, tx + 13, y + 8, GREY, false);
+
+        int closeX = right() - 20;
+        boolean closeHover = inside(mouseX, mouseY, closeX, y + 4, 16, 16);
+        if (closeHover) g.fill(closeX, y + 4, closeX + 16, y + 20, WHITE);
+        else brackets(g, closeX, y + 4, 16, 16, GREY, 3);
+        g.drawString(font, "×", closeX + 5, y + 8, closeHover ? BLACK : WHITE, false);
+        hotspots.add(new Hotspot(closeX, y + 4, 16, 16, this::onClose));
+    }
+
+    /** Draws text with one extra pixel between letters and returns the x after it. */
+    private int spaced(GuiGraphics g, String text, int x, int y, int color) {
+        for (int i = 0; i < text.length(); i++) {
+            String c = String.valueOf(text.charAt(i));
+            g.drawString(font, c, x, y, color, false);
+            x += font.width(c) + 1;
+        }
+        return x;
+    }
+
     private void renderSidebar(GuiGraphics g, int mouseX, int mouseY) {
         int x = left(), y = contentTop(), w = SIDEBAR, h = bottom() - contentTop();
         panel(g, x, y, w, h);
-        int rowY = y + 5;
+        spaced(g, Component.translatable("guide.universegate.chapters").getString().toUpperCase(java.util.Locale.ROOT), x + 10, y + 9, GREY);
+        int firstRow = y + 24;
+
+        // the white marker glides to the selected chapter
+        float target = firstRow + chapter * (CHAPTER_H + 2);
+        indicatorY = indicatorY < 0 ? target : indicatorY + (target - indicatorY) * 0.25F;
+        int iy = Math.round(indicatorY);
+        g.fill(x + 5, iy, x + w - 5, iy + CHAPTER_H, 0x22FFFFFF);
+        g.fill(x + 5, iy, x + 7, iy + CHAPTER_H, WHITE);
+
+        int rowY = firstRow;
         for (int i = 0; i < book.chapters.size(); i++) {
             GuideBook.Chapter c = book.chapters.get(i);
-            int rx = x + 4, rw = w - 8;
+            int rx = x + 5, rw = w - 10;
             if (rowY + CHAPTER_H > y + h - 4) break;
             boolean selected = i == chapter;
             boolean hover = inside(mouseX, mouseY, rx, rowY, rw, CHAPTER_H);
-            if (selected) g.fill(rx, rowY, rx + rw, rowY + CHAPTER_H, WHITE);
-            else if (hover) border(g, rx, rowY, rw, CHAPTER_H, GREY);
-            if (!c.icon().isEmpty()) g.renderItem(c.icon(), rx + 2, rowY + 2);
-            String name = font.plainSubstrByWidth(c.title(), rw - 24);
-            g.drawString(font, name, rx + 21, rowY + 6, selected ? BLACK : (hover ? WHITE : LIGHT), false);
+            String number = (i < 9 ? "0" : "") + (i + 1);
+            g.drawString(font, number, rx + 7, rowY + 7, selected ? WHITE : DIM, false);
+            if (!c.icon().isEmpty()) g.renderItem(c.icon(), rx + 22, rowY + 3);
+            String name = font.plainSubstrByWidth(c.title(), rw - 44);
+            int shift = hover && !selected ? 2 : 0;
+            g.drawString(font, name, rx + 42 + shift, rowY + 7, selected || hover ? WHITE : GREY, false);
             final int index = i;
             hotspots.add(new Hotspot(rx, rowY, rw, CHAPTER_H, () -> selectChapter(index)));
             rowY += CHAPTER_H + 2;
@@ -160,27 +250,65 @@ public class GuideScreen extends Screen {
         int viewTop = y + 2, viewBottom = y + h - 2;
         scroll = Mth.clamp(scroll, 0, Math.max(0, contentHeight - (viewBottom - viewTop)));
 
+        float fadeIn = easeOut(progress(chapterAt, FADE_MS));
+        contentAlpha = fadeIn;
         g.enableScissor(x + 1, viewTop, x + w - 1, viewBottom);
-        int left = x + PAD;
-        int cursor = viewTop + PAD - (int) Math.round(scroll);
+        int left = x + PAD + 4;
+        int cursor = viewTop + PAD - (int) Math.round(scroll) + (int) ((1.0F - fadeIn) * 10);
         int start = cursor;
         GuideBook.Chapter c = book.chapters.get(chapter);
+        cursor = renderHero(g, c, left, cursor, Math.min(w - PAD * 2 - 8, MAX_TEXT + 140));
         for (int i = 0; i < c.elements().size(); i++) {
             cursor = renderElement(g, i, c.elements().get(i), left, cursor, textWidth(), mouseX, mouseY, viewTop, viewBottom);
         }
         contentHeight = cursor - start + PAD;
         g.disableScissor();
+        contentAlpha = 1.0F;
 
         // Scrollbar
         int view = viewBottom - viewTop;
         if (contentHeight > view) {
             int barX = x + w - 5;
-            g.fill(barX, viewTop + 2, barX + 2, viewBottom - 2, DIM);
-            int track = view - 4;
+            g.fill(barX, viewTop + 4, barX + 1, viewBottom - 4, DIM);
+            int track = view - 8;
             int thumb = Math.max(12, track * view / contentHeight);
-            int thumbY = viewTop + 2 + (int) ((track - thumb) * (scroll / (contentHeight - view)));
-            g.fill(barX, thumbY, barX + 2, thumbY + thumb, WHITE);
+            int thumbY = viewTop + 4 + (int) ((track - thumb) * (scroll / (contentHeight - view)));
+            g.fill(barX - 1, thumbY, barX + 2, thumbY + thumb, WHITE);
         }
+    }
+
+    /** The chapter banner: big icon, "CHAPTER 03", the title typed out, and a line sweeping across. */
+    private int renderHero(GuiGraphics g, GuideBook.Chapter c, int x, int y, int w) {
+        if (!c.icon().isEmpty()) {
+            GuideRender.push(g);
+            GuideRender.translate(g, x, y + 4, 0);
+            GuideRender.scale(g, 2.0F);
+            g.renderItem(c.icon(), 0, 0);
+            GuideRender.pop(g);
+        }
+        int tx = x + (c.icon().isEmpty() ? 0 : 42);
+        String label = Component.translatable("guide.universegate.chapter", (chapter < 9 ? "0" : "") + (chapter + 1)).getString()
+                .toUpperCase(java.util.Locale.ROOT);
+        spaced(g, label, tx, y + 4, fade(GREY, contentAlpha));
+
+        String full = c.title();
+        int shown = Math.round(full.length() * progress(chapterAt, TYPE_MS));
+        String typed = full.substring(0, shown);
+        GuideRender.push(g);
+        GuideRender.translate(g, tx, y + 17, 0);
+        GuideRender.scale(g, 2.0F);
+        g.drawString(font, typed, 0, 0, WHITE, false);
+        if (shown < full.length() && (System.currentTimeMillis() / 120) % 2 == 0) {
+            g.fill(font.width(typed) + 1, 0, font.width(typed) + 5, 8, WHITE);
+        }
+        GuideRender.pop(g);
+
+        int lineY = y + HERO_H - 10;
+        g.fill(x, lineY, x + w, lineY + 1, DIM);
+        int sweep = (int) (w * easeOut(progress(chapterAt, FADE_MS * 2)));
+        g.fill(x, lineY, x + sweep, lineY + 1, WHITE);
+        g.fill(x + sweep - 2, lineY - 1, x + sweep, lineY + 2, WHITE);
+        return y + HERO_H;
     }
 
     /** Draws one element at {@code y} and returns the y below it. */
@@ -188,15 +316,17 @@ public class GuideScreen extends Screen {
                               int mouseX, int mouseY, int viewTop, int viewBottom) {
         boolean mouseInView = mouseY >= viewTop && mouseY < viewBottom;
         if (element instanceof GuideBook.Title title) {
-            y += 4;
-            g.drawString(font, title.text(), x, y, WHITE, false);
-            g.fill(x, y + 11, x + Math.min(w, font.width(title.text()) + 12), y + 12, WHITE);
-            return y + 18;
+            y += 6;
+            g.fill(x, y + 2, x + 4, y + 6, fade(WHITE, contentAlpha));
+            g.drawString(font, title.text(), x + 9, y, fade(WHITE, contentAlpha), false);
+            int line = (int) ((font.width(title.text()) + 9) * contentAlpha);
+            g.fill(x, y + 12, x + Math.min(w, line), y + 13, fade(GREY, contentAlpha));
+            return y + 20;
         }
         if (element instanceof GuideBook.Text text) {
-            int color = text.placeholder() ? GREY : LIGHT;
+            int color = fade(text.placeholder() ? GREY : LIGHT, contentAlpha);
             int textX = x;
-            int textW = w;
+            int textW = Math.min(w, MAX_TEXT + 60);
             List<FormattedCharSequence> lines;
             if (text.placeholder()) {
                 textX += 6;
@@ -211,7 +341,7 @@ public class GuideScreen extends Screen {
             int lineY = y;
             for (FormattedCharSequence line : lines) {
                 g.drawString(font, line, textX, lineY, color, false);
-                lineY += 10;
+                lineY += 11;
             }
             if (text.placeholder()) {
                 // dashed white margin marks text that still has to be written
@@ -267,12 +397,9 @@ public class GuideScreen extends Screen {
         if (state.time >= length) state.time %= length;
 
         int boxW = w;
-        border(g, x, y, boxW, SCENE_H, WHITE);
-        // pixel corner notches
-        g.fill(x, y, x + 1, y + 1, PANEL);
-        g.fill(x + boxW - 1, y, x + boxW, y + 1, PANEL);
-        g.fill(x, y + SCENE_H - 1, x + 1, y + SCENE_H, PANEL);
-        g.fill(x + boxW - 1, y + SCENE_H - 1, x + boxW, y + SCENE_H, PANEL);
+        g.fill(x, y, x + boxW, y + SCENE_H, 0x66000000);
+        border(g, x, y, boxW, SCENE_H, DIM);
+        brackets(g, x, y, boxW, SCENE_H, WHITE, 8);
         scene.render(g, x + 1, y + 1, boxW - 2, SCENE_H - 2, state.time, state.rotation);
 
         int step = scene.stepAt(state.time);
@@ -333,6 +460,7 @@ public class GuideScreen extends Screen {
 
     private void renderRecipe(GuiGraphics g, GuideRecipes.Recipe recipe, int x, int y, int mouseX, int mouseY, boolean mouseInView) {
         border(g, x, y, RECIPE_W, RECIPE_H, DIM);
+        brackets(g, x, y, RECIPE_W, RECIPE_H, GREY, 4);
         int gx = x + 4, gy = y + 4;
         if (recipe.kind() == GuideRecipes.Kind.CRAFTING) {
             for (int i = 0; i < 9; i++) slot(g, recipe.grid()[i], gx + (i % 3) * SLOT, gy + (i / 3) * SLOT, mouseX, mouseY, mouseInView);
@@ -360,14 +488,23 @@ public class GuideScreen extends Screen {
         }
     }
 
+    /** Translucent black panel with a dim frame and white corner brackets. */
     private static void panel(GuiGraphics g, int x, int y, int w, int h) {
         g.fill(x, y, x + w, y + h, PANEL);
-        border(g, x, y, w, h, WHITE);
-        // pixel corners
-        g.fill(x, y, x + 1, y + 1, BLACK);
-        g.fill(x + w - 1, y, x + w, y + 1, BLACK);
-        g.fill(x, y + h - 1, x + 1, y + h, BLACK);
-        g.fill(x + w - 1, y + h - 1, x + w, y + h, BLACK);
+        border(g, x, y, w, h, DIM);
+        brackets(g, x, y, w, h, WHITE, 6);
+    }
+
+    /** White L-shaped corners, {@code size} pixels long. */
+    private static void brackets(GuiGraphics g, int x, int y, int w, int h, int color, int size) {
+        g.fill(x, y, x + size, y + 1, color);
+        g.fill(x, y, x + 1, y + size, color);
+        g.fill(x + w - size, y, x + w, y + 1, color);
+        g.fill(x + w - 1, y, x + w, y + size, color);
+        g.fill(x, y + h - 1, x + size, y + h, color);
+        g.fill(x, y + h - size, x + 1, y + h, color);
+        g.fill(x + w - size, y + h - 1, x + w, y + h, color);
+        g.fill(x + w - 1, y + h - size, x + w, y + h, color);
     }
 
     private static void border(GuiGraphics g, int x, int y, int w, int h, int color) {
@@ -387,6 +524,7 @@ public class GuideScreen extends Screen {
         if (index == chapter) return;
         chapter = index;
         lastChapter = index;
+        chapterAt = System.currentTimeMillis();
         scroll = 0;
         scenes.clear();
     }
