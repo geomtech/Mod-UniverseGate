@@ -17,4 +17,9 @@ public interface SectionRenderDispatcherAccessor {
     @Mutable
     @Accessor("fixedBuffers")
     void universegate$setFixedBuffers(SectionBufferBuilderPack fixedBuffers);
+
+    //? if <1.21.11 {
+    @Accessor("fixedBuffers")
+    SectionBufferBuilderPack universegate$getFixedBuffers();
+    //?}
 }

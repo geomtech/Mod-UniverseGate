@@ -347,7 +347,9 @@ public class PortalCoreBlockEntity extends BlockEntity implements PosMenuProvide
         preservedFieldCells.clear();
         for (BlockPos pos : frame.interior()) {
             BlockState current = level.getBlockState(pos);
-            if (current.is(PRESERVED_PORTAL_BLOCKS) || hasWiring(level, pos, current)) {
+            // Keep lava as a real liquid. The preserved-cell crossing check also covers this part of the aperture.
+            if (current.getFluidState().is(FluidTags.LAVA) || current.is(PRESERVED_PORTAL_BLOCKS)
+                    || hasWiring(level, pos, current)) {
                 preservedFieldCells.add(pos);
                 continue;
             }

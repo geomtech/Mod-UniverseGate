@@ -37,6 +37,9 @@ public final class RemoteRenderWorldState {
     private @Nullable SectionBufferBuilderPool dedicatedBufferPool;
     private @Nullable SectionBufferBuilderPack dedicatedFixedBuffers;
     private @Nullable ViewArea viewArea;
+    private double lastCameraX = Double.NaN;
+    private double lastCameraY = Double.NaN;
+    private double lastCameraZ = Double.NaN;
     private boolean disposed = false;
 
     public static boolean isRemoteRenderSection(@Nullable SectionRenderDispatcher.RenderSection section) {
@@ -99,11 +102,15 @@ public final class RemoteRenderWorldState {
         if (disposed || viewArea == null) {
             return;
         }
+        if (x == lastCameraX && y == lastCameraY && z == lastCameraZ) return;
         //? if >=1.21.11 {
         /*viewArea.repositionCamera(SectionPos.of(BlockPos.containing(x, y, z)));
         *///?} else {
         viewArea.repositionCamera(x, z);
         //?}
+        lastCameraX = x;
+        lastCameraY = y;
+        lastCameraZ = z;
     }
 
     public void markSectionDirty(int sectionX, int sectionY, int sectionZ, boolean immediate) {

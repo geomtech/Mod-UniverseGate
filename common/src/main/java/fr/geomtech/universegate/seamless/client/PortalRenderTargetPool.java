@@ -2,6 +2,13 @@ package fr.geomtech.universegate.seamless.client;
 
 import org.lwjgl.opengl.GL11;
 import org.lwjgl.opengl.GL30;
+//? if <1.21.11 {
+import com.mojang.blaze3d.pipeline.TextureTarget;
+import com.mojang.blaze3d.systems.RenderSystem;
+import com.mojang.blaze3d.vertex.ByteBufferBuilder;
+import net.minecraft.client.Minecraft;
+import net.minecraft.client.renderer.MultiBufferSource;
+//?}
 
 /**
  * Tracks OpenGL stencil availability on the active framebuffer and manages any pooled offscreen
@@ -15,6 +22,52 @@ public final class PortalRenderTargetPool {
     private static int cachedWidth = -1;
     private static int cachedHeight = -1;
     private static int cachedFramebuffer = -1;
+    //? if <1.21.11 {
+    private static TextureTarget destination;
+    private static TextureTarget drawingDestination;
+    private static int destinationWidth;
+    private static int destinationHeight;
+    private static ByteBufferBuilder modelBytes;
+
+    static TextureTarget destination(int width, int height) {
+        int halfWidth = Math.max(1, (width + 1) / 2);
+        int halfHeight = Math.max(1, (height + 1) / 2);
+        if (destination == null) {
+            destination = new TextureTarget(halfWidth, halfHeight, true, Minecraft.ON_OSX);
+            destination.setFilterMode(GL11.GL_LINEAR);
+        } else if (destination.width != halfWidth || destination.height != halfHeight) {
+            destination.resize(halfWidth, halfHeight, Minecraft.ON_OSX);
+            destination.setFilterMode(GL11.GL_LINEAR);
+        }
+        return destination;
+    }
+
+    static void beginDestination(TextureTarget target, int width, int height) {
+        drawingDestination = target;
+        destinationWidth = width;
+        destinationHeight = height;
+        bindActiveDestination();
+    }
+
+    public static void bindActiveDestination() {
+        if (drawingDestination == null) return;
+        drawingDestination.bindWrite(false);
+        RenderSystem.viewport(0, 0, destinationWidth, destinationHeight);
+    }
+
+    static void endDestination() {
+        drawingDestination = null;
+    }
+
+    static MultiBufferSource.BufferSource modelBuffers() {
+        if (modelBytes == null) modelBytes = new ByteBufferBuilder(262144);
+        return MultiBufferSource.immediate(modelBytes);
+    }
+
+    static void discardModelBuffers() {
+        if (modelBytes != null) modelBytes.discard();
+    }
+    //?}
 
     private PortalRenderTargetPool() {}
 
@@ -78,6 +131,16 @@ public final class PortalRenderTargetPool {
     }
 
     public static void releaseAll() {
+        //? if <1.21.11 {
+        if (destination != null) {
+            destination.destroyBuffers();
+            destination = null;
+        }
+        if (modelBytes != null) {
+            modelBytes.close();
+            modelBytes = null;
+        }
+        //?}
         invalidate();
     }
 }

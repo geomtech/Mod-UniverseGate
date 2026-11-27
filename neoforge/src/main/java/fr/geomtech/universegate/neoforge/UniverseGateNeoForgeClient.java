@@ -30,6 +30,13 @@ import fr.geomtech.universegate.seamless.client.ClientRemoteWorldManager;
 import fr.geomtech.universegate.seamless.client.PortalRenderTargetPool;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.renderer.ItemBlockRenderTypes;
+//? if <1.21.11 {
+import com.mojang.blaze3d.vertex.DefaultVertexFormat;
+import fr.geomtech.universegate.seamless.client.PortalDistortionRenderer;
+import net.minecraft.client.renderer.ShaderInstance;
+import net.neoforged.neoforge.client.event.RegisterShadersEvent;
+import java.io.IOException;
+//?}
 //? if >=1.21.11 {
 /*import net.minecraft.client.renderer.chunk.ChunkSectionLayer;
 import net.neoforged.neoforge.client.event.ConfigureMainRenderTargetEvent;
@@ -52,6 +59,7 @@ import net.neoforged.neoforge.client.extensions.common.IClientFluidTypeExtension
 import net.neoforged.neoforge.client.extensions.common.RegisterClientExtensionsEvent;
 import net.neoforged.neoforge.client.event.RegisterParticleProvidersEvent;
 import fr.geomtech.universegate.ModParticles;
+import fr.geomtech.universegate.PortalInkParticle;
 import fr.geomtech.universegate.UniverseGateSparkParticle;
 import net.neoforged.neoforge.common.NeoForge;
 import net.neoforged.neoforge.event.entity.player.ItemTooltipEvent;
@@ -71,6 +79,18 @@ public final class UniverseGateNeoForgeClient {
         if (fr.geomtech.universegate.neoforge.create.CreateCompatMixinPlugin.isSupported()) {
             fr.geomtech.universegate.neoforge.create.CarriageTeleportClient.register();
         }
+        //?}
+
+        //? if <1.21.11 {
+        modBus.addListener(RegisterShadersEvent.class, event -> {
+            try {
+                var shader = new ShaderInstance(event.getResourceProvider(), PortalDistortionRenderer.SHADER_ID,
+                        DefaultVertexFormat.POSITION_TEX);
+                event.registerShader(shader, PortalDistortionRenderer::setShader);
+            } catch (IOException failure) {
+                UniverseGate.LOGGER.warn("Could not load the portal vortex shader", failure);
+            }
+        });
         //?}
 
         modBus.addListener(FMLClientSetupEvent.class, event -> event.enqueueWork(() -> {
@@ -97,8 +117,10 @@ public final class UniverseGateNeoForgeClient {
             //?}
         }));
 
-        modBus.addListener(RegisterParticleProvidersEvent.class, event ->
-                event.registerSpriteSet(ModParticles.SPARK, UniverseGateSparkParticle.Provider::new));
+        modBus.addListener(RegisterParticleProvidersEvent.class, event -> {
+            event.registerSpriteSet(ModParticles.SPARK, UniverseGateSparkParticle.Provider::new);
+            event.registerSpriteSet(ModParticles.PORTAL_INK, PortalInkParticle.Provider::new);
+        });
 
         modBus.addListener(RegisterClientExtensionsEvent.class, event -> event.registerFluidType(new IClientFluidTypeExtensions() {
             @Override

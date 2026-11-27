@@ -240,7 +240,14 @@ class PortalGateGeometryTest {
             float horizontal = vertex.<Float>getArgument(1) * 16.0F;
             float vertical = vertex.<Float>getArgument(2) * 16.0F;
             float depth = vertex.<Float>getArgument(3) * 16.0F;
-            if (horizontal != Math.round(horizontal) || vertical != Math.round(vertical)) {
+            // The ring is modelled on a half-pixel grid; only the joint recesses fall between its lines.
+            // The smooth inner lip is a separate circle laid over the voxels, so it is left out here.
+            double lipRadius = Math.hypot(horizontal - PortalGateGeometry.CENTER_H, vertical - PortalGateGeometry.CENTER_V);
+            boolean smoothLip = lipRadius > PortalGateGeometry.INNER_RADIUS - 0.5D
+                    && lipRadius < PortalGateGeometry.INNER_RADIUS + 1.9D
+                    && (depth < PortalGateRingLayer.RING_Z0 || depth > PortalGateRingLayer.RING_Z1
+                        || Math.abs(lipRadius - (PortalGateGeometry.INNER_RADIUS - 0.4D)) < 0.01D);
+            if (!smoothLip && (horizontal * 2.0F != Math.round(horizontal * 2.0F) || vertical * 2.0F != Math.round(vertical * 2.0F))) {
                 assertTrue(depth > PortalGateRingLayer.RING_Z0 && depth < PortalGateRingLayer.RING_Z1,
                         "cut detail stays inside the outer faces");
                 recessAtJoint[0] = true;

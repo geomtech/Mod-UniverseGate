@@ -41,12 +41,15 @@ final class PortalRingSegmentRenderer {
             if (!PortalRingSegments.isPlaced(level, corePos, right, segment)) continue;
             placed |= 1 << segment;
             if (solid == null) {
-                solid = buffer.getBuffer(PortalGateRenderTypes.GATE_SOLID);
+                solid = GateSolidBuffer.begin(buffer);
                 brightness = PortalGateRenderer.sampleBrightness(level, corePos, right);
             }
             PortalGateRingLayer.renderSegment(segment, solid, matrix, xAxis, brightness);
         }
-        if (solid != null) PortalGateBrokenJoints.renderConstruction(placed, occupied, solid, matrix, xAxis, brightness);
+        if (solid != null) {
+            PortalGateBrokenJoints.renderConstruction(placed, occupied, solid, matrix, xAxis, brightness);
+            GateSolidBuffer.end(solid);
+        }
 
         renderPreview(core, right, poseStack, buffer);
     }
