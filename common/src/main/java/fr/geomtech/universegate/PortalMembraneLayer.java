@@ -32,8 +32,7 @@ final class PortalMembraneLayer implements PortalGateLayer {
         if (!ctx.active()) return;
 
         boolean unstable = ctx.unstable();
-        boolean seamlessRendered = !fr.geomtech.universegate.seamless.client.PortalStencilRenderer.isRenderingPortalPass()
-                && fr.geomtech.universegate.seamless.client.PortalStencilRenderer.wasRenderedSeamlesslyThisFrame(ctx.corePos());
+        boolean seamlessRendered = fr.geomtech.universegate.seamless.client.PortalStencilRenderer.replacesMembrane(ctx.corePos());
         // En mode seamless stable, la vue en temps réel remplace entièrement la membrane opaque.
         // En mode instable, on ne dessine que les éclats blancs/gris lumineux par-dessus la vue live.
         if (seamlessRendered && !unstable) return;
