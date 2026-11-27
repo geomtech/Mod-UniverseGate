@@ -26,10 +26,12 @@
 		"client.ClientPacketListenerAccessor",
 		"client.ClientPacketListenerRespawnMixin",
 		"client.LevelRendererAccessor",
+		"client.LevelRendererPortalCompositeMixin",
 		"client.LevelRendererSeamlessMixin",
 		"client.LightTextureAccessor",
 		"client.MainTargetStencilMixin",
 		"client.MinecraftSeamlessSwitchMixin",
+		"client.PauseScreenPortalViewMixin",
 		"client.RenderTargetStencilMixin",
 		"client.SectionRenderDispatcherAccessor"
 	],

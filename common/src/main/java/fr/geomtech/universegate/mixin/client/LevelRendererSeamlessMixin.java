@@ -19,6 +19,7 @@ import org.joml.Vector4f;
 *///?} else {
 import net.minecraft.client.renderer.GameRenderer;
 import net.minecraft.client.renderer.LightTexture;
+import net.minecraft.client.multiplayer.ClientLevel;
 import net.minecraft.world.level.block.entity.BlockEntity;
 import java.util.Collection;
 //?}
@@ -40,6 +41,12 @@ public abstract class LevelRendererSeamlessMixin {
     }
 
     //? if <1.21.11 {
+    @Inject(method = "setSectionDirty(IIIZ)V", at = @At("HEAD"))
+    private void universegate$dirtyPortalCompositeSection(int x, int y, int z, boolean immediate, CallbackInfo ci) {
+        ClientLevel level = ((LevelRendererAccessor) this).universegate$getLevel();
+        PortalStencilRenderer.onLocalSectionDirty(level, x, y, z, immediate);
+    }
+
     @Inject(method = "updateGlobalBlockEntities", at = @At("HEAD"), cancellable = true)
     private void universegate$isolateRemoteGlobalBlockEntities(Collection<BlockEntity> toRemove,
                                                                Collection<BlockEntity> toAdd,

@@ -14,6 +14,7 @@ public final class PortalRenderTargetPool {
     private static volatile boolean mainTargetHasStencil = false;
     private static int cachedWidth = -1;
     private static int cachedHeight = -1;
+    private static int cachedFramebuffer = -1;
 
     private PortalRenderTargetPool() {}
 
@@ -30,13 +31,18 @@ public final class PortalRenderTargetPool {
      * Checks on the render thread whether the currently bound framebuffer has stencil bits (> 0).
      */
     public static boolean hasActiveStencilBuffer(int width, int height) {
-        if (lastStencilQueryValid && width == cachedWidth && height == cachedHeight) {
+        return hasStencilBuffer(GL11.glGetInteger(GL30.GL_DRAW_FRAMEBUFFER_BINDING), width, height);
+    }
+
+    public static boolean hasStencilBuffer(int framebuffer, int width, int height) {
+        if (lastStencilQueryValid && width == cachedWidth && height == cachedHeight && framebuffer == cachedFramebuffer) {
             return mainTargetHasStencil;
         }
+        int bound = GL11.glGetInteger(GL30.GL_DRAW_FRAMEBUFFER_BINDING);
         try {
+            if (bound != framebuffer) GL30.glBindFramebuffer(GL30.GL_DRAW_FRAMEBUFFER, framebuffer);
             int stencilBits = 0;
-            int fbo = GL11.glGetInteger(GL30.GL_DRAW_FRAMEBUFFER_BINDING);
-            if (fbo == 0) {
+            if (framebuffer == 0) {
                 stencilBits = GL11.glGetInteger(GL11.GL_STENCIL_BITS);
             } else {
                 int type = GL30.glGetFramebufferAttachmentParameteri(
@@ -53,15 +59,16 @@ public final class PortalRenderTargetPool {
                 }
             }
             mainTargetHasStencil = stencilBits > 0;
-            cachedWidth = width;
-            cachedHeight = height;
-            lastStencilQueryValid = true;
-            return mainTargetHasStencil;
         } catch (Throwable ignored) {
             mainTargetHasStencil = false;
+        } finally {
+            if (bound != framebuffer) GL30.glBindFramebuffer(GL30.GL_DRAW_FRAMEBUFFER, bound);
+            cachedWidth = width;
+            cachedHeight = height;
+            cachedFramebuffer = framebuffer;
             lastStencilQueryValid = true;
-            return false;
         }
+        return mainTargetHasStencil;
     }
 
     public static void invalidate() {

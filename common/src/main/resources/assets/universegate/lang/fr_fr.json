@@ -1,5 +1,7 @@
 {
   "itemGroup.universegate.main": "UniverseGate",
+  "options.universegate.live_portal_view": "Vue du portail en direct : %s",
+  "options.universegate.live_portal_view.tooltip": "Affiche la destination à travers un portail ouvert.",
   "block.universegate.void_block": "Bloc du vide",
   "block.universegate.light_block": "Bloc de lumière",
   "block.universegate.kelo_log": "Bûche d'arbre mort (Kelo)",

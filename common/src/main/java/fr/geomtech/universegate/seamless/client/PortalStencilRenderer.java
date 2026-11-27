@@ -15,6 +15,7 @@ import com.mojang.blaze3d.vertex.DefaultVertexFormat;
 import com.mojang.blaze3d.vertex.PoseStack;
 import com.mojang.blaze3d.vertex.Tesselator;
 import com.mojang.blaze3d.vertex.VertexFormat;
+import com.mojang.blaze3d.vertex.VertexBuffer;
 import com.mojang.blaze3d.vertex.VertexSorting;
 import fr.geomtech.universegate.PortalBuriedFloor;
 import fr.geomtech.universegate.PortalCoreBlockEntity;
@@ -63,9 +64,8 @@ import java.util.Set;
  *
  * <p>Executes outside {@code PortalGateRenderer} (so MC 1.21.11's {@code RecordingBufferSource}
  * is never blocked) and coordinates with {@code PortalMembraneLayer} via
- * {@link #wasRenderedSeamlesslyThisFrame(BlockPos)} so any unsupported environment (Iris shaderpack,
- * shadow pass, Sodium chunk pipeline mismatch, missing stencil bits, opening blackout, recursion cap)
- * falls back cleanly to the classic pixel-art membrane.</p>
+ * {@link #replacesMembrane(BlockPos)}. Iris and Sodium composite after the main world render.
+ * Shadow passes, missing stencil bits and opening blackout keep the membrane fallback.</p>
  */
 public final class PortalStencilRenderer {
 
@@ -79,6 +79,8 @@ public final class PortalStencilRenderer {
     //? if <1.21.11 {
     private static final Map<BlockPos, CachedFrontNormal> FRONT_NORMAL_CACHE = new HashMap<>();
     private static net.minecraft.resources.ResourceKey<net.minecraft.world.level.Level> frontNormalCacheDim = null;
+    private static RemoteRenderWorldState localCompositeWorld;
+    private static List<PortalCandidate> pendingComposite = List.of();
     //?}
     private static int currentRecursionDepth = 0;
     private static String lastDiagnosticStatus = "";
@@ -88,6 +90,9 @@ public final class PortalStencilRenderer {
     public static void beginFrame() {
         if (currentRecursionDepth == 0) {
             RENDERED_SEAMLESSLY_THIS_FRAME.clear();
+            //? if <1.21.11 {
+            pendingComposite = List.of();
+            //?}
         }
     }
 
@@ -107,11 +112,25 @@ public final class PortalStencilRenderer {
         return corePos != null && RENDERED_SEAMLESSLY_THIS_FRAME.contains(corePos);
     }
 
+    public static boolean replacesMembrane(BlockPos corePos) {
+        if (isRenderingPortalPass() || !PortalViewOptions.enabled()) return false;
+        if (wasRenderedSeamlesslyThisFrame(corePos)) return true;
+        //? if <1.21.11 {
+        for (PortalCandidate candidate : pendingComposite) {
+            if (candidate.corePos().equals(corePos)) return true;
+        }
+        //?}
+        return false;
+    }
+
     public static void onClientDisconnect() {
         RENDERED_SEAMLESSLY_THIS_FRAME.clear();
         //? if <1.21.11 {
         FRONT_NORMAL_CACHE.clear();
         frontNormalCacheDim = null;
+        if (localCompositeWorld != null) localCompositeWorld.dispose();
+        localCompositeWorld = null;
+        pendingComposite = List.of();
         //?}
         currentRecursionDepth = 0;
         lastDiagnosticStatus = "";
@@ -127,6 +146,40 @@ public final class PortalStencilRenderer {
                                            float partialTick,
                                            Matrix4f frustumMatrix,
                                            Matrix4f projectionMatrix) {
+        //? if <1.21.11 {
+        if (!PortalViewOptions.enabled() || SodiumIrisCompat.isIrisShadowPass()) return;
+        Minecraft mc = Minecraft.getInstance();
+        if (mc.level == null || mc.player == null || ClientRemoteWorldManager.getInstance().getActiveEndpoints().isEmpty()) return;
+        var candidates = collectCandidates(mc.level, mainCamera.getPosition(), new Vec3(mainCamera.getLookVector()));
+        if (usesLateComposite()) {
+            var target = mc.getMainRenderTarget();
+            if (candidates.isEmpty() || !PortalRenderTargetPool.hasStencilBuffer(target.frameBufferId, target.width, target.height)) return;
+            // Leave the aperture clear while Iris assembles the main world. Its depth must come
+            // from actual foreground geometry rather than from the fallback membrane.
+            pendingComposite = candidates.subList(0, Math.min(candidates.size(), MAX_PORTALS_PER_FRAME));
+        } else {
+            renderPortals(levelRenderer, mainCamera, partialTick, frustumMatrix, projectionMatrix, false, candidates);
+        }
+        //?}
+    }
+
+    //? if <1.21.11 {
+    private static boolean usesLateComposite() {
+        return SodiumIrisCompat.isSodiumLoaded() || SodiumIrisCompat.isIrisShaderPackActive();
+    }
+
+    public static void compositeAfterWorld(LevelRenderer renderer, Camera camera, float partialTick,
+                                           Matrix4f view, Matrix4f projection) {
+        if (!PortalViewOptions.enabled() || pendingComposite.isEmpty() || SodiumIrisCompat.isIrisShadowPass()) return;
+        List<PortalCandidate> candidates = pendingComposite;
+        pendingComposite = List.of();
+        Minecraft.getInstance().getMainRenderTarget().bindWrite(false);
+        renderPortals(renderer, camera, partialTick, view, projection, true, candidates);
+    }
+
+    private static void renderPortals(LevelRenderer levelRenderer, Camera mainCamera, float partialTick,
+                                      Matrix4f frustumMatrix, Matrix4f projectionMatrix, boolean composite,
+                                      List<PortalCandidate> candidates) {
         if (currentRecursionDepth >= MAX_RECURSION_DEPTH) {
             return;
         }
@@ -139,23 +192,13 @@ public final class PortalStencilRenderer {
         int width = mc.getMainRenderTarget().width;
         int height = mc.getMainRenderTarget().height;
         boolean stencilOk = PortalRenderTargetPool.hasActiveStencilBuffer(width, height);
-        SodiumIrisCompat.FallbackReason fallback = SodiumIrisCompat.currentFallbackReason(stencilOk);
+        SodiumIrisCompat.FallbackReason fallback = SodiumIrisCompat.evaluateRenderPolicy(stencilOk, false,
+                SodiumIrisCompat.isIrisShadowPass(), false);
         if (fallback != SodiumIrisCompat.FallbackReason.NONE) {
             logStatusOnce("fallback=" + fallback + " (stencilOk=" + stencilOk + ")");
             return;
         }
 
-        //? if >=1.21.11 {
-        /*// MC 1.21.11 uses Blaze3D RenderPass command buffers rather than immediate GL11 draw calls.
-        // Remote worlds are still streamed, ticked, and promoted seamlessly on traversal, while
-        // visual rendering cleanly falls back to PortalMembraneLayer unless a 1.21.11 RenderPass
-        // stencil pipeline is active.
-        return;
-        *///?} else {
-        Vec3 camPos = mainCamera.getPosition();
-        Vec3 camLook = new Vec3(mainCamera.getLookVector());
-
-        List<PortalCandidate> candidates = collectCandidates(activeLevel, camPos, camLook);
         if (candidates.isEmpty()) {
             int endpoints = ClientRemoteWorldManager.getInstance().getActiveEndpoints().size();
             if (endpoints > 0) {
@@ -178,7 +221,7 @@ public final class PortalStencilRenderer {
             if (renderedCount >= MAX_PORTALS_PER_FRAME) {
                 break;
             }
-            if (renderSinglePortal(mc, levelRenderer, mainCamera, partialTick, frustumMatrix, projectionMatrix, candidate)) {
+            if (renderSinglePortal(mc, levelRenderer, mainCamera, partialTick, frustumMatrix, projectionMatrix, candidate, composite)) {
                 RENDERED_SEAMLESSLY_THIS_FRAME.add(candidate.corePos());
                 renderedCount++;
             }
@@ -188,8 +231,8 @@ public final class PortalStencilRenderer {
             GL11.glStencilMask(0x00);
             GL11.glDisable(GL11.GL_STENCIL_TEST);
         }
-        //?}
     }
+    //?}
 
     private static void logStatusOnce(String status) {
         if (!status.equals(lastDiagnosticStatus)) {
@@ -273,7 +316,8 @@ public final class PortalStencilRenderer {
                                               float partialTick,
                                               Matrix4f mainFrustumMatrix,
                                               Matrix4f mainProjectionMatrix,
-                                              PortalCandidate candidate) {
+                                              PortalCandidate candidate,
+                                              boolean composite) {
         int parentStencil = currentRecursionDepth;
         int childStencil = parentStencil + 1;
 
@@ -325,8 +369,9 @@ public final class PortalStencilRenderer {
         RenderSystem.depthMask(true);
 
         currentRecursionDepth = childStencil;
+        boolean rendered = false;
         try {
-            renderRemoteWorldView(
+            rendered = renderRemoteWorldView(
                     mc,
                     levelRenderer,
                     mainCamera,
@@ -337,7 +382,8 @@ public final class PortalStencilRenderer {
                     partialTick,
                     remoteFrustumMatrix,
                     mainProjectionMatrix,
-                    obliqueProjection
+                    obliqueProjection,
+                    composite
             );
         } catch (Throwable t) {
             UniverseGate.LOGGER.warn("[SeamlessPortal] Render pass failed at {}", candidate.corePos(), t);
@@ -367,10 +413,10 @@ public final class PortalStencilRenderer {
         GL11.glStencilMask(0x00);
         GL11.glStencilFunc(GL11.GL_EQUAL, parentStencil, 0xFF);
         GL11.glStencilOp(GL11.GL_KEEP, GL11.GL_KEEP, GL11.GL_KEEP);
-        return true;
+        return rendered;
     }
 
-    private static void renderRemoteWorldView(Minecraft mc,
+    private static boolean renderRemoteWorldView(Minecraft mc,
                                               LevelRenderer levelRenderer,
                                               Camera mainCamera,
                                               PortalCandidate candidate,
@@ -380,7 +426,8 @@ public final class PortalStencilRenderer {
                                               float partialTick,
                                               Matrix4f remoteFrustumMatrix,
                                               Matrix4f mainProjectionMatrix,
-                                              Matrix4f obliqueProjection) {
+                                              Matrix4f obliqueProjection,
+                                              boolean composite) {
         LevelRendererAccessor lr = (LevelRendererAccessor) levelRenderer;
         ClientLevel savedMcLevel = mc.level;
         ClientLevel savedLrLevel = lr.universegate$getLevel();
@@ -417,10 +464,12 @@ public final class PortalStencilRenderer {
             }
 
             // Bind remote world's dedicated ViewArea/SectionRenderDispatcher when cross-dimension / far remote
-            if (candidate.remoteEntry() != null) {
-                RemoteRenderWorldState renderState = candidate.remoteEntry().getOrCreateRenderState(mc);
+            if (candidate.remoteEntry() != null || composite) {
+                RemoteRenderWorldState renderState = candidate.remoteEntry() != null
+                        ? candidate.remoteEntry().getOrCreateRenderState(mc) : localCompositeWorld(mc, candidate.targetLevel());
+                if (renderState == null) return false;
                 if (renderState.getViewArea() == null || renderState.getSectionRenderDispatcher() == null) {
-                    return;
+                    return false;
                 }
                 BlockPos targetCore = candidate.endpoint().targetCorePos();
                 renderState.repositionCamera(targetCore.getX() + 0.5D, targetCore.getY() + 3.0D, targetCore.getZ() + 0.5D);
@@ -432,7 +481,7 @@ public final class PortalStencilRenderer {
             }
 
             if (targetViewArea == null || targetDispatcher == null) {
-                return;
+                return false;
             }
 
             // Populate visibleSections directly from targetViewArea (never mutating active SectionOcclusionGraph!)
@@ -525,9 +574,9 @@ public final class PortalStencilRenderer {
             RenderSystem.setProjectionMatrix(obliqueProjection, VertexSorting.DISTANCE_TO_ORIGIN);
 
             // Render solid, cutout-mipped, and cutout terrain layers
-            lr.universegate$renderSectionLayer(RenderType.solid(), remoteCamPos.x, remoteCamPos.y, remoteCamPos.z, remoteFrustumMatrix, obliqueProjection);
-            lr.universegate$renderSectionLayer(RenderType.cutoutMipped(), remoteCamPos.x, remoteCamPos.y, remoteCamPos.z, remoteFrustumMatrix, obliqueProjection);
-            lr.universegate$renderSectionLayer(RenderType.cutout(), remoteCamPos.x, remoteCamPos.y, remoteCamPos.z, remoteFrustumMatrix, obliqueProjection);
+            renderTerrain(lr, RenderType.solid(), remoteCamPos, remoteFrustumMatrix, obliqueProjection, composite);
+            renderTerrain(lr, RenderType.cutoutMipped(), remoteCamPos, remoteFrustumMatrix, obliqueProjection, composite);
+            renderTerrain(lr, RenderType.cutout(), remoteCamPos, remoteFrustumMatrix, obliqueProjection, composite);
 
             // Render destination BlockEntities & Entities using vanilla's exact ModelViewStack +
             // identity PoseStack convention so vertex normals remain in world space (preventing
@@ -572,7 +621,8 @@ public final class PortalStencilRenderer {
             }
 
             // Render translucent terrain layer
-            lr.universegate$renderSectionLayer(RenderType.translucent(), remoteCamPos.x, remoteCamPos.y, remoteCamPos.z, remoteFrustumMatrix, obliqueProjection);
+            renderTerrain(lr, RenderType.translucent(), remoteCamPos, remoteFrustumMatrix, obliqueProjection, composite);
+            return true;
         } finally {
             mc.level = savedMcLevel;
             if (savedMcLevel != null && candidate.targetLevel() != savedMcLevel) {
@@ -599,6 +649,59 @@ public final class PortalStencilRenderer {
             lr.universegate$setCullingFrustum(savedFrustum);
             lr.universegate$getVisibleSections().clear();
             lr.universegate$getVisibleSections().addAll(savedVisible);
+        }
+    }
+
+    private static RemoteRenderWorldState localCompositeWorld(Minecraft mc, ClientLevel level) {
+        if (localCompositeWorld != null && localCompositeWorld.getLevel() != level) {
+            localCompositeWorld.dispose();
+            localCompositeWorld = null;
+        }
+        if (localCompositeWorld == null) {
+            localCompositeWorld = new RemoteRenderWorldState(level, mc.options.getEffectiveRenderDistance());
+        }
+        return localCompositeWorld.ensureInitialized(mc) ? localCompositeWorld : null;
+    }
+
+    public static void onLocalSectionDirty(ClientLevel level, int x, int y, int z, boolean immediate) {
+        if (localCompositeWorld != null && localCompositeWorld.getLevel() == level && !isRenderingPortalPass()) {
+            localCompositeWorld.markSectionDirty(x, y, z, immediate);
+        }
+    }
+
+    private static void renderTerrain(LevelRendererAccessor renderer, RenderType layer,
+                                      Vec3 camera, Matrix4f view, Matrix4f projection, boolean composite) {
+        if (!composite) {
+            renderer.universegate$renderSectionLayer(layer, camera.x, camera.y, camera.z, view, projection);
+            return;
+        }
+        // Sodium's LevelRenderer layer hook draws its main-world chunk list. Draw the destination buffers directly.
+        layer.setupRenderState();
+        var shader = RenderSystem.getShader();
+        try {
+            shader.setDefaultUniforms(VertexFormat.Mode.QUADS, view, projection, Minecraft.getInstance().getWindow());
+            shader.apply();
+            var offset = shader.CHUNK_OFFSET;
+            var sections = renderer.universegate$getVisibleSections();
+            boolean opaque = layer != RenderType.translucent();
+            var sectionsInOrder = sections.listIterator(opaque ? 0 : sections.size());
+            while (opaque ? sectionsInOrder.hasNext() : sectionsInOrder.hasPrevious()) {
+                var section = opaque ? sectionsInOrder.next() : sectionsInOrder.previous();
+                if (section.getCompiled().isEmpty(layer)) continue;
+                BlockPos pos = section.getOrigin();
+                if (offset != null) {
+                    offset.set((float) (pos.getX() - camera.x), (float) (pos.getY() - camera.y), (float) (pos.getZ() - camera.z));
+                    offset.upload();
+                }
+                VertexBuffer mesh = section.getBuffer(layer);
+                mesh.bind();
+                mesh.draw();
+            }
+            if (offset != null) offset.set(0F, 0F, 0F);
+        } finally {
+            shader.clear();
+            VertexBuffer.unbind();
+            layer.clearRenderState();
         }
     }
 
