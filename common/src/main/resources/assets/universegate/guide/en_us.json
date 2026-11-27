@@ -236,7 +236,8 @@
           "captions": [
             "Place the Meteorological Controller.",
             "Next to it (within 1 block), stack 2 Meteorological Condensers.",
-            "On top, the Meteorological Catalyst: put an Energy Crystal in it.",
+            "On top, place the Meteorological Catalyst.",
+            "Put an Energy Crystal in it: each activation uses it up.",
             "Connect the tower to the energy network.",
             "Add a Parabola on the same network (120 FE/s). After a 5 minute charge, pick Clear, Rain or Thunder (2,500 FE, 10 minutes)."
           ]
@@ -246,7 +247,8 @@
             "meteorological_controller",
             "meteorological_condenser",
             "meteorological_catalyst",
-            "parabola_block"
+            "parabola_block",
+            "energy_crystal"
           ]
         },
         {

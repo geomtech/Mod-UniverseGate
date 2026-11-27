@@ -236,7 +236,8 @@
           "captions": [
             "Pose le contrôleur météorologique.",
             "À côté (à 1 bloc au plus), empile 2 condenseurs météorologiques.",
-            "Au sommet, le catalyseur météorologique : mets-y un cristal d'énergie.",
+            "Au sommet, pose le catalyseur météorologique.",
+            "Mets-y un cristal d'énergie : il sera consommé à chaque activation.",
             "Relie la tour au réseau d'énergie.",
             "Ajoute une parabole sur le même réseau (120 FE/s). Après 5 minutes de charge, choisis Clair, Pluie ou Orage (2 500 FE, 10 minutes)."
           ]
@@ -246,7 +247,8 @@
             "meteorological_controller",
             "meteorological_condenser",
             "meteorological_catalyst",
-            "parabola_block"
+            "parabola_block",
+            "energy_crystal"
           ]
         },
         {
