@@ -4,6 +4,7 @@
 	"compatibilityLevel": "JAVA_21",
 	"mixins": [
 		"AnvilMenuMixin",
+		"BlockGetterPortalShapeMixin",
 		"ChunkMapAccessor",
 		"ChunkMapEntityAddMixin",
 		"ChunkMapEntityRemoveMixin",

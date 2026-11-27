@@ -2,6 +2,9 @@ package fr.geomtech.universegate;
 
 //? if >=1.21.11 {
 /*import net.minecraft.world.level.redstone.Orientation;
+import net.minecraft.util.RandomSource;
+import net.minecraft.world.level.LevelReader;
+import net.minecraft.world.level.ScheduledTickAccess;
 import org.jetbrains.annotations.Nullable;
 *///?}
 import fr.geomtech.universegate.platform.MenuHelper;
@@ -16,8 +19,10 @@ import net.minecraft.world.InteractionResult;
 import net.minecraft.world.MenuProvider;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.item.context.BlockPlaceContext;
 import net.minecraft.world.level.BlockGetter;
 import net.minecraft.world.level.Level;
+import net.minecraft.world.level.LevelAccessor;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.BaseEntityBlock;
 import net.minecraft.world.level.block.state.BlockState;
@@ -25,40 +30,61 @@ import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.block.entity.BlockEntityTicker;
 import net.minecraft.world.level.block.entity.BlockEntityType;
 import net.minecraft.world.level.block.RenderShape;
+import net.minecraft.world.level.block.SimpleWaterloggedBlock;
 import net.minecraft.world.phys.BlockHitResult;
 import net.minecraft.world.level.block.state.StateDefinition;
 import net.minecraft.world.level.block.state.properties.BooleanProperty;
-import net.minecraft.world.phys.shapes.Shapes;
-import net.minecraft.world.phys.shapes.VoxelShape;
+import net.minecraft.world.level.block.state.properties.BlockStateProperties;
+import net.minecraft.world.level.block.state.properties.EnumProperty;
+import net.minecraft.world.level.material.FluidState;
+import net.minecraft.world.level.material.Fluids;
 
 import org.jetbrains.annotations.Nullable;
 
 
 
-public class PortalCoreBlock extends BaseEntityBlock {
+public class PortalCoreBlock extends BaseEntityBlock implements SimpleWaterloggedBlock {
 
-    /** Portail complet : le Core est masqué, il est dessiné au pied de l'anneau 3D (PortalGateRenderer). */
+    /** L'anneau a déjà été assemblé autour du Core. */
     public static final BooleanProperty FORMED = PortalFrameBlock.FORMED;
+    public static final BooleanProperty WATERLOGGED = PortalFrameBlock.WATERLOGGED;
+    /** Y indique qu'aucune orientation n'a encore été enregistrée, notamment dans les anciens mondes. */
+    public static final EnumProperty<Direction.Axis> AXIS = BlockStateProperties.AXIS;
 
     public PortalCoreBlock(Properties properties) {
         super(properties);
-        this.registerDefaultState(this.stateDefinition.any().setValue(FORMED, false));
+        this.registerDefaultState(this.stateDefinition.any().setValue(FORMED, false)
+                .setValue(WATERLOGGED, false).setValue(AXIS, Direction.Axis.Y));
     }
 
     @Override
     protected void createBlockStateDefinition(StateDefinition.Builder<Block, BlockState> builder) {
-        builder.add(FORMED);
+        builder.add(FORMED, WATERLOGGED, AXIS);
+    }
+
+    @Override
+    public BlockState getStateForPlacement(BlockPlaceContext context) {
+        return PortalFrameBlock.withPlacementWater(defaultBlockState(), context.getLevel(), context.getClickedPos());
+    }
+
+    @Override
+    public FluidState getFluidState(BlockState state) {
+        return state.getValue(WATERLOGGED) ? Fluids.WATER.getSource(false) : super.getFluidState(state);
     }
 
     //? if >=1.21.11 {
     /*@Override
-    protected VoxelShape getOcclusionShape(BlockState state) {
-        return state.getValue(FORMED) ? Shapes.empty() : Shapes.block();
+    protected BlockState updateShape(BlockState state, LevelReader level, ScheduledTickAccess ticks, BlockPos pos,
+                                     Direction direction, BlockPos neighborPos, BlockState neighborState, RandomSource random) {
+        if (state.getValue(WATERLOGGED)) ticks.scheduleTick(pos, Fluids.WATER, Fluids.WATER.getTickDelay(level));
+        return super.updateShape(state, level, ticks, pos, direction, neighborPos, neighborState, random);
     }
     *///?} else {
     @Override
-    protected VoxelShape getOcclusionShape(BlockState state, BlockGetter level, BlockPos pos) {
-        return state.getValue(FORMED) ? Shapes.empty() : Shapes.block();
+    protected BlockState updateShape(BlockState state, Direction direction, BlockState neighborState,
+                                     LevelAccessor level, BlockPos pos, BlockPos neighborPos) {
+        if (state.getValue(WATERLOGGED)) level.scheduleTick(pos, Fluids.WATER, Fluids.WATER.getTickDelay(level));
+        return super.updateShape(state, direction, neighborState, level, pos, neighborPos);
     }
     //?}
 

@@ -249,6 +249,7 @@ public final class PortalTeleportHandler {
             if (!(entity instanceof ServerPlayer)) {
                 entity.setDeltaMovement(preservedVelocity);
             }
+            restorePassengers(passengerTree);
             return;
         }
 
@@ -307,6 +308,21 @@ public final class PortalTeleportHandler {
             children.add(childNode);
         }
         return new PassengerNode(root, root.getYRot(), root.getXRot(), children);
+    }
+
+    private static void restorePassengers(PassengerNode parent) {
+        for (PassengerNode child : parent.children()) {
+            //? if >=1.21.11 {
+            /*boolean remounted = child.entity().startRiding(parent.entity(), true, true);
+            *///?} else {
+            boolean remounted = child.entity().startRiding(parent.entity(), true);
+            //?}
+            if (!remounted) {
+                UniverseGate.LOGGER.warn("Could not restore passenger {} on {} after failed portal teleport",
+                        child.entity().getUUID(), parent.entity().getUUID());
+            }
+            restorePassengers(child);
+        }
     }
 
     private static void sendSeamlessSwitchHints(PassengerNode node,

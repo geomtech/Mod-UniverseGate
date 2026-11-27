@@ -320,27 +320,21 @@ class Tier2AreaBRenderingBoundaryE2eTest {
     @Test
     @Tag("tier2")
     @Tag("areaB")
-    @DisplayName("T2-F7-04: Buried portal plinth (PortalGateBaseLayer.isBuried) seam compatibility")
-    void buriedPortalPlinthSeamCompatibility() {
-        Class<?> baseLayerCls = SeamlessContractProbe.requireClass("fr.geomtech.universegate.PortalGateBaseLayer");
-        SeamlessContractProbe.requireStaticMethod(
-                baseLayerCls, "isBuried", boolean.class, Level.class, BlockPos.class, Direction.class);
-
+    @DisplayName("T2-F7-04: Terrain and the core cube define the floor below the aperture")
+    void apertureUsesTerrainAndCoreCube() {
+        Class<?> ringLayerCls = SeamlessContractProbe.requireClass("fr.geomtech.universegate.PortalGateRingLayer");
         @SuppressWarnings("unchecked")
         List<PortalGateLayer> layers = SeamlessContractProbe.invokeStatic(
                 PortalGateLayers.class, "all", List.class, new Class<?>[0]);
-        assertTrue(baseLayerCls.isInstance(layers.get(0)));
+        assertTrue(ringLayerCls.isInstance(layers.get(0)));
 
-        Class<?> ringLayerCls = SeamlessContractProbe.requireClass("fr.geomtech.universegate.PortalGateRingLayer");
         Class<?> membraneCls = SeamlessContractProbe.requireClass("fr.geomtech.universegate.PortalMembraneLayer");
         float centerV = SeamlessContractProbe.readStaticField(ringLayerCls, "CENTER_V", float.class);
         float innerRadius = SeamlessContractProbe.readStaticField(ringLayerCls, "INNER_RADIUS", float.class);
         int membraneRadius = SeamlessContractProbe.readStaticField(membraneCls, "RADIUS", int.class);
-        int plinthHeight = SeamlessContractProbe.readStaticField(baseLayerCls, "PLINTH_HEIGHT", int.class);
 
         assertEquals(13.0F, centerV - innerRadius, 1.0E-5F);
         assertEquals(12.0F, centerV - membraneRadius, 1.0E-5F);
-        assertEquals(12, plinthHeight);
 
         Class<?> stencilRenderer = SeamlessContractProbe.requireClass(FQCN_PORTAL_STENCIL_RENDERER, false);
         SeamlessContractProbe.requireStaticMethod(

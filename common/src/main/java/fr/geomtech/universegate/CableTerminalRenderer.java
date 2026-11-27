@@ -61,8 +61,7 @@ public final class CableTerminalRenderer<T extends BlockEntity> extends Immediat
         // A core across a chunk boundary can arrive later than the clip and its immediate neighbours.
         if (!changed && level.getGameTime() >= geometry.retryAt) {
             changed = geometry.waitingForCore || (geometry.corePos != null
-                    && (geometry.buried != PortalGateBaseLayer.isBuried(level, geometry.corePos, geometry.right)
-                    || geometry.terrain.entrySet().stream().anyMatch(e -> level.getBlockState(e.getKey()) != e.getValue())));
+                    && geometry.terrain.entrySet().stream().anyMatch(e -> PortalGateGeometry.stateAt(level, e.getKey()) != e.getValue()));
             geometry.retryAt = level.getGameTime() + 20;
         }
         if (changed) {
@@ -93,7 +92,6 @@ public final class CableTerminalRenderer<T extends BlockEntity> extends Immediat
         private Direction grip;
         private BlockPos corePos;
         private Direction right;
-        private boolean buried;
         private boolean waitingForCore;
         private Direction keyboardFacing;
         private long retryAt;
@@ -106,10 +104,10 @@ public final class CableTerminalRenderer<T extends BlockEntity> extends Immediat
             BlockState support = neighbors[grip.ordinal()];
             boolean core = !antenna && support.is(ModBlocks.PORTAL_CORE) && support.getValue(PortalCoreBlock.FORMED);
             boolean frame = !antenna && support.is(ModBlocks.PORTAL_FRAME) && support.getValue(PortalFrameBlock.FORMED);
-            corePos = core ? supportPos : frame ? PortalFrameDetector.findCoreOfFrame(level, supportPos).orElse(null) : null;
-            right = corePos == null ? null : PortalGateAnimator.resolveRight(level, corePos);
+            PortalGateGeometry.Gate gate = frame ? PortalGateGeometry.findGate(level, supportPos) : null;
+            corePos = core ? supportPos : gate == null ? null : gate.core();
+            right = core ? PortalGateGeometry.resolveRight(level, supportPos) : gate == null ? null : gate.right();
             if (right == null) corePos = null;
-            buried = right != null && PortalGateBaseLayer.isBuried(level, corePos, right);
             waitingForCore = (core || frame) && right == null;
             retryAt = level.getGameTime() + 20;
             boolean onMast = !antenna && support.is(ModBlocks.LIGHTNING_ANTENNA);
@@ -134,7 +132,7 @@ public final class CableTerminalRenderer<T extends BlockEntity> extends Immediat
                         Math.abs(transverse.y), Math.abs(transverse.z)), mount));
             }
             if (right != null) {
-                portalTerminal(level, pos, ports);
+                portalTerminal(level, pos, supportPos, support, ports);
                 return;
             }
             for (int lane : new int[]{1, -1}) {
@@ -195,7 +193,7 @@ public final class CableTerminalRenderer<T extends BlockEntity> extends Immediat
             quads.add(new Quad(bottom[3],bottom[2],bottom[1],bottom[0],color));
         }
 
-        private void portalTerminal(Level level, BlockPos pos, List<WirePort> ports) {
+        private void portalTerminal(Level level, BlockPos pos, BlockPos supportPos, BlockState support, List<WirePort> ports) {
             Vec3 across = vector(right), front = vector(right.getClockWise());
             Vec3 origin = Vec3.atLowerCornerOf(corePos.subtract(pos)).add(.5,0,.5);
             WirePort feed = ports.isEmpty() ? null : ports.getFirst();
@@ -203,17 +201,21 @@ public final class CableTerminalRenderer<T extends BlockEntity> extends Immediat
             Vec3 relative = incoming.subtract(origin);
             double face = CENTER.subtract(origin).dot(front);
             if ((face == 0 ? relative.dot(front) : face) < 0) front = front.reverse();
-            double side = relative.dot(across) < 0 ? -1 : 1;
-            double floor = buried ? 1 + 1.5/16 : .75;
-            Vec3 seat = origin.add(across.scale(side*1.53)).add(front.scale(.472)).add(0,floor,0);
-            if (Math.abs(CENTER.subtract(origin).dot(across)) < .5 && CENTER.y - origin.y <= floor + .9) {
-                // A clip on the core can bolt straight through its top, including a flush buried core.
-                seat = origin.add(front.scale(.10)).add(0, buried ? 1 : floor, 0);
-            } else if (!buried) {
-                // The exposed plinth has a continuous top. Put the saddle under the actual clip.
-                double lateral = Math.clamp(CENTER.subtract(origin).dot(across), -1.52, 1.52);
-                seat = origin.add(across.scale(lateral)).add(front.scale(.472)).add(0,floor,0);
+            double lateral = CENTER.subtract(origin).dot(across);
+            if (Math.abs(lateral) < .5) lateral = relative.dot(across);
+            boolean positiveDepth = front.x + front.z > 0;
+            Vec3 socket = PortalBuriedFloor.clipSeat(level, corePos, right, lateral, positiveDepth);
+
+            // The socket can disappear when the gate is dug out or the bottom frame is broken.
+            for (int dx = -2; dx <= 2; dx++) {
+                BlockPos column = corePos.relative(right, dx);
+                watch(level, column);
+                watch(level, column.below());
+                watch(level, column.relative(right.getClockWise()));
+                watch(level, column.relative(right.getCounterClockWise()));
             }
+            Vec3 seat = socket != null ? Vec3.atLowerCornerOf(corePos.subtract(pos)).add(socket)
+                    : supportSeat(level, pos, supportPos, support);
             collar(seat, across, front);
             Vec3 delta = incoming.subtract(seat);
             // Angle the cable entries towards the feed but keep the copper on the outer face.
@@ -235,6 +237,25 @@ public final class CableTerminalRenderer<T extends BlockEntity> extends Immediat
                     portalLead(level, pos, port, lug.sleeve, contactSide, approach, front, lane);
                 }
             }
+        }
+
+        private void watch(Level level, BlockPos pos) {
+            terrain.put(pos, PortalGateGeometry.stateAt(level, pos));
+        }
+
+        private Vec3 supportSeat(Level level, BlockPos pos, BlockPos supportPos, BlockState support) {
+            Vec3 supportOffset = Vec3.atLowerCornerOf(supportPos.subtract(pos));
+            Vec3 seat = supportOffset.add(.5, 1, .5);
+            double distance = Double.POSITIVE_INFINITY;
+            for (AABB box : support.getCollisionShape(level, supportPos).toAabbs()) {
+                Vec3 end = supportOffset.add((box.minX + box.maxX) / 2, box.maxY, (box.minZ + box.maxZ) / 2);
+                double candidateDistance = end.distanceToSqr(CENTER);
+                if (candidateDistance < distance) {
+                    distance = candidateDistance;
+                    seat = end;
+                }
+            }
+            return seat;
         }
 
         // Sample actual collision boxes so both leads can settle on slabs, stairs or a full floor.
@@ -266,7 +287,7 @@ public final class CableTerminalRenderer<T extends BlockEntity> extends Immediat
             List<Vec3> run = new ArrayList<>();
             boolean hanging = start.y > end.y + .5;
             if (hanging) {
-                // Clear the lip, drop almost vertically, then turn onto the ground outside the plinth.
+                // Clear the lip, drop almost vertically, then turn onto the ground.
                 Vec3 lip = start.add(port.inward.scale(.20));
                 Vec3 landing = lip.add(front.scale(Math.max(.12, .88 - lip.subtract(centerEnd).dot(front))));
                 double ground = restingHeight(level, pos, landing, start.y-.09);

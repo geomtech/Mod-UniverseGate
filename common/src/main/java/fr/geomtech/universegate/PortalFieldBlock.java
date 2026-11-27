@@ -13,6 +13,7 @@ import org.jetbrains.annotations.Nullable;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.server.level.ServerLevel;
+import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.util.RandomSource;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.player.Player;
@@ -89,6 +90,12 @@ public class PortalFieldBlock extends Block implements EntityBlock, SimpleWaterl
     //?}
         if (level.isClientSide()) return;
 
+        if (entity.getRootVehicle() instanceof ServerPlayer player) {
+            // Movement packet handling would overwrite a teleport performed inside Entity.move().
+            fr.geomtech.universegate.seamless.physics.PortalCrossingTracker.deferPlayerCrossing(
+                    player.getUUID(), level.dimension(), pos);
+            return;
+        }
         PortalTeleportHandler.tryTeleport(entity, pos);
     }
 

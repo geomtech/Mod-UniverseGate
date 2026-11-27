@@ -8,12 +8,14 @@ import net.minecraft.core.Direction;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.server.level.TicketType;
+import net.minecraft.tags.BlockTags;
 import net.minecraft.tags.StructureTags;
 import net.minecraft.util.Mth;
 import net.minecraft.util.RandomSource;
 import net.minecraft.world.entity.npc.Villager;
 import net.minecraft.world.level.ChunkPos;
 import net.minecraft.world.level.Level;
+import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.levelgen.Heightmap;
 import net.minecraft.world.phys.AABB;
@@ -323,9 +325,7 @@ public final class OverworldVillagePortalGenerator {
             if (!entry.dim().equals(level.dimension())) continue;
 
             BlockPos portalPos = entry.pos();
-            int dx = portalPos.getX() - center.getX();
-            int dz = portalPos.getZ() - center.getZ();
-            if ((dx * dx) + (dz * dz) > radiusSqr) continue;
+            if (horizontalDistanceSqr(portalPos, center) > radiusSqr) continue;
             if (!level.hasChunkAt(portalPos)) return true;
 
             if (level.getBlockState(portalPos).is(ModBlocks.PORTAL_CORE)) {
@@ -351,7 +351,7 @@ public final class OverworldVillagePortalGenerator {
                     new BlockPos(x, level.getMinBuildHeight(), z)
             );
 
-            BlockPos corePos = surface.immutable();
+            BlockPos corePos = surface.below();
             if (corePos.getY() <= level.getMinBuildHeight() + 1) continue;
             if (corePos.getY() + PortalFrameDetector.INNER_HEIGHT + 1 >= level.getMaxBuildHeight()) continue;
             if (!level.hasChunkAt(corePos)) continue;
@@ -376,26 +376,27 @@ public final class OverworldVillagePortalGenerator {
         if (hasPortalCoreNear(level, corePos, MIN_CORE_SEPARATION)) return false;
 
         Direction normal = right == Direction.EAST ? Direction.SOUTH : Direction.EAST;
+        BlockPos keyboardHeight = corePos.above();
 
-        BlockPos keyboardA = corePos.relative(normal, 2);
+        BlockPos keyboardA = keyboardHeight.relative(normal, 2);
         if (canPlaceVillagePortalAt(level, corePos, right, keyboardA)) {
             placeVillagePortal(level, villageCenter, corePos, right, keyboardA);
             return true;
         }
 
-        BlockPos keyboardB = corePos.relative(normal.getOpposite(), 2);
+        BlockPos keyboardB = keyboardHeight.relative(normal.getOpposite(), 2);
         if (canPlaceVillagePortalAt(level, corePos, right, keyboardB)) {
             placeVillagePortal(level, villageCenter, corePos, right, keyboardB);
             return true;
         }
 
-        BlockPos keyboardC = corePos.relative(normal, 3);
+        BlockPos keyboardC = keyboardHeight.relative(normal, 3);
         if (canPlaceVillagePortalAt(level, corePos, right, keyboardC)) {
             placeVillagePortal(level, villageCenter, corePos, right, keyboardC);
             return true;
         }
 
-        BlockPos keyboardD = corePos.relative(normal.getOpposite(), 3);
+        BlockPos keyboardD = keyboardHeight.relative(normal.getOpposite(), 3);
         if (canPlaceVillagePortalAt(level, corePos, right, keyboardD)) {
             placeVillagePortal(level, villageCenter, corePos, right, keyboardD);
             return true;
@@ -420,11 +421,8 @@ public final class OverworldVillagePortalGenerator {
                 BlockState state = level.getBlockState(p);
 
                 if (border) {
-                    if (dx == 0 && dy == 0) {
-                        if (!state.is(ModBlocks.PORTAL_CORE) && !state.canBeReplaced()) return false;
-                    } else {
-                        if (!state.is(ModBlocks.PORTAL_FRAME) && !state.canBeReplaced()) return false;
-                    }
+                    if (state.is(dx == 0 && dy == 0 ? ModBlocks.PORTAL_CORE : ModBlocks.PORTAL_FRAME) || state.canBeReplaced()) continue;
+                    if (dy != 0 || !isSurfaceTerrain(level, p, state)) return false;
                 } else {
                     if (!state.isAir() && !state.canBeReplaced()) return false;
                     if (state.is(ModBlocks.PORTAL_CORE)
@@ -445,6 +443,12 @@ public final class OverworldVillagePortalGenerator {
         if (!canPlaceNaturalKeyboard(level, keyboardPos)) return false;
 
         return true;
+    }
+
+    private static boolean isSurfaceTerrain(ServerLevel level, BlockPos pos, BlockState state) {
+        return level.getHeight(Heightmap.Types.MOTION_BLOCKING_NO_LEAVES, pos.getX(), pos.getZ()) == pos.getY() + 1
+                && (state.is(BlockTags.DIRT) || state.is(BlockTags.SAND) || state.is(BlockTags.BASE_STONE_OVERWORLD)
+                    || state.is(Blocks.DIRT_PATH) || state.is(Blocks.GRAVEL) || state.is(Blocks.SNOW_BLOCK));
     }
 
     private static boolean canPlaceNaturalKeyboard(ServerLevel level, BlockPos keyboardPos) {

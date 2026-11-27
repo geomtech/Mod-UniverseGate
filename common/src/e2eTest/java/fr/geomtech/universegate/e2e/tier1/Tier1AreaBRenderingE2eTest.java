@@ -289,11 +289,10 @@ class Tier1AreaBRenderingE2eTest {
         @SuppressWarnings("unchecked")
         List<PortalGateLayer> layers = SeamlessContractProbe.invokeStatic(
                 PortalGateLayers.class, "all", List.class, new Class<?>[0]);
-        assertEquals(4, layers.size());
-        assertEquals("PortalGateBaseLayer", layers.get(0).getClass().getSimpleName());
-        assertEquals("PortalGateRingLayer", layers.get(1).getClass().getSimpleName());
-        assertEquals("PortalMembraneLayer", layers.get(2).getClass().getSimpleName());
-        assertEquals("PortalArcLayer", layers.get(3).getClass().getSimpleName());
+        assertEquals(3, layers.size());
+        assertEquals("PortalGateRingLayer", layers.get(0).getClass().getSimpleName());
+        assertEquals("PortalMembraneLayer", layers.get(1).getClass().getSimpleName());
+        assertEquals("PortalArcLayer", layers.get(2).getClass().getSimpleName());
 
         Class<?> stencilRenderer = SeamlessContractProbe.requireClass(FQCN_PORTAL_STENCIL_RENDERER, false);
         SeamlessContractProbe.requireStaticMethod(
